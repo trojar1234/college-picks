@@ -14,57 +14,78 @@ import numpy as np
 import pandas as pd
 
 
-def fit(rows, ycol, prior, mu0, hfa0, lam, default=(0.0, 0.0)):
-    """rows: DataFrame with off, deff, h, and ycol. prior: {team: (off, def)}."""
-    teams = sorted(set(prior) | set(rows["off"]) | set(rows["deff"])) if len(rows) else sorted(prior)
+def fit(rows, ycol, prior, mu0, hfa0, lam, default=(0.0, 0.0), fcs=frozenset(), g0=(0.0, 0.0)):
+    """rows: DataFrame with off, deff, h, and ycol. prior: {team: (off, def)}.
+
+    FCS teams share a group offset (g_off, g_def) estimated from all their games,
+    and their own ratings shrink toward that group. Games involving an FCS team
+    don't inform home field (FCS teams almost always play away, which would
+    otherwise inflate home field)."""
+    teams = sorted(set(prior) | (set(rows["off"]) | set(rows["deff"]) if len(rows) else set()))
     idx = {t: i for i, t in enumerate(teams)}
     n = len(teams)
-    k = 2 + 2 * n  # mu, off..., def..., hfa
+    k = 4 + 2 * n  # mu, off..., def..., hfa, g_off, g_def
+    HI, GO, GD = 1 + 2 * n, 2 + 2 * n, 3 + 2 * n
     A = np.zeros((k, k))
     b = np.zeros(k)
     if len(rows):
+        m = len(rows)
         o = rows["off"].map(idx).to_numpy()
-        d = rows["deff"].map(idx).to_numpy() + n
-        h = rows["h"].to_numpy(dtype=float)
+        d = rows["deff"].map(idx).to_numpy()
+        of = rows["off"].isin(fcs).to_numpy()
+        df = rows["deff"].isin(fcs).to_numpy()
+        h = np.where(of | df, 0.0, rows["h"].to_numpy(dtype=float))
+        X = np.zeros((m, k))
+        r = np.arange(m)
+        X[:, 0] = 1
+        X[r, 1 + o] = 1
+        X[r, 1 + n + d] = 1
+        X[:, HI] = h
+        X[:, GO] = of
+        X[:, GD] = df
         y = rows[ycol].to_numpy(dtype=float)
-        cols = [np.zeros(len(rows), int), o + 1, d + 1]
-        # Build normal equations X'X and X'y without a dense design matrix.
-        for ci in cols:
-            np.add.at(b, ci, y)
-            for cj in cols:
-                np.add.at(A, (ci, cj), 1.0)
-        hi = k - 1
-        b[hi] += (h * y).sum()
-        A[hi, hi] += (h * h).sum()
-        for ci in cols:
-            np.add.at(A, (ci, hi), h)
-            np.add.at(A, (hi, ci), h)
+        A += X.T @ X
+        b += X.T @ y
     b0 = np.zeros(k)
-    b0[0] = mu0
-    b0[-1] = hfa0
+    b0[0], b0[HI], b0[GO], b0[GD] = mu0, hfa0, g0[0], g0[1]
     for t, i in idx.items():
-        po, pd_ = prior.get(t, default)
+        po, pd_ = (0.0, 0.0) if t in fcs else prior.get(t, default)
         b0[1 + i] = po
         b0[1 + n + i] = pd_
     pen = np.full(k, float(lam))
-    pen[0] = 0.5   # weak pull on the league average
-    pen[-1] = 20.0  # home field is fairly stable; pull it toward its prior
+    pen[0] = 0.5    # weak pull on the league average
+    pen[HI] = 20.0  # home field is stable; pull it toward its prior
+    pen[GO] = pen[GD] = 2.0
     A[np.diag_indices(k)] += pen
     b += pen * b0
     sol = np.linalg.solve(A, b)
     return dict(
         mu=float(sol[0]),
-        hfa=float(sol[-1]),
+        hfa=float(sol[HI]),
+        g=(float(sol[GO]), float(sol[GD])),
+        fcs=set(fcs),
         off={t: float(sol[1 + i]) for t, i in idx.items()},
         deff={t: float(sol[1 + n + i]) for t, i in idx.items()},
         default=default,
     )
 
 
+def _side(R, team, j):
+    book = R["off"] if j == 0 else R["deff"]
+    if team in book:
+        return book[team] + (R["g"][j] if team in R["fcs"] else 0.0)
+    return R["g"][j]  # unknown team: almost always a small FCS school
+
+
 def expect(R, off_team, def_team, h):
-    o = R["off"].get(off_team, R["default"][0])
-    d = R["deff"].get(def_team, R["default"][1])
-    return R["mu"] + o + d + R["hfa"] * h
+    return R["mu"] + _side(R, off_team, 0) + _side(R, def_team, 1) + R["hfa"] * h
+
+
+def absolute(R):
+    """Ratings with the FCS group offset folded in (used to build next year's priors)."""
+    return dict(mu=R["mu"], hfa=R["hfa"],
+                off={t: _side(R, t, 0) for t in R["off"]},
+                deff={t: _side(R, t, 1) for t in R["deff"]})
 
 
 # ---------- Preseason priors ----------
@@ -77,91 +98,89 @@ def _z(d):
     return {k: (x - m) / s for k, x in d.items() if x == x}
 
 
+METRICS = {"ppa": "ppa", "sr": "sr", "pace": "plays"}  # rating name -> column in game rows
+
+
+def _ret(ret, t, rmean):
+    v = ret.get(t, rmean)
+    return (v if v == v else rmean) - rmean
+
+
 def prior_features(prev, talent, ret):
-    """Feature rows per team for building next season's prior."""
+    """Feature rows per team for building next season's prior (prev = absolute ratings)."""
     tz = _z(talent)
     rv = [x for x in ret.values() if x == x]
     rmean = float(np.mean(rv)) if rv else 0.5
     teams = set(prev["ppa"]["off"]) | set(tz)
     rows = []
     for t in teams:
-        rows.append(
-            dict(
-                team=t,
-                has_prev=t in prev["ppa"]["off"],
-                p_off=prev["ppa"]["off"].get(t, np.nan),
-                p_def=prev["ppa"]["deff"].get(t, np.nan),
-                p_poff=prev["pace"]["off"].get(t, np.nan),
-                p_pdef=prev["pace"]["deff"].get(t, np.nan),
-                ret=(ret.get(t, rmean) if ret.get(t, rmean) == ret.get(t, rmean) else rmean) - rmean,
-                tal=tz.get(t, -1.0),
-            )
-        )
+        r = dict(team=t, has_prev=t in prev["ppa"]["off"], ret=_ret(ret, t, rmean), tal=tz.get(t, -1.0))
+        for m in METRICS:
+            for side in ("off", "deff"):
+                r[f"p_{m}_{side}"] = prev[m][side].get(t, np.nan)
+        rows.append(r)
     return pd.DataFrame(rows)
 
 
-FEATS = {
-    "off": ["p_off", "p_off_ret", "tal"],
-    "def": ["p_def", "tal"],
-    "poff": ["p_poff"],
-    "pdef": ["p_pdef"],
-}
-FALLBACK = {"off": [0.6, 0.0, 0.0], "def": [0.6, 0.0], "poff": [0.5], "pdef": [0.5]}
+def _cols(m, side):
+    base = f"p_{m}_{side}"
+    if m == "pace":
+        return [base]
+    return [base, f"{base}_ret", "tal"] if side == "off" else [base, "tal"]
 
 
-def _design(df, comp):
+def _design(df, m, side):
     df = df.copy()
-    df["p_off_ret"] = df["p_off"] * df["ret"]
-    X = df[FEATS[comp]].to_numpy(dtype=float)
-    return np.column_stack([np.ones(len(df)), X])
+    base = f"p_{m}_{side}"
+    df[f"{base}_ret"] = df[base] * df["ret"]
+    return np.column_stack([np.ones(len(df)), df[_cols(m, side)].to_numpy(dtype=float)])
+
+
+def _usable(f):
+    need = [f"p_{m}_{s}" for m in METRICS for s in ("off", "deff")]
+    return f[f.has_prev & f[need].notna().all(axis=1)]
 
 
 def fit_prior_coefs(pairs):
-    """pairs: list of (features_df for season s, final ratings of season s). Ridge OLS per component."""
+    """pairs: list of (features for season s, absolute final ratings of season s)."""
     coefs = {}
-    tgt_key = {"off": ("ppa", "off"), "def": ("ppa", "deff"), "poff": ("pace", "off"), "pdef": ("pace", "deff")}
-    for comp, (m, side) in tgt_key.items():
-        Xs, ys = [], []
-        for feats, final in pairs:
-            f = feats[feats.has_prev].copy()
-            f["y"] = f.team.map(final[m][side])
-            f = f.dropna(subset=["y", "p_off", "p_def", "p_poff", "p_pdef"])
-            if len(f):
-                Xs.append(_design(f, comp))
-                ys.append(f["y"].to_numpy())
-        if not Xs or sum(len(y) for y in ys) < 150:
-            coefs[comp] = None
-            continue
-        X, y = np.vstack(Xs), np.concatenate(ys)
-        reg = np.eye(X.shape[1]) * 1.0
-        reg[0, 0] = 0
-        coefs[comp] = np.linalg.solve(X.T @ X + reg, X.T @ y)
+    for m in METRICS:
+        for side in ("off", "deff"):
+            Xs, ys = [], []
+            for feats, final in pairs:
+                f = _usable(feats).copy()
+                f["y"] = f.team.map(final[m][side])
+                f = f.dropna(subset=["y"])
+                if len(f):
+                    Xs.append(_design(f, m, side))
+                    ys.append(f["y"].to_numpy())
+            if not Xs or sum(len(y) for y in ys) < 150:
+                coefs[(m, side)] = None
+                continue
+            X, y = np.vstack(Xs), np.concatenate(ys)
+            reg = np.eye(X.shape[1])
+            reg[0, 0] = 0
+            coefs[(m, side)] = np.linalg.solve(X.T @ X + reg, X.T @ y)
     return coefs
 
 
 def make_prior(prev, feats, coefs, tiers_prev):
-    """Returns ({team: (off, def)} for ppa, same for pace, defaults per tier)."""
-    out_ppa, out_pace = {}, {}
-    f = feats.copy()
-    # Teams with no previous-season data start at their tier's average.
-    def tier_mean(m, side, tier):
-        vals = [v for t, v in prev[m][side].items() if tiers_prev.get(t) == tier]
+    """Returns ({metric: {team: (off, def)}}, {metric: default (off, def)})."""
+    def tier_mean(m, side):
+        vals = [v for t, v in prev[m][side].items() if tiers_prev.get(t) == "FCS"]
         return float(np.mean(vals)) if vals else 0.0
-    for comp, (m, side) in {"off": ("ppa", "off"), "def": ("ppa", "deff"), "poff": ("pace", "off"), "pdef": ("pace", "deff")}.items():
-        has = f[f.has_prev & f[["p_off", "p_def", "p_poff", "p_pdef"]].notna().all(axis=1)]
-        c = coefs.get(comp)
-        if c is None:
-            pred = _design(has, comp)[:, 1:] @ np.array(FALLBACK[comp])
-        else:
-            pred = _design(has, comp) @ c
-        f[comp] = np.nan
-        f.loc[has.index, comp] = pred
-        f.loc[f[comp].isna(), comp] = tier_mean(m, side, "FCS")
-    for _, r in f.iterrows():
-        out_ppa[r.team] = (float(r["off"]), float(r["def"]))
-        out_pace[r.team] = (float(r["poff"]), float(r["pdef"]))
-    defaults = {
-        "ppa": (tier_mean("ppa", "off", "FCS"), tier_mean("ppa", "deff", "FCS")),
-        "pace": (0.0, 0.0),
-    }
-    return out_ppa, out_pace, defaults
+    f = feats.copy()
+    has = _usable(f)
+    priors, defaults = {}, {}
+    for m in METRICS:
+        for side in ("off", "deff"):
+            c = coefs.get((m, side))
+            X = _design(has, m, side)
+            pred = X @ c if c is not None else X[:, 1] * (0.5 if m == "pace" else 0.6)
+            col = f"pr_{m}_{side}"
+            f[col] = np.nan
+            f.loc[has.index, col] = pred
+            f.loc[f[col].isna(), col] = 0.0 if m == "pace" else tier_mean(m, side)
+        priors[m] = {r.team: (float(getattr(r, f"pr_{m}_off")), float(getattr(r, f"pr_{m}_deff"))) for r in f.itertuples()}
+        defaults[m] = (0.0, 0.0) if m == "pace" else (tier_mean(m, "off"), tier_mean(m, "deff"))
+    return priors, defaults

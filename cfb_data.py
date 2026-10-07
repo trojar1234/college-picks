@@ -70,7 +70,8 @@ def adv_table(raw, games):
         gid = int(gid)
         off = _g(d, "offense", default={}) or {}
         ppa, plays = _num(_g(off, "ppa")), _num(_g(off, "plays"))
-        if np.isnan(ppa) or np.isnan(plays) or plays < 20:
+        sr = _num(_g(off, "successRate", "success_rate"))
+        if np.isnan(ppa) or np.isnan(plays) or np.isnan(sr) or plays < 20:
             continue
         team = _g(d, "team")
         info = hmap[gid]
@@ -83,6 +84,7 @@ def adv_table(raw, games):
                 ppa=ppa,
                 plays=plays,
                 drives=_num(_g(off, "drives")),
+                sr=_num(_g(off, "successRate", "success_rate")),
                 h=h,
             )
         )

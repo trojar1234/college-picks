@@ -7,6 +7,7 @@ import pandas as pd
 import cfb_config as C
 import cfb_fetch as fetch
 import cfb_model as model
+import cfb_ratings as Rt
 import cfb_sim as sim
 from cfb_lines import _f
 
@@ -86,11 +87,11 @@ def game_weather(slate, now):
     return out
 
 
-def predict_game(r, state, Rp, Rc, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0)):
-    f = model.game_feats(Rp, Rc, r.home, r.away, r.neutral)
+def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0)):
+    f = model.game_feats(R, r.home, r.away, r.neutral)
     conv = np.array(state["conv"])
-    eh = float(model.points(conv, [f["p_h"]], [f["q_h"]], [f["h"]])[0])
-    ea = float(model.points(conv, [f["p_a"]], [f["q_a"]], [-f["h"]])[0])
+    eh = float(model.points(conv, [f["p_h"]], [f["q_h"]], [f["s_h"]], [f["h"]])[0])
+    ea = float(model.points(conv, [f["p_a"]], [f["q_a"]], [f["s_a"]], [-f["h"]])[0])
     notes, low = [], []
     for team, side in ((r.home, "h"), (r.away, "a")):
         if team in ovr:
@@ -124,8 +125,8 @@ def predict_game(r, state, Rp, Rc, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0)):
         model_spread=model_spread, model_total=model_total,
         market=mkt, weather=wx or {}, notes=notes, low_conf=sorted(set(low)),
         ratings=dict(
-            home_off=Rp["off"].get(r.home), home_def=Rp["deff"].get(r.home),
-            away_off=Rp["off"].get(r.away), away_def=Rp["deff"].get(r.away),
+            home_off=Rt._side(R["ppa"], r.home, 0), home_def=Rt._side(R["ppa"], r.home, 1),
+            away_off=Rt._side(R["ppa"], r.away, 0), away_def=Rt._side(R["ppa"], r.away, 1),
             home_pace=f["p_h"], away_pace=f["p_a"],
         ),
         **s,

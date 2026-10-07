@@ -25,6 +25,22 @@ def _matchup(r):
     return {("P4", "P4"): "P4 vs P4", ("G5", "P4"): "P4 vs G5", ("G5", "G5"): "G5 vs G5"}[tuple(t)]
 
 
+def _grade_spread(d, col, thr):
+    x = d.dropna(subset=[col]).copy()
+    e = x[col] + x.pm  # >0: home side has value vs this line
+    v = np.where(e > 0, x.am + x[col], -(x.am + x[col]))
+    x["res"] = np.where(v == 0, "push", np.where(v > 0, "win", "loss"))
+    return x[e.abs() >= thr]
+
+
+def _grade_total(d, col, thr):
+    x = d.dropna(subset=[col]).copy()
+    e = x.pt - x[col]
+    v = np.where(e > 0, x["at"] - x[col], x[col] - x["at"])
+    x["res"] = np.where(v == 0, "push", np.where(v > 0, "win", "loss"))
+    return x[e.abs() >= thr]
+
+
 def backtest(wf, SEASONS):
     if wf.empty:
         return {}
@@ -52,6 +68,16 @@ def backtest(wf, SEASONS):
     ht["res"] = np.where(vt == 0, "push", np.where(vt > 0, "win", "loss"))
     ht["flag"] = et.abs() >= C.TOTAL_EDGE
 
+    so = _grade_spread(d, "cfbd_spread_open", C.SPREAD_EDGE)
+    to = _grade_total(d, "cfbd_total_open", C.TOTAL_EDGE)
+    # Does the line move toward the model? (opening -> closing, games with a real disagreement)
+    mv = d.dropna(subset=["cfbd_spread", "cfbd_spread_open"])
+    e = mv.cfbd_spread_open + mv.pm
+    mv = mv[(e.abs() >= 5) & (mv.cfbd_spread != mv.cfbd_spread_open)]
+    e = e.loc[mv.index]
+    toward = (np.sign(mv.cfbd_spread_open - mv.cfbd_spread) == np.sign(e))
+    move = dict(pct=round(float(toward.mean()), 3) if len(mv) else None, n=int(len(mv)))
+
     by_season = []
     for s, g in d.groupby("season"):
         hs, tt = has[has.season == s], ht[ht.season == s]
@@ -62,6 +88,7 @@ def backtest(wf, SEASONS):
             mkt_margin_mae=round(float((-hs.cfbd_spread - hs.am).abs().mean()), 2) if len(hs) else None,
             total_mae=round(float((g.pt - g["at"]).abs().mean()), 2),
             ats=_rec(hs[hs.flag].res), ou=_rec(tt[tt.flag].res),
+            ats_open=_rec(so[so.season == s].res), ou_open=_rec(to[to.season == s].res),
         ))
 
     # Calibration: when the model says the home team covers X% of the time, how often does it?
@@ -79,10 +106,22 @@ def backtest(wf, SEASONS):
     def shrink(p, hit):
         x, y = np.asarray(p) - 0.5, np.asarray(hit, float) - 0.5
         return float(np.clip((x * y).sum() / max((x * x).sum(), 1e-9), 0, 1)) if len(x) > 200 else 0.5
-    shrink_spread = shrink(nopush.p_home_cover, nopush.home_cov)
-    ht2 = ht[ht.res != "push"].copy()
-    p_over = _phi((ht2.pt - ht2.cfbd_total) / ht2.sd_t)
-    shrink_total = shrink(p_over, ht2["at"] > ht2.cfbd_total)
+    def spread_shrink(col):
+        x = d.dropna(subset=[col])
+        x = x[(x.am + x[col]) != 0]
+        p = _phi((x.pm + x[col]) / x.sd_m)
+        return shrink(p, (x.am + x[col]) > 0), len(x)
+
+    def total_shrink(col):
+        x = d.dropna(subset=[col])
+        x = x[x["at"] != x[col]]
+        p = _phi((x.pt - x[col]) / x.sd_t)
+        return shrink(p, x["at"] > x[col]), len(x)
+
+    ss, n_open = spread_shrink("cfbd_spread_open")
+    shrink_spread = ss if n_open > 500 else spread_shrink("cfbd_spread")[0]
+    st, n_open_t = total_shrink("cfbd_total_open")
+    shrink_total = st if n_open_t > 500 else total_shrink("cfbd_total")[0]
 
     return dict(
         shrink_spread=round(shrink_spread, 3),
@@ -96,7 +135,9 @@ def backtest(wf, SEASONS):
             total_mae=round(float((d.pt - d["at"]).abs().mean()), 2),
             mkt_total_mae=round(float((ht.cfbd_total - ht["at"]).abs().mean()), 2) if len(ht) else None,
             ats=_rec(has[has.flag].res), ou=_rec(ht[ht.flag].res),
+            ats_open=_rec(so.res), ou_open=_rec(to.res),
         ),
+        line_move=move,
         calibration=cal,
         segments=segments(d),
     )

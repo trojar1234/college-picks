@@ -21,9 +21,10 @@ WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 FIRST_SEASON = 2015
 
 # Edge thresholds: a game is flagged only when the model disagrees with the
-# market line by at least this many points.
-SPREAD_EDGE = 3.0
-TOTAL_EDGE = 4.0
+# current line by at least this many points. Set from the 2017-2025 backtest:
+# smaller disagreements showed no edge, even against opening lines.
+SPREAD_EDGE = 7.0
+TOTAL_EDGE = 7.0
 
 # Prior-strength values tried during tuning (bigger = trust preseason priors longer).
 LAMBDA_GRID = [2, 4, 8, 16, 32]

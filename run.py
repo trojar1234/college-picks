@@ -71,7 +71,7 @@ def main(mode):
 
     # Predictions for this week's games that haven't kicked off
     slate, wk = predict.current_slate(games, now)
-    Rp, Rc = finals[season]["ppa"], finals[season]["pace"]
+    R = finals[season]
     tiers = finals[season]["tiers"]
     ovr = predict.load_overrides()
     wx = predict.game_weather(slate, now) if len(slate) else {}
@@ -87,7 +87,7 @@ def main(mode):
         if m.get("total") is None and cfbd_ln is not None and r.game_id in cfbd_ln.index:
             m["total"] = lines._f(cfbd_ln.loc[r.game_id, "cfbd_total"])
             m["open_total"] = m.get("open_total") or lines._f(cfbd_ln.loc[r.game_id, "cfbd_total_open"])
-        preds.append(predict.predict_game(r, state, Rp, Rc, m, wx.get(r.game_id), ovr, tiers, gp, shrink))
+        preds.append(predict.predict_game(r, state, R, m, wx.get(r.game_id), ovr, tiers, gp, shrink))
 
     store = predict.load_store()
     store = predict.update_store(store, preds, now)

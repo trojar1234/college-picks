@@ -142,15 +142,16 @@ INDEX_BODY = NAV("p") + r"""
 <div class="tbl"><table><thead><tr>
 <th>Game</th><th>Projected</th><th>Spread · model / market</th><th class="hide-sm">Total · model / market</th><th class="hide-sm">Line move</th><th>Edge</th>
 </tr></thead><tbody id="rows"></tbody></table></div>
-<p class="note">Home team in bold. Click a game for details. Edges show only when the model and market disagree by at least the threshold; amber means the edge rests on shaky inputs. Projected scores are the simulation's most typical result; lines are never used as model inputs.</p>
+<p class="note">Home team in bold. Click a game for details. Edges show only when the model and the current line disagree by at least the threshold; amber means the edge rests on shaky inputs. The backtest shows the model's edge is against early-week lines; by kickoff the market has usually caught up, so an edge is only worth acting on early, and only if the line hasn't already moved to the model's number. Projected scores are the simulation's most typical result; lines are never used as model inputs.</p>
 """.replace("</div>\n<p", "</div>\n<p", 1) + "<script>window.PAGE='index'</script>"
 
 REPORT_BODY = NAV("r") + r"""
 <h2>This season (live, graded at kickoff)</h2>
 <div class="cards" id="live"></div>
 <h2>Backtest by season</h2>
-<p class="sub">Walk-forward: each week predicted using only data available before it. Graded against the closing line.</p>
-<div class="tbl"><table><thead><tr><th>Season</th><th>Games</th><th>Team MAE</th><th>Margin MAE</th><th class="hide-sm">Market margin MAE</th><th class="hide-sm">Total MAE</th><th>Flagged ATS</th><th>Flagged O/U</th></tr></thead><tbody id="bt"></tbody></table></div>
+<p class="sub">Walk-forward: each week predicted using only data available before it. Flagged bets are graded against the opening line (when the model's edges are meant to be bet) and the closing line. Opening lines exist for only part of the history.</p>
+<div class="cards" id="btcards"></div>
+<div class="tbl"><table><thead><tr><th>Season</th><th>Games</th><th>Margin MAE</th><th class="hide-sm">Market margin MAE</th><th class="hide-sm">Total MAE</th><th>ATS vs open</th><th>ATS vs close</th><th>O/U vs open</th><th class="hide-sm">O/U vs close</th></tr></thead><tbody id="bt"></tbody></table></div>
 <h2>Calibration</h2>
 <p class="sub">When the model gives the home team X% to cover, how often do they?</p>
 <div class="tbl"><table><thead><tr><th>Model said</th><th>Average</th><th>Actually covered</th><th>Games</th></tr></thead><tbody id="cal"></tbody></table></div>
@@ -257,9 +258,14 @@ document.getElementById('live').innerHTML=L.graded?[
  card('Flagged ATS',rec(L.ats)+(L.ats&&L.ats.pct!=null?` <span class="sub">${pct(L.ats.pct)}</span>`:'')),card('Flagged O/U',rec(L.ou)),
  card('Avg CLV',L.clv_avg==null?'—':sgn(L.clv_avg)+' pts'),card('Beat closing line',L.clv_beat_pct==null?'—':pct(L.clv_beat_pct)+` <span class="sub">of ${L.clv_n}</span>`)].join('')
  :card('Games graded','0')+'<p class="sub" style="grid-column:1/-1">Results appear here once games the model projected before kickoff are final.</p>';
-const bt=(B.seasons||[]).map(s=>`<tr><td>${s.season}</td><td>${s.games}</td><td>${fmt(s.team_mae)}</td><td>${fmt(s.margin_mae)}</td><td class="hide-sm">${fmt(s.mkt_margin_mae)}</td><td class="hide-sm">${fmt(s.total_mae)}</td><td>${rec(s.ats)} <span class="when">${pct(s.ats.pct)}</span></td><td>${rec(s.ou)} <span class="when">${pct(s.ou.pct)}</span></td></tr>`);
-const o=B.overall;if(o)bt.push(`<tr><td><b>All</b></td><td>${o.games}</td><td>${fmt(o.team_mae)}</td><td>${fmt(o.margin_mae)}</td><td class="hide-sm">${fmt(o.mkt_margin_mae)}</td><td class="hide-sm">${fmt(o.total_mae)}</td><td><b>${rec(o.ats)}</b> <span class="when">${pct(o.ats.pct)}</span></td><td><b>${rec(o.ou)}</b> <span class="when">${pct(o.ou.pct)}</span></td></tr>`);
-document.getElementById('bt').innerHTML=bt.join('')||'<tr><td colspan="8" class="muted">Backtest not available yet.</td></tr>';
+const rp=r=>r?`${rec(r)} <span class="when">${pct(r.pct)}</span>`:'—';
+const bt=(B.seasons||[]).map(s=>`<tr><td>${s.season}</td><td>${s.games}</td><td>${fmt(s.margin_mae)}</td><td class="hide-sm">${fmt(s.mkt_margin_mae)}</td><td class="hide-sm">${fmt(s.total_mae)}</td><td>${rp(s.ats_open)}</td><td>${rp(s.ats)}</td><td>${rp(s.ou_open)}</td><td class="hide-sm">${rp(s.ou)}</td></tr>`);
+const o=B.overall;if(o)bt.push(`<tr><td><b>All</b></td><td>${o.games}</td><td>${fmt(o.margin_mae)}</td><td class="hide-sm">${fmt(o.mkt_margin_mae)}</td><td class="hide-sm">${fmt(o.total_mae)}</td><td><b>${rp(o.ats_open)}</b></td><td><b>${rp(o.ats)}</b></td><td><b>${rp(o.ou_open)}</b></td><td class="hide-sm"><b>${rp(o.ou)}</b></td></tr>`);
+document.getElementById('bt').innerHTML=bt.join('')||'<tr><td colspan="9" class="muted">Backtest not available yet.</td></tr>';
+if(o){const mv=B.line_move||{};document.getElementById('btcards').innerHTML=[
+ card('Flagged ATS vs open',rp(o.ats_open)),card('Flagged O/U vs open',rp(o.ou_open)),
+ card('Lines moving toward model',mv.pct==null?'—':pct(mv.pct)+` <span class="sub">of ${mv.n}</span>`),
+ card('Margin MAE (model / market)',`${fmt(o.margin_mae)} <span class="sub">/ ${fmt(o.mkt_margin_mae)}</span>`)].join('');}
 document.getElementById('cal').innerHTML=(B.calibration||[]).map(c=>`<tr><td>${c.bin}</td><td>${pct(c.predicted)}</td><td>${pct(c.actual)}</td><td>${c.n}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">—</td></tr>';
 document.getElementById('shrink').textContent=B.shrink_spread!=null?`Learned from this table: cover probabilities shown on the projections page keep ${pct(B.shrink_spread)} of the model's raw confidence for spreads and ${pct(B.shrink_total)} for totals.`:'';
 const S=B.segments||{};const names={margin_by_week:'Margin by week',margin_by_matchup:'Margin by matchup',margin_by_fav_size:'Margin by projected favorite size',total_by_week:'Total by week',total_by_matchup:'Total by matchup'};

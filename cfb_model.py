@@ -25,20 +25,22 @@ def _completed_rows(S, games_subset):
     return a[a.game_id.isin(ids)] if len(a) else a
 
 
-def game_feats(Rp, Rc, home, away, neutral):
+def game_feats(R, home, away, neutral):
     h = 0 if neutral else 1
-    return dict(
-        q_h=Rt.expect(Rp, home, away, h),
-        p_h=Rt.expect(Rc, home, away, h),
-        q_a=Rt.expect(Rp, away, home, -h),
-        p_a=Rt.expect(Rc, away, home, -h),
-        h=h,
-    )
+    out = dict(h=h)
+    for key, m in (("q", "ppa"), ("s", "sr"), ("p", "pace")):
+        out[f"{key}_h"] = Rt.expect(R[m], home, away, h)
+        out[f"{key}_a"] = Rt.expect(R[m], away, home, -h)
+    return out
+
+
+FIRST_G = {"ppa": (-0.15, 0.15), "sr": (-0.05, 0.05), "pace": (0.0, 0.0)}
+FIRST_HFA = {"ppa": 0.03, "sr": 0.01, "pace": 0.5}
 
 
 def run_chain(SEASONS, lam, backtest=True):
     """Walk through seasons in order. Returns final ratings per season, the
-    walk-forward backtest rows, and the priors used for the latest season."""
+    walk-forward backtest rows, and the context (priors) used per season."""
     seasons = sorted(SEASONS)
     first = seasons[0]
     finals, pairs, bt, info = {}, [], [], {}
@@ -48,77 +50,80 @@ def run_chain(SEASONS, lam, backtest=True):
         if g.empty or S["adv"].empty:
             continue
         tiers = season_tiers(g)
+        ctx = dict(tiers=tiers, fcs=frozenset(t for t, v in tiers.items() if v == "FCS"), m={})
+        feats = None
         if s == first or (s - 1) not in finals:
-            ppa_prior, pace_prior = {}, {}
-            mu0 = float(S["adv"].ppa.mean())
-            pmu0 = float(S["adv"].plays.mean())
-            hfa0, phfa0 = 0.03, 0.5
-            defaults = {"ppa": (-0.05, 0.05), "pace": (0.0, 0.0)}
-            feats = None
+            for m, col in Rt.METRICS.items():
+                ctx["m"][m] = dict(prior={}, mu0=float(S["adv"][col].mean()), hfa0=FIRST_HFA[m],
+                                   default=(0.0, 0.0), g0=FIRST_G[m])
         else:
             prev = finals[s - 1]
-            feats = Rt.prior_features(prev, S["talent"], S["ret"])
-            coefs = Rt.fit_prior_coefs(pairs)
-            ppa_prior, pace_prior, defaults = Rt.make_prior(prev, feats, coefs, prev["tiers"])
-            mu0, hfa0 = prev["ppa"]["mu"], prev["ppa"]["hfa"]
-            pmu0, phfa0 = prev["pace"]["mu"], prev["pace"]["hfa"]
-        ctx = dict(ppa_prior=ppa_prior, pace_prior=pace_prior, mu0=mu0, hfa0=hfa0,
-                   pmu0=pmu0, phfa0=phfa0, defaults=defaults, tiers=tiers)
+            feats = Rt.prior_features(prev["abs"], S["talent"], S["ret"])
+            priors, defaults = Rt.make_prior(prev["abs"], feats, Rt.fit_prior_coefs(pairs), prev["tiers"])
+            for m in Rt.METRICS:
+                ctx["m"][m] = dict(prior=priors[m], mu0=prev[m]["mu"], hfa0=prev[m]["hfa"],
+                                   default=defaults[m], g0=prev[m]["g"])
         if backtest and s != first:
             done = g[g.completed]
             for wk in sorted(done.wk.unique()):
                 cut = done.loc[done.wk == wk, "start"].min()
-                train = _completed_rows(S, g[(g.start < cut) & (g.wk < wk)])
-                Rp, Rc = ratings_from(train, ctx, lam)
+                R = ratings_from(_completed_rows(S, g[(g.start < cut) & (g.wk < wk)]), ctx, lam)
                 gp = int((g.completed & (g.start < cut)).sum())
                 for r in done[done.wk == wk].itertuples():
-                    f = game_feats(Rp, Rc, r.home, r.away, r.neutral)
                     bt.append(dict(season=s, wk=wk, game_id=r.game_id, home=r.home, away=r.away,
                                    home_pts=r.home_pts, away_pts=r.away_pts,
                                    home_tier=tiers.get(r.home), away_tier=tiers.get(r.away),
-                                   games_played=gp, **f))
-        Rp, Rc = ratings_from(_completed_rows(S, g), ctx, lam)
-        finals[s] = dict(ppa=Rp, pace=Rc, tiers=tiers)
+                                   games_played=gp, **game_feats(R, r.home, r.away, r.neutral)))
+        R = ratings_from(_completed_rows(S, g), ctx, lam)
+        finals[s] = dict(R, tiers=tiers, abs={m: Rt.absolute(R[m]) for m in Rt.METRICS})
         info[s] = ctx
         if feats is not None:
-            pairs.append((feats, finals[s]))
+            pairs.append((feats, finals[s]["abs"]))
     return finals, pd.DataFrame(bt), info
 
 
 def ratings_from(rows, ctx, lam):
-    Rp = Rt.fit(rows, "ppa", ctx["ppa_prior"], ctx["mu0"], ctx["hfa0"], lam, ctx["defaults"]["ppa"])
-    Rc = Rt.fit(rows, "plays", ctx["pace_prior"], ctx["pmu0"], ctx["phfa0"], lam, ctx["defaults"]["pace"])
-    return Rp, Rc
+    out = {}
+    for m, col in Rt.METRICS.items():
+        c = ctx["m"][m]
+        out[m] = Rt.fit(rows, col, c["prior"], c["mu0"], c["hfa0"], lam, c["default"], ctx["fcs"], c["g0"])
+    return out
 
 
 # ---------- Points conversion: ratings -> expected points ----------
 
-def _conv_X(P, Q, h):
-    P, Q, h = map(np.asarray, (P, Q, h))
-    return np.column_stack([np.ones_like(P), P, P * Q, h])
+def _conv_X(P, Q, S, h):
+    P, Q, S, h = (np.asarray(x, dtype=float) for x in (P, Q, S, h))
+    return np.column_stack([np.ones_like(P), P, P * Q, P * S, h])
 
 
 def side_rows(bt):
     """Two rows per game (home offense, away offense)."""
-    hs = pd.DataFrame(dict(season=bt.season, game_id=bt.game_id, P=bt.p_h, Q=bt.q_h, h=bt.h, pts=bt.home_pts))
-    aw = pd.DataFrame(dict(season=bt.season, game_id=bt.game_id, P=bt.p_a, Q=bt.q_a, h=-bt.h, pts=bt.away_pts))
+    hs = pd.DataFrame(dict(season=bt.season, game_id=bt.game_id, P=bt.p_h, Q=bt.q_h, S=bt.s_h, h=bt.h, pts=bt.home_pts))
+    aw = pd.DataFrame(dict(season=bt.season, game_id=bt.game_id, P=bt.p_a, Q=bt.q_a, S=bt.s_a, h=-bt.h, pts=bt.away_pts))
     return pd.concat([hs, aw], ignore_index=True)
 
 
-def fit_conv(sides):
-    X = _conv_X(sides.P, sides.Q, sides.h)
+CONV_DECAY = 0.6  # weight per season of age: scoring environments drift (rule changes, pace)
+
+
+def fit_conv(sides, decay=None):
+    """Least squares from ratings to points, weighting recent seasons more."""
+    decay = CONV_DECAY if decay is None else decay
+    X = _conv_X(sides.P, sides.Q, sides.S, sides.h)
     y = sides.pts.to_numpy(float)
-    return np.linalg.lstsq(X, y, rcond=None)[0]
+    w = np.sqrt(decay ** (sides.season.max() - sides.season.to_numpy()))
+    return np.linalg.lstsq(X * w[:, None], y * w, rcond=None)[0]
 
 
-def points(conv, P, Q, h):
-    return _conv_X(P, Q, h) @ conv
+def points(conv, P, Q, S, h):
+    return _conv_X(P, Q, S, h) @ conv
 
 
 def predict_bt(bt, conv):
     out = bt.copy()
-    out["pred_h"] = points(conv, bt.p_h, bt.q_h, bt.h)
-    out["pred_a"] = points(conv, bt.p_a, bt.q_a, -bt.h)
+    out["pred_h"] = points(conv, bt.p_h, bt.q_h, bt.s_h, bt.h)
+    out["pred_a"] = points(conv, bt.p_a, bt.q_a, bt.s_a, -bt.h)
     return out
 
 
