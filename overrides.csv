@@ -1,0 +1,4 @@
+# Optional manual adjustments. One row per team; points are added to that team's expected score.
+# Example: a starting QB ruled out might be worth -3 to -7. Delete a row when it no longer applies.
+# Team names must match CollegeFootballData (as shown on the site).
+team,points,note

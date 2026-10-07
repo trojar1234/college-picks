@@ -1,0 +1,50 @@
+name: Update model
+
+on:
+  schedule:
+    - cron: "7 13 * * *"          # Full update daily, ~8am Central: results, ratings, grading, predictions
+    - cron: "7 23 * * 1-5"        # Line snapshot weekday evenings, ~6pm Central
+    - cron: "7 15,17,19,21,23 * * 6"  # Saturdays every 2 hours, ~10am-6pm Central (closing lines)
+    - cron: "7 1,3 * * 0"         # Saturday ~8pm and ~10pm Central
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "update (full), odds (lines only), or retune"
+        default: update
+
+permissions:
+  contents: write
+
+concurrency:
+  group: model
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Run model
+        env:
+          CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          MODE="${{ github.event.inputs.mode }}"
+          if [ -z "$MODE" ]; then
+            if [ "${{ github.event.schedule }}" = "7 13 * * *" ]; then MODE=update; else MODE=odds; fi
+          fi
+          echo "Mode: $MODE"
+          python run.py "$MODE"
+      - name: Save results
+        run: |
+          git config user.name "model-bot"
+          git config user.email "model-bot@users.noreply.github.com"
+          git add data docs
+          git diff --cached --quiet || git commit -m "Model update $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push
