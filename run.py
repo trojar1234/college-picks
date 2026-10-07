@@ -11,9 +11,14 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-from cfbmodel import config as C
-from cfbmodel import data as Dt
-from cfbmodel import fetch, lines, model, predict, report, site
+import cfb_config as C
+import cfb_data as Dt
+import cfb_fetch as fetch
+import cfb_lines as lines
+import cfb_model as model
+import cfb_predict as predict
+import cfb_report as report
+import cfb_site as site
 
 STATE = C.DATA / "model_state.json"
 
