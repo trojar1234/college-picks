@@ -1,25 +1,12 @@
 {
- "run": "2026-10-08T12:46:48.912652+00:00",
- "available": [
-  "direct",
-  "priors",
-  "qb",
-  "score",
-  "travel"
- ],
+ "version": 3,
+ "run": "2026-10-08T13:34:33.402072+00:00",
+ "available": [],
  "status": {
-  "travel": "ok",
-  "qb": "ok",
-  "weather": "partial: 8954 past games still to download",
-  "priors/recruiting": "ok",
-  "priors/portal": "ok",
-  "priors/coaches": "ok",
-  "priors/defense_returning": "ok",
-  "cfbd_calls_used_for_extras": 0
+  "qb_alerts": "ok",
+  "pbp": "partial: 97 weeks of plays still to download"
  },
  "chosen": {
-  "recency": 8,
-  "priors": false,
   "groups": [
    "score"
   ]
@@ -29,113 +16,33 @@
   2024
  ],
  "baseline": {
-  "margin": 13.338,
-  "total": 13.599,
+  "margin": 13.044,
+  "total": 13.251,
   "n": 6828
  },
  "combined": {
-  "margin": 13.152,
-  "total": 13.234,
+  "margin": 13.044,
+  "total": 13.251,
   "n": 6828
  },
  "holdout": {
   "season": 2025,
   "baseline": {
-   "margin": 12.851,
-   "total": 13.096,
+   "margin": 12.434,
+   "total": 12.905,
    "n": 934
   },
   "selected": {
-   "margin": 12.599,
-   "total": 12.802,
+   "margin": 12.434,
+   "total": 12.905,
    "n": 934
   }
  },
  "tests": [
   {
-   "feature": "Recency weighting (half-life 4 weeks)",
-   "group": "recency",
-   "margin": 13.494,
-   "total": 13.593,
-   "gain_margin": -0.156,
-   "gain_total": 0.006,
-   "kept": false,
-   "ok": false
-  },
-  {
-   "feature": "Recency weighting (half-life 8 weeks)",
-   "group": "recency",
-   "margin": 13.346,
-   "total": 13.577,
-   "gain_margin": -0.008,
-   "gain_total": 0.022,
-   "kept": true,
-   "ok": true
-  },
-  {
-   "feature": "Recency weighting (half-life 16 weeks)",
-   "group": "recency",
-   "margin": 13.324,
-   "total": 13.585,
-   "gain_margin": 0.014,
-   "gain_total": 0.014,
-   "kept": false,
-   "ok": false
-  },
-  {
-   "feature": "Preseason priors (QB/OL recruiting, transfer portal, coaching changes, defensive returning production)",
-   "group": "priors",
-   "margin": 13.34,
-   "total": 13.602,
-   "gain_margin": -0.002,
-   "gain_total": -0.003,
-   "kept": false,
-   "ok": false
-  },
-  {
-   "feature": "Scoring-margin rating (special teams, finishing drives, turnovers)",
-   "group": "score",
-   "margin": 13.093,
-   "total": 13.233,
-   "gain_margin": 0.245,
-   "gain_total": 0.366,
-   "kept": true,
-   "ok": true
-  },
-  {
-   "feature": "Margin fitted directly (instead of from each team's points)",
-   "group": "direct",
-   "margin": 13.379,
-   "total": 13.599,
-   "gain_margin": -0.041,
-   "gain_total": 0.0,
-   "kept": false,
-   "ok": false
-  },
-  {
-   "feature": "QB change detection",
-   "group": "qb",
-   "margin": 13.344,
-   "total": 13.598,
-   "gain_margin": -0.006,
-   "gain_total": 0.001,
-   "kept": false,
-   "ok": false
-  },
-  {
-   "feature": "Travel and rest",
-   "group": "travel",
-   "margin": 13.338,
-   "total": 13.596,
-   "gain_margin": 0.0,
-   "gain_total": 0.003,
-   "kept": false,
-   "ok": false
-  },
-  {
-   "feature": "Weather at kickoff",
-   "group": "weather",
-   "skipped": "partial: 8954 past games still to download"
+   "feature": "Play-by-play: non-garbage points per drive, finishing drives, field position",
+   "group": "pbp",
+   "skipped": "partial: 97 weeks of plays still to download"
   }
  ]
 }

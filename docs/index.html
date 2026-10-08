@@ -54,7 +54,7 @@ tr:last-child td{border-bottom:0}
 <div class="tbl"><table><thead><tr>
 <th>Game</th><th>Projected</th><th>Spread · model / market</th><th class="hide-sm">Total · model / market</th><th class="hide-sm">Line move</th><th>Edge</th>
 </tr></thead><tbody id="rows"></tbody></table></div>
-<p class="note">Home team in bold. Click a game for details. Edges show only when the model and the current line disagree by at least the threshold; amber means the edge rests on shaky inputs. The backtest shows the model's edge is against early-week lines; by kickoff the market has usually caught up, so an edge is only worth acting on early, and only if the line hasn't already moved to the model's number. Projected scores are the simulation's most typical result; lines are never used as model inputs.</p>
+<p class="note">Home team in bold. Click a game for details. Edges show only when the model and the current line disagree by at least the threshold; amber means the edge rests on shaky inputs. "Check news" marks games where the model and market differ by 8+ points: in past seasons the market was closer in about two of three of those games, usually because of injury or QB news the model can't see. The backtest shows the model's edge is against early-week lines; by kickoff the market has usually caught up, so an edge is only worth acting on early, and only if the line hasn't already moved to the model's number. Projected scores are the simulation's most typical result; lines are never used as model inputs.</p>
 
 <p class="note" id="foot"></p>
 </div>
@@ -109,7 +109,9 @@ function moveCell(g){const m=g.market||{};if(m.open_spread==null||m.spread==null
  let toward='';if(g.model_spread!=null){toward=Math.abs(g.model_spread-m.spread)<Math.abs(g.model_spread-m.open_spread)?'up':'down';}
  return `<span class="${toward}">${line(g.home,g.away,m.open_spread)} → ${line(g.home,g.away,m.spread)}</span><div class="when">${toward==='up'?'toward model':'away from model'}</div>`;}
 function icons(g){const w=g.weather||{};let s='';if(w.wind>15)s+=` <span class="pill p-warn" title="Wind">${Math.round(w.wind)} mph</span>`;
- if((g.notes||[]).some(n=>!n.startsWith('wind')))s+=' <span class="pill p-bad" title="Manual adjustment">adj</span>';return s;}
+ const n=g.notes||[];if(n.some(x=>x.includes('expected starter')))s+=' <span class="pill p-bad" title="QB change">QB</span>';
+ if(n.some(x=>!x.includes('expected starter')))s+=' <span class="pill p-bad" title="Manual adjustment">adj</span>';
+ if((g.low_conf||[]).some(x=>x.startsWith('big disagreement')))s+=' <span class="pill p-warn" title="Model and market differ a lot: check injury/QB news">check news</span>';return s;}
 function detail(g){
  if(g.home_med==null)return '<div class="sub">No projection stored for this game.</div>';
  const h=g.hist||[],mx=Math.max(1,...h);const m=g.market||{};

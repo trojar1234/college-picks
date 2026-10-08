@@ -59,6 +59,7 @@ tr:last-child td{border-bottom:0}
 <p class="sub" id="expsub"></p>
 <div class="tbl"><table><thead><tr><th>Feature</th><th>Margin error change</th><th>Total error change</th><th>Result</th></tr></thead><tbody id="exp"></tbody></table></div>
 <p class="sub" id="exphold"></p>
+<p class="sub">Tested on 2018–2024 and removed because they didn't improve accuracy: weather at kickoff, travel and rest, recency weighting, run/pass matchups, fitting the margin directly, and recruiting/portal/coaching/defensive-returning preseason data. QB changes are shown as alerts instead of being a model input.</p>
 <h2>Calibration</h2>
 <p class="sub">When the model gives the home team X% to cover, how often do they?</p>
 <div class="tbl"><table><thead><tr><th>Model said</th><th>Average</th><th>Actually covered</th><th>Games</th></tr></thead><tbody id="cal"></tbody></table></div>
@@ -112,7 +113,7 @@ document.getElementById('shrink').textContent=B.shrink_spread!=null?`Learned fro
 const E=R.experiments||{};
 if(E.tests){
  const ch=v=>v==null?'—':`<span class="${v>0?'up':v<0?'down':''}">${v>0?'−':v<0?'+':''}${Math.abs(v).toFixed(3)}</span>`;
- document.getElementById('expsub').textContent=`Each feature is tested on ${E.tune_seasons?E.tune_seasons.join('–'):'the tuning seasons'} against the baseline (margin MAE ${fmt(E.baseline&&E.baseline.margin)}, total MAE ${fmt(E.baseline&&E.baseline.total)}). It's kept only if it lowers error by at least 0.02 points without hurting the other measure. Green means less error. Last tested ${new Date(E.run).toLocaleDateString()}.`;
+ document.getElementById('expsub').textContent=`Each feature is tested on ${E.tune_seasons?E.tune_seasons.join('–'):'the tuning seasons'} against the baseline (margin MAE ${fmt(E.baseline&&E.baseline.margin)}, total MAE ${fmt(E.baseline&&E.baseline.total)}). It's kept only if it lowers error by at least 0.05 points without hurting the other measure. Green means less error. Last tested ${new Date(E.run).toLocaleDateString()}.`;
  document.getElementById('exp').innerHTML=E.tests.map(t=>`<tr><td>${esc(t.feature)}</td><td>${t.skipped?'—':ch(t.gain_margin)}</td><td>${t.skipped?'—':ch(t.gain_total)}</td><td>${t.skipped?`<span class="muted">Not tested: ${esc(t.skipped)}</span>`:t.kept?'<span class="pill p-good">Kept</span>':'<span class="muted">Not kept</span>'}</td></tr>`).join('');
  const H=E.holdout||{};if(H.baseline&&H.selected)document.getElementById('exphold').textContent=`Holdout check on ${H.season}, a season never used for tuning: baseline margin MAE ${fmt(H.baseline.margin)} vs selected features ${fmt(H.selected.margin)}; total MAE ${fmt(H.baseline.total)} vs ${fmt(H.selected.total)}.`;
 }
