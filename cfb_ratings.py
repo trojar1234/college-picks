@@ -99,7 +99,9 @@ def _z(d):
     return {k: (x - m) / s for k, x in d.items() if x == x}
 
 
-METRICS = {"ppa": "ppa", "sr": "sr", "pace": "plays"}  # rating name -> column in game rows
+# rating name -> column in game rows. "pts" is opponent-adjusted points scored, which captures
+# what per-play efficiency misses: special teams, red-zone finishing, field position, turnovers.
+METRICS = {"ppa": "ppa", "sr": "sr", "pace": "plays", "pts": "pts"}
 
 
 def _ret(ret, t, rmean):

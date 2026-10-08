@@ -53,6 +53,7 @@ def main(mode):
         extra.CFBD_BUDGET, extra.WEATHER_BUDGET = 0, 0
     print("Preparing extra features ...")
     gctx, prior_extra, available, xstatus = extra.build(SEASONS, season, tune_seasons[0])
+    available["score"] = available["direct"] = True  # built from data the model already has
     for k, v in xstatus.items():
         print(f"  {k}: {v}")
     avail_key = sorted(k for k in available if not k.startswith("_"))
@@ -63,7 +64,9 @@ def main(mode):
     retuned = False
     if lam is None or mode == "retune" or (full and tuned_at is not None and now - tuned_at > pd.Timedelta(days=30)):
         print("Tuning prior strength on the tuning seasons ...")
-        lam, tune_res = model.tune(SEASONS, C.LAMBDA_GRID, tune_seasons)
+        prev = state_old.get("features") or {}
+        lam, tune_res = model.tune(SEASONS, C.LAMBDA_GRID, tune_seasons,
+                                   groups=[g for g in prev.get("groups", ["score"]) if g in available], gctx=gctx)
         tuned_at, retuned = now, True
     else:
         tune_res = state_old.get("tune_results", {})

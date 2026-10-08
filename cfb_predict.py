@@ -97,7 +97,7 @@ def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_r
         w = wx or {}
         gx.update(Ex.weather_cols(w.get("wind"), w.get("precip"), w.get("temp"), dome=bool(w.get("dome"))))
     bt1 = pd.DataFrame([dict(season=r.season, game_id=r.game_id, **f)])
-    pr = model.predict_bt(bt1, conv, groups, pd.DataFrame([gx]))
+    pr = model.predict_bt(bt1, conv, groups, pd.DataFrame([gx]), state.get("conv_m"))
     eh, ea = float(pr.pred_h.iloc[0]), float(pr.pred_a.iloc[0])
     notes, low = [], []
     if "qb" in groups:

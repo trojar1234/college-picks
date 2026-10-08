@@ -59,9 +59,20 @@ def games_table(raw, season):
     return df.sort_values(["start", "game_id"]).reset_index(drop=True)
 
 
+MARGIN_CAP = 50  # blowouts: points beyond a 50-point margin are mostly garbage time (tuned on 2017-2024)
+
+
+def _capped_pts(info, is_home):
+    hp, ap = info["home_pts"], info["away_pts"]
+    if hp != hp or ap != ap:
+        return np.nan
+    own, opp = (hp, ap) if is_home else (ap, hp)
+    return min(own, opp + MARGIN_CAP)
+
+
 def adv_table(raw, games):
     """One row per team per game: offensive PPA (EPA/play) and play count."""
-    hmap = games.set_index("game_id")[["home", "neutral", "start"]].to_dict("index")
+    hmap = games.set_index("game_id")[["home", "neutral", "start", "home_pts", "away_pts"]].to_dict("index")
     rows = []
     for d in raw:
         gid = _g(d, "gameId", "game_id")
@@ -87,6 +98,7 @@ def adv_table(raw, games):
                 sr=_num(_g(off, "successRate", "success_rate")),
                 h=h,
                 start=info["start"],
+                pts=_capped_pts(info, team == info["home"]),
             )
         )
     return pd.DataFrame(rows)

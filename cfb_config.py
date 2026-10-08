@@ -27,7 +27,7 @@ SPREAD_EDGE = 7.0
 TOTAL_EDGE = 7.0
 
 # Prior-strength values tried during tuning (bigger = trust preseason priors longer).
-LAMBDA_GRID = [2, 4, 8, 16, 32]
+LAMBDA_GRID = [2, 3, 4, 6, 8]
 
 # Wind: each team's expected points shrink by this fraction per mph above WIND_START.
 # A fixed starting value, not fitted. Check the "wind" row in the error report.
