@@ -29,10 +29,10 @@ TOTAL_EDGE = 7.0
 # Prior-strength values tried during tuning (bigger = trust preseason priors longer).
 LAMBDA_GRID = [2, 3, 4, 6, 8]
 
-# Wind: each team's expected points shrink by this fraction per mph above WIND_START.
-# A fixed starting value, not fitted. Check the "wind" row in the error report.
-WIND_START = 10.0
-WIND_PER_MPH = 0.006
+# Games where the model and the market differ by this much are marked low confidence:
+# in 2018-2025 the market was closer in about two of three such games.
+DISAGREE_SPREAD = 8.0
+DISAGREE_TOTAL = 10.0
 
 SIMS = 10000
 

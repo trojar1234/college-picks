@@ -29,7 +29,8 @@ def games_table(raw, season):
     for d in raw:
         hc = str(_g(d, "homeClassification", "home_division", default="") or "").lower()
         ac = str(_g(d, "awayClassification", "away_division", default="") or "").lower()
-        if "fbs" not in (hc, ac):
+        # FBS games, plus FCS-vs-FCS games (used only to rate FCS teams individually)
+        if "fbs" not in (hc, ac) and not (hc == "fcs" and ac == "fcs"):
             continue
         st = _g(d, "seasonType", "season_type", default="regular")
         rows.append(
@@ -136,11 +137,13 @@ def team_info(raw_talent, raw_ret):
 
 
 def load_season(sd, season):
-    g = games_table(sd["games"], season)
-    a = adv_table(sd["adv"], g) if not g.empty else pd.DataFrame()
+    g_all = games_table(sd["games"], season)
+    a = adv_table(sd["adv"], g_all) if not g_all.empty else pd.DataFrame()
+    # Predictions, backtests and the site cover games with at least one FBS team.
+    g = g_all[(g_all.home_cls == "fbs") | (g_all.away_cls == "fbs")].reset_index(drop=True) if len(g_all) else g_all
     ln = lines_table(sd["lines"])
     t, r = team_info(sd["talent"], sd["returning"])
-    return dict(games=g, adv=a, lines=ln, talent=t, ret=r)
+    return dict(games=g, games_all=g_all, adv=a, lines=ln, talent=t, ret=r)
 
 
 def tier(conf, cls, season):

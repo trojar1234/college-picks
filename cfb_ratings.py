@@ -101,7 +101,12 @@ def _z(d):
 
 # rating name -> column in game rows. "pts" is opponent-adjusted points scored, which captures
 # what per-play efficiency misses: special teams, red-zone finishing, field position, turnovers.
-METRICS = {"ppa": "ppa", "sr": "sr", "pace": "plays", "pts": "pts"}
+METRICS = {"ppa": "ppa", "sr": "sr", "pace": "plays", "pts": "pts",
+           # from raw play-by-play (when downloaded): non-garbage points per drive,
+           # points per scoring opportunity (finishing), and average starting field position
+           "ppd": "ppd", "fin": "fin", "fpos": "fpos"}
+CORE = ("ppa", "sr", "pace", "pts")  # every team has these; the rest may be missing
+NEUTRAL = ("pace", "fpos")            # tendencies: unknown teams default to league average
 
 
 def _ret(ret, t, rmean):
@@ -109,12 +114,9 @@ def _ret(ret, t, rmean):
     return (v if v == v else rmean) - rmean
 
 
-EXTRA = ["qbrec", "olrec", "portal", "hc", "defret"]
-
-
-def prior_features(prev, talent, ret, extra=None):
-    """Feature rows per team for building next season's prior (prev = absolute ratings).
-    extra: optional {team: {qbrec, olrec, portal, hc, defret}} for richer priors."""
+def prior_features(prev, talent, ret):
+    """Feature rows per team for building next season's prior (prev = absolute ratings):
+    last season's ratings, returning production, and the roster talent composite."""
     tz = _z(talent)
     rv = [x for x in ret.values() if x == x]
     rmean = float(np.mean(rv)) if rv else 0.5
@@ -125,51 +127,31 @@ def prior_features(prev, talent, ret, extra=None):
         for m in METRICS:
             for side in ("off", "deff"):
                 r[f"p_{m}_{side}"] = prev[m][side].get(t, np.nan)
-        ex = (extra or {}).get(t, {})
-        for k in EXTRA:
-            r[f"ex_{k}"] = ex.get(k, np.nan)
         rows.append(r)
-    df = pd.DataFrame(rows)
-    # Standardize the extras (z-scores; coaching change stays 0/1), missing -> average.
-    for k in EXTRA:
-        c = df[f"ex_{k}"].astype(float)
-        if k != "hc" and c.notna().sum() > 5 and c.std() > 0:
-            c = (c - c.mean()) / c.std()
-        df[f"ex_{k}"] = c.fillna(0.0)
-    return df
+    return pd.DataFrame(rows)
 
 
-def _cols(m, side, extra=False):
+def _cols(m, side):
     base = f"p_{m}_{side}"
-    if m == "pace":
+    if m in NEUTRAL:
         return [base]
-    cols = [base, f"{base}_ret", "tal"] if side == "off" else [base, "tal"]
-    if extra:
-        if side == "off":
-            cols += ["ex_qbrec", "ex_olrec", "ex_portal", f"{base}_hc"]
-        else:
-            cols += [f"{base}_defret", "ex_portal", f"{base}_hc"]
-    return cols
+    return [base, f"{base}_ret", "tal"] if side == "off" else [base, "tal"]
 
 
-def _design(df, m, side, extra=False):
+def _design(df, m, side):
     df = df.copy()
     base = f"p_{m}_{side}"
-    df[f"{base}_ret"] = df[base] * df["ret"]
-    for k in EXTRA:
-        if f"ex_{k}" not in df:
-            df[f"ex_{k}"] = 0.0
-    df[f"{base}_hc"] = df[base] * df["ex_hc"]
-    df[f"{base}_defret"] = df[base] * df["ex_defret"]
-    return np.column_stack([np.ones(len(df)), df[_cols(m, side, extra)].to_numpy(dtype=float)])
+    df[f"{base}_ret"] = (df[base] * df["ret"]).fillna(0.0)
+    df[base] = df[base].fillna(0.0)
+    return np.column_stack([np.ones(len(df)), df[_cols(m, side)].to_numpy(dtype=float)])
 
 
 def _usable(f):
-    need = [f"p_{m}_{s}" for m in METRICS for s in ("off", "deff")]
+    need = [f"p_{m}_{s}" for m in CORE for s in ("off", "deff")]
     return f[f.has_prev & f[need].notna().all(axis=1)]
 
 
-def fit_prior_coefs(pairs, extra=False):
+def fit_prior_coefs(pairs):
     """pairs: list of (features for season s, absolute final ratings of season s)."""
     coefs = {}
     for m in METRICS:
@@ -180,7 +162,7 @@ def fit_prior_coefs(pairs, extra=False):
                 f["y"] = f.team.map(final[m][side])
                 f = f.dropna(subset=["y"])
                 if len(f):
-                    Xs.append(_design(f, m, side, extra))
+                    Xs.append(_design(f, m, side))
                     ys.append(f["y"].to_numpy())
             if not Xs or sum(len(y) for y in ys) < 150:
                 coefs[(m, side)] = None
@@ -192,10 +174,10 @@ def fit_prior_coefs(pairs, extra=False):
     return coefs
 
 
-def make_prior(prev, feats, coefs, tiers_prev, extra=False):
+def make_prior(prev, feats, coefs, tiers_prev):
     """Returns ({metric: {team: (off, def)}}, {metric: default (off, def)})."""
     def tier_mean(m, side):
-        vals = [v for t, v in prev[m][side].items() if tiers_prev.get(t) == "FCS"]
+        vals = [v for t, v in prev[m][side].items() if tiers_prev.get(t) == "FCS" and v == v]
         return float(np.mean(vals)) if vals else 0.0
     f = feats.copy()
     has = _usable(f)
@@ -203,12 +185,12 @@ def make_prior(prev, feats, coefs, tiers_prev, extra=False):
     for m in METRICS:
         for side in ("off", "deff"):
             c = coefs.get((m, side))
-            X = _design(has, m, side, extra)
-            pred = X @ c if c is not None else X[:, 1] * (0.5 if m == "pace" else 0.6)
+            X = _design(has, m, side)
+            pred = X @ c if c is not None else X[:, 1] * (0.5 if m in NEUTRAL else 0.6)
             col = f"pr_{m}_{side}"
             f[col] = np.nan
             f.loc[has.index, col] = pred
-            f.loc[f[col].isna(), col] = 0.0 if m == "pace" else tier_mean(m, side)
+            f.loc[f[col].isna(), col] = 0.0 if m in NEUTRAL else tier_mean(m, side)
         priors[m] = {r.team: (float(getattr(r, f"pr_{m}_off")), float(getattr(r, f"pr_{m}_deff"))) for r in f.itertuples()}
-        defaults[m] = (0.0, 0.0) if m == "pace" else (tier_mean(m, "off"), tier_mean(m, "deff"))
+        defaults[m] = (0.0, 0.0) if m in NEUTRAL else (tier_mean(m, "off"), tier_mean(m, "deff"))
     return priors, defaults

@@ -142,7 +142,7 @@ INDEX_BODY = NAV("p") + r"""
 <div class="tbl"><table><thead><tr>
 <th>Game</th><th>Projected</th><th>Spread · model / market</th><th class="hide-sm">Total · model / market</th><th class="hide-sm">Line move</th><th>Edge</th>
 </tr></thead><tbody id="rows"></tbody></table></div>
-<p class="note">Home team in bold. Click a game for details. Edges show only when the model and the current line disagree by at least the threshold; amber means the edge rests on shaky inputs. The backtest shows the model's edge is against early-week lines; by kickoff the market has usually caught up, so an edge is only worth acting on early, and only if the line hasn't already moved to the model's number. Projected scores are the simulation's most typical result; lines are never used as model inputs.</p>
+<p class="note">Home team in bold. Click a game for details. Edges show only when the model and the current line disagree by at least the threshold; amber means the edge rests on shaky inputs. "Check news" marks games where the model and market differ by 8+ points: in past seasons the market was closer in about two of three of those games, usually because of injury or QB news the model can't see. The backtest shows the model's edge is against early-week lines; by kickoff the market has usually caught up, so an edge is only worth acting on early, and only if the line hasn't already moved to the model's number. Projected scores are the simulation's most typical result; lines are never used as model inputs.</p>
 """.replace("</div>\n<p", "</div>\n<p", 1) + "<script>window.PAGE='index'</script>"
 
 REPORT_BODY = NAV("r") + r"""
@@ -156,6 +156,7 @@ REPORT_BODY = NAV("r") + r"""
 <p class="sub" id="expsub"></p>
 <div class="tbl"><table><thead><tr><th>Feature</th><th>Margin error change</th><th>Total error change</th><th>Result</th></tr></thead><tbody id="exp"></tbody></table></div>
 <p class="sub" id="exphold"></p>
+<p class="sub">Tested on 2018–2024 and removed because they didn't improve accuracy: weather at kickoff, travel and rest, recency weighting, run/pass matchups, fitting the margin directly, and recruiting/portal/coaching/defensive-returning preseason data. QB changes are shown as alerts instead of being a model input.</p>
 <h2>Calibration</h2>
 <p class="sub">When the model gives the home team X% to cover, how often do they?</p>
 <div class="tbl"><table><thead><tr><th>Model said</th><th>Average</th><th>Actually covered</th><th>Games</th></tr></thead><tbody id="cal"></tbody></table></div>
@@ -209,7 +210,9 @@ function moveCell(g){const m=g.market||{};if(m.open_spread==null||m.spread==null
  let toward='';if(g.model_spread!=null){toward=Math.abs(g.model_spread-m.spread)<Math.abs(g.model_spread-m.open_spread)?'up':'down';}
  return `<span class="${toward}">${line(g.home,g.away,m.open_spread)} → ${line(g.home,g.away,m.spread)}</span><div class="when">${toward==='up'?'toward model':'away from model'}</div>`;}
 function icons(g){const w=g.weather||{};let s='';if(w.wind>15)s+=` <span class="pill p-warn" title="Wind">${Math.round(w.wind)} mph</span>`;
- if((g.notes||[]).some(n=>!n.startsWith('wind')))s+=' <span class="pill p-bad" title="Manual adjustment">adj</span>';return s;}
+ const n=g.notes||[];if(n.some(x=>x.includes('expected starter')))s+=' <span class="pill p-bad" title="QB change">QB</span>';
+ if(n.some(x=>!x.includes('expected starter')))s+=' <span class="pill p-bad" title="Manual adjustment">adj</span>';
+ if((g.low_conf||[]).some(x=>x.startsWith('big disagreement')))s+=' <span class="pill p-warn" title="Model and market differ a lot: check injury/QB news">check news</span>';return s;}
 function detail(g){
  if(g.home_med==null)return '<div class="sub">No projection stored for this game.</div>';
  const h=g.hist||[],mx=Math.max(1,...h);const m=g.market||{};
@@ -275,7 +278,7 @@ document.getElementById('shrink').textContent=B.shrink_spread!=null?`Learned fro
 const E=R.experiments||{};
 if(E.tests){
  const ch=v=>v==null?'—':`<span class="${v>0?'up':v<0?'down':''}">${v>0?'−':v<0?'+':''}${Math.abs(v).toFixed(3)}</span>`;
- document.getElementById('expsub').textContent=`Each feature is tested on ${E.tune_seasons?E.tune_seasons.join('–'):'the tuning seasons'} against the baseline (margin MAE ${fmt(E.baseline&&E.baseline.margin)}, total MAE ${fmt(E.baseline&&E.baseline.total)}). It's kept only if it lowers error by at least 0.02 points without hurting the other measure. Green means less error. Last tested ${new Date(E.run).toLocaleDateString()}.`;
+ document.getElementById('expsub').textContent=`Each feature is tested on ${E.tune_seasons?E.tune_seasons.join('–'):'the tuning seasons'} against the baseline (margin MAE ${fmt(E.baseline&&E.baseline.margin)}, total MAE ${fmt(E.baseline&&E.baseline.total)}). It's kept only if it lowers error by at least 0.05 points without hurting the other measure. Green means less error. Last tested ${new Date(E.run).toLocaleDateString()}.`;
  document.getElementById('exp').innerHTML=E.tests.map(t=>`<tr><td>${esc(t.feature)}</td><td>${t.skipped?'—':ch(t.gain_margin)}</td><td>${t.skipped?'—':ch(t.gain_total)}</td><td>${t.skipped?`<span class="muted">Not tested: ${esc(t.skipped)}</span>`:t.kept?'<span class="pill p-good">Kept</span>':'<span class="muted">Not kept</span>'}</td></tr>`).join('');
  const H=E.holdout||{};if(H.baseline&&H.selected)document.getElementById('exphold').textContent=`Holdout check on ${H.season}, a season never used for tuning: baseline margin MAE ${fmt(H.baseline.margin)} vs selected features ${fmt(H.selected.margin)}; total MAE ${fmt(H.baseline.total)} vs ${fmt(H.selected.total)}.`;
 }

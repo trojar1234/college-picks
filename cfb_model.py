@@ -3,13 +3,14 @@ that turn ratings into points. Re-running this is how the model learns:
 every completed game updates the ratings, and every graded prediction feeds
 the refit of the points conversion and the simulator's variance.
 
-Optional feature groups (each kept only if it improves the backtest):
-  recency  - recent games count more in the ratings (half-life in weeks)
-  priors   - richer preseason priors: QB/OL recruiting, transfer portal,
-             coaching changes, defensive returning production
-  qb       - adjustment when a team's expected starting QB has changed
-  travel   - rest-day advantage, travel distance, time zones crossed
-  weather  - wind, rain, and cold at kickoff, fitted from past games
+Core model (always on):
+  - opponent-adjusted efficiency ratings (EPA/play, success rate, plays per game)
+  - opponent-adjusted scoring-margin rating (captures special teams, finishing,
+    field position and turnovers that per-play efficiency misses)
+  - FCS teams rated individually from all their games, shrunk toward the FCS average
+
+Optional (kept only if it improves the tuning seasons by at least MIN_GAIN):
+  pbp - play-by-play: non-garbage points per drive, finishing drives, field position
 """
 import numpy as np
 import pandas as pd
@@ -17,6 +18,9 @@ import pandas as pd
 import cfb_data as Dt
 import cfb_ratings as Rt
 import cfb_sim as sim
+
+BASE_GROUPS = ["score"]  # always in the conversion
+OPTIONAL = {"pbp": "Play-by-play: non-garbage points per drive, finishing drives, field position"}
 
 
 def season_tiers(games):
@@ -27,37 +31,38 @@ def season_tiers(games):
     return t
 
 
-def _completed_rows(S, games_subset, half_life=None):
-    ids = set(games_subset.loc[games_subset.completed, "game_id"])
+def _rows_before(S, cut=None):
+    """Every team-game played before the cutoff (FCS-vs-FCS games included, which is
+    how FCS teams get individual ratings)."""
     a = S["adv"]
-    rows = a[a.game_id.isin(ids)] if len(a) else a
-    if half_life and len(rows):
-        rows = rows.copy()
-        age = (rows.start.max() - rows.start).dt.total_seconds() / (7 * 86400)
-        rows["w"] = 0.5 ** (age / half_life)
-    return rows
+    if cut is None or not len(a):
+        return a
+    return a[a.start < cut]
 
 
 def game_feats(R, home, away, neutral):
     h = 0 if neutral else 1
     out = dict(h=h)
-    for key, m in (("q", "ppa"), ("s", "sr"), ("p", "pace"), ("r", "pts")):
+    for key, m in FEAT_KEYS:
         out[f"{key}_h"] = Rt.expect(R[m], home, away, h)
         out[f"{key}_a"] = Rt.expect(R[m], away, home, -h)
     return out
 
 
-FIRST_G = {"ppa": (-0.15, 0.15), "sr": (-0.05, 0.05), "pace": (0.0, 0.0), "pts": (-14.0, 14.0)}
-FIRST_HFA = {"ppa": 0.03, "sr": 0.01, "pace": 0.5, "pts": 1.5}
+FEAT_KEYS = (("q", "ppa"), ("s", "sr"), ("p", "pace"), ("r", "pts"), ("d", "ppd"), ("fn", "fin"), ("fp", "fpos"))
+FIRST_G = {"ppa": (-0.15, 0.15), "sr": (-0.05, 0.05), "pace": (0.0, 0.0), "pts": (-14.0, 14.0),
+           "ppd": (-1.0, 1.0), "fin": (-1.0, 1.0), "fpos": (5.0, -5.0)}
+FIRST_HFA = {"ppa": 0.03, "sr": 0.01, "pace": 0.5, "pts": 1.5, "ppd": 0.15, "fin": 0.1}
 
 
-def run_chain(SEASONS, lam, backtest=True, opts=None, prior_extra=None):
+def _mu0(adv, col):
+    v = adv[col].mean() if col in adv else np.nan
+    return float(v) if v == v else 0.0
+
+
+def run_chain(SEASONS, lam, backtest=True):
     """Walk through seasons in order. Returns final ratings per season, the
-    walk-forward backtest rows, and the context (priors) used per season.
-    opts: {"recency": half-life in weeks or None, "priors": bool}."""
-    opts = opts or {}
-    hl = opts.get("recency")
-    use_extra = bool(opts.get("priors")) and prior_extra
+    walk-forward backtest rows, and the context (priors) used per season."""
     seasons = sorted(SEASONS)
     first = seasons[0]
     finals, pairs, bt, info = {}, [], [], {}
@@ -66,19 +71,17 @@ def run_chain(SEASONS, lam, backtest=True, opts=None, prior_extra=None):
         g = S["games"]
         if g.empty or S["adv"].empty:
             continue
-        tiers = season_tiers(g)
+        tiers = season_tiers(S.get("games_all", g))
         ctx = dict(tiers=tiers, fcs=frozenset(t for t, v in tiers.items() if v == "FCS"), m={})
         feats = None
         if s == first or (s - 1) not in finals:
             for m, col in Rt.METRICS.items():
-                ctx["m"][m] = dict(prior={}, mu0=float(S["adv"][col].mean()), hfa0=FIRST_HFA[m],
-                                   default=(0.0, 0.0), g0=FIRST_G[m])
+                ctx["m"][m] = dict(prior={}, mu0=_mu0(S["adv"], col), hfa0=FIRST_HFA.get(m, 0.0),
+                                   default=(0.0, 0.0), g0=FIRST_G.get(m, (0.0, 0.0)))
         else:
             prev = finals[s - 1]
-            extra = prior_extra.get(s) if use_extra else None
-            feats = Rt.prior_features(prev["abs"], S["talent"], S["ret"], extra)
-            priors, defaults = Rt.make_prior(prev["abs"], feats, Rt.fit_prior_coefs(pairs, use_extra),
-                                             prev["tiers"], use_extra)
+            feats = Rt.prior_features(prev["abs"], S["talent"], S["ret"])
+            priors, defaults = Rt.make_prior(prev["abs"], feats, Rt.fit_prior_coefs(pairs), prev["tiers"])
             for m in Rt.METRICS:
                 ctx["m"][m] = dict(prior=priors[m], mu0=prev[m]["mu"], hfa0=prev[m]["hfa"],
                                    default=defaults[m], g0=prev[m]["g"])
@@ -86,14 +89,14 @@ def run_chain(SEASONS, lam, backtest=True, opts=None, prior_extra=None):
             done = g[g.completed]
             for wk in sorted(done.wk.unique()):
                 cut = done.loc[done.wk == wk, "start"].min()
-                R = ratings_from(_completed_rows(S, g[(g.start < cut) & (g.wk < wk)], hl), ctx, lam)
+                R = ratings_from(_rows_before(S, cut), ctx, lam)
                 gp = int((g.completed & (g.start < cut)).sum())
                 for r in done[done.wk == wk].itertuples():
                     bt.append(dict(season=s, wk=wk, game_id=r.game_id, home=r.home, away=r.away,
                                    home_pts=r.home_pts, away_pts=r.away_pts,
                                    home_tier=tiers.get(r.home), away_tier=tiers.get(r.away),
                                    games_played=gp, **game_feats(R, r.home, r.away, r.neutral)))
-        R = ratings_from(_completed_rows(S, g, hl), ctx, lam)
+        R = ratings_from(_rows_before(S), ctx, lam)
         finals[s] = dict(R, tiers=tiers, abs={m: Rt.absolute(R[m]) for m in Rt.METRICS})
         info[s] = ctx
         if feats is not None:
@@ -105,44 +108,36 @@ def ratings_from(rows, ctx, lam):
     out = {}
     for m, col in Rt.METRICS.items():
         c = ctx["m"][m]
-        out[m] = Rt.fit(rows, col, c["prior"], c["mu0"], c["hfa0"], lam, c["default"], ctx["fcs"], c["g0"])
+        r = rows[rows[col].notna()] if col in rows else rows.iloc[0:0]
+        out[m] = Rt.fit(r, col, c["prior"], c["mu0"], c["hfa0"], lam, c["default"], ctx["fcs"], c["g0"])
     return out
 
 
-# ---------- Points conversion: ratings (+ game context) -> expected points ----------
+# ---------- Points conversion: ratings -> expected points ----------
 
-# Extra columns each optional group adds to the conversion, built per side (team on offense).
 GROUP_COLS = {
-    "score": ["R"],  # scoring-margin rating blended with the efficiency ratings
-    "qb": ["qbd"],
-    "travel": ["rest_adv", "trav", "tz"],
-    "weather": ["wind_over", "precip", "cold"],
+    "score": ["R"],             # scoring-margin rating
+    "pbp": ["DP", "FN", "FP"],  # non-garbage pts/drive x pace, finishing, field position
 }
 CONV_DECAY = 0.6  # weight per season of age: scoring environments drift (rule changes, pace)
 
 
-def side_frame(bt, gctx=None):
+def side_frame(bt):
     """Two rows per game (home offense, away offense) with every column the conversion may use."""
-    hs = pd.DataFrame(dict(season=bt.season.values, game_id=bt.game_id.values, P=bt.p_h.values,
-                           Q=bt.q_h.values, S=bt.s_h.values, R=bt.r_h.values, h=bt.h.values,
-                           pts=bt.home_pts.values if "home_pts" in bt else np.nan, side="h"))
-    aw = pd.DataFrame(dict(season=bt.season.values, game_id=bt.game_id.values, P=bt.p_a.values,
-                           Q=bt.q_a.values, S=bt.s_a.values, R=bt.r_a.values, h=-bt.h.values,
-                           pts=bt.away_pts.values if "away_pts" in bt else np.nan, side="a"))
-    df = pd.concat([hs, aw], ignore_index=True)
-    cols = [c for g in GROUP_COLS.values() for c in g if c != "R"]
-    if gctx is not None and len(gctx):
-        gx = gctx.set_index("game_id")
-        for c in cols:
-            if c in ("wind_over", "precip", "cold"):
-                df[c] = df.game_id.map(gx[c]) if c in gx else 0.0
-            else:
-                own = df.game_id.map(gx[f"{c}_h"]) if f"{c}_h" in gx else np.nan
-                opp = df.game_id.map(gx[f"{c}_a"]) if f"{c}_a" in gx else np.nan
-                df[c] = np.where(df.side == "h", own, opp)
-    for c in cols:
-        if c not in df:
-            df[c] = 0.0
+    names = {"p": "P", "q": "Q", "s": "S", "r": "R", "d": "D", "fn": "FN", "fp": "FP"}
+
+    def side(sfx, sign):
+        out = dict(season=bt.season.values, game_id=bt.game_id.values, h=sign * bt.h.values,
+                   pts=bt[f"{'home' if sfx == 'h' else 'away'}_pts"].values if "home_pts" in bt else np.nan,
+                   side=sfx)
+        for k, n in names.items():
+            col = f"{k}_{sfx}"
+            out[n] = bt[col].values if col in bt else np.nan
+        return pd.DataFrame(out)
+
+    df = pd.concat([side("h", 1), side("a", -1)], ignore_index=True)
+    df["DP"] = df.D * df.P / 10
+    for c in ("R", "DP", "FN", "FP"):
         df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0.0)
     return df
 
@@ -165,44 +160,16 @@ def fit_conv(df, groups=(), decay=None):
     return np.linalg.lstsq(X * w[:, None], y * w, rcond=None)[0]
 
 
-def fit_conv_margin(df, groups=(), decay=None):
-    """Second stage fitted directly to the final margin (home minus away) instead of to
-    each team's points: same inputs, but home-side minus away-side, so every weight is
-    chosen to minimize margin error."""
-    decay = CONV_DECAY if decay is None else decay
-    n = len(df) // 2
-    X = conv_X(df, groups)
-    Xd = (X[:n] - X[n:])[:, 1:]  # intercept cancels
-    y = df.pts.to_numpy(float)
-    yd = y[:n] - y[n:]
-    w = np.sqrt(decay ** (df.season.max() - df.season.to_numpy()[:n]))
-    return np.linalg.lstsq(Xd * w[:, None], yd * w, rcond=None)[0]
-
-
-def predict_bt(bt, conv, groups=(), gctx=None, conv_m=None):
+def predict_bt(bt, conv, groups=()):
     out = bt.copy()
-    df = side_frame(bt, gctx)
-    X = conv_X(df, groups)
-    pred = X @ np.asarray(conv)
+    pred = conv_X(side_frame(bt), groups) @ np.asarray(conv)
     n = len(bt)
-    ph, pa = pred[:n], pred[n:]
-    if conv_m is not None:
-        # Totals from the points fit, margin from the margin fit.
-        tot = ph + pa
-        mar = (X[:n] - X[n:])[:, 1:] @ np.asarray(conv_m)
-        ph, pa = (tot + mar) / 2, (tot - mar) / 2
-    out["pred_h"] = ph
-    out["pred_a"] = pa
+    out["pred_h"] = pred[:n]
+    out["pred_a"] = pred[n:]
     return out
 
 
-def fit_all(df, groups):
-    conv = fit_conv(df, groups)
-    conv_m = fit_conv_margin(df, groups) if "direct" in groups else None
-    return conv, conv_m
-
-
-def walk_forward(bt, eval_from, groups=(), gctx=None):
+def walk_forward(bt, eval_from, groups=()):
     """Score each season with a points conversion fit only on earlier seasons."""
     parts = []
     for s in sorted(bt.season.unique()):
@@ -211,11 +178,11 @@ def walk_forward(bt, eval_from, groups=(), gctx=None):
         train = bt[bt.season < s]
         if len(train) < 300:
             continue
-        conv, conv_m = fit_all(side_frame(train, gctx), groups)
-        tp = predict_bt(train, conv, groups, gctx, conv_m)
+        conv = fit_conv(side_frame(train), groups)
+        tp = predict_bt(train, conv, groups)
         sd_m = float(((tp.home_pts - tp.away_pts) - (tp.pred_h - tp.pred_a)).std())
         sd_t = float(((tp.home_pts + tp.away_pts) - (tp.pred_h + tp.pred_a)).std())
-        p = predict_bt(bt[bt.season == s], conv, groups, gctx, conv_m)
+        p = predict_bt(bt[bt.season == s], conv, groups)
         p["sd_m"], p["sd_t"] = sd_m, sd_t
         parts.append(p)
     return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame()
@@ -223,7 +190,7 @@ def walk_forward(bt, eval_from, groups=(), gctx=None):
 
 def score(wf, seasons):
     """Margin and total mean absolute error over the given seasons."""
-    w = wf[wf.season.isin(seasons)]
+    w = wf[wf.season.isin(seasons)] if len(wf) else wf
     if w.empty:
         return dict(margin=None, total=None, n=0)
     return dict(
@@ -233,13 +200,13 @@ def score(wf, seasons):
     )
 
 
-def tune(SEASONS, grid, tune_seasons, opts=None, prior_extra=None, groups=(), gctx=None):
+def tune(SEASONS, grid, tune_seasons, groups=None):
     """Pick the prior strength with the lowest margin error on the tuning seasons."""
+    groups = groups or BASE_GROUPS
     results = {}
     for lam in grid:
-        _, bt, _ = run_chain(SEASONS, lam, opts=opts, prior_extra=prior_extra)
-        wf = walk_forward(bt, min(tune_seasons), groups, gctx)
-        sc = score(wf, tune_seasons)
+        _, bt, _ = run_chain(SEASONS, lam)
+        sc = score(walk_forward(bt, min(tune_seasons), groups), tune_seasons)
         if sc["margin"] is None:
             continue
         results[lam] = sc["margin"]
@@ -248,9 +215,9 @@ def tune(SEASONS, grid, tune_seasons, opts=None, prior_extra=None, groups=(), gc
     return best, results
 
 
-# ---------- Feature selection: keep only what improves the tuning seasons ----------
+# ---------- Feature selection: keep only what clearly improves the tuning seasons ----------
 
-MIN_GAIN = 0.02  # points of MAE a feature must save to be kept
+MIN_GAIN = 0.05  # points of MAE a feature must save to be kept (smaller gains were noise)
 
 
 def _better(sc, base):
@@ -259,79 +226,40 @@ def _better(sc, base):
     return (dm >= MIN_GAIN or dt >= MIN_GAIN) and dm > -0.01 and dt > -0.01, round(dm, 3), round(dt, 3)
 
 
-def select_features(SEASONS, lam, tune_seasons, holdout, gctx, prior_extra, available):
-    """Test each feature group against the baseline on the tuning seasons only.
-    Groups that help are combined; the combination is checked on the tuning
-    seasons again and reported once on the untouched holdout season."""
+def select_features(SEASONS, lam, tune_seasons, holdout, available):
+    """Test each optional group against the core model on the tuning seasons only,
+    and report the result once on the untouched holdout season."""
     start = min(tune_seasons)
-    log = []
-    _, bt0, _ = run_chain(SEASONS, lam)
-    base = score(walk_forward(bt0, start), tune_seasons)
-    print(f"  baseline: margin {base['margin']}  total {base['total']}")
-    chosen = dict(recency=None, priors=False, groups=[])
-
-    # Chain-level features
-    best_rec = None
-    for hl in (4, 8, 16):
-        _, b, _ = run_chain(SEASONS, lam, opts=dict(recency=hl))
-        sc = score(walk_forward(b, start), tune_seasons)
-        ok, dm, dt = _better(sc, base)
-        log.append(dict(feature=f"Recency weighting (half-life {hl} weeks)", group="recency", margin=sc["margin"],
-                        total=sc["total"], gain_margin=dm, gain_total=dt, kept=False, ok=ok))
-        if ok and (best_rec is None or sc["margin"] < best_rec[1]):
-            best_rec = (hl, sc["margin"], len(log) - 1)
-    if best_rec:
-        chosen["recency"] = best_rec[0]
-        log[best_rec[2]]["kept"] = True
-    if "priors" in available:
-        _, b, _ = run_chain(SEASONS, lam, opts=dict(priors=True), prior_extra=prior_extra)
-        sc = score(walk_forward(b, start), tune_seasons)
-        ok, dm, dt = _better(sc, base)
-        log.append(dict(feature="Preseason priors (QB/OL recruiting, transfer portal, coaching changes, defensive returning production)",
-                        group="priors", margin=sc["margin"], total=sc["total"],
-                        gain_margin=dm, gain_total=dt, kept=ok, ok=ok))
-        chosen["priors"] = ok
-    else:
-        log.append(dict(feature="Preseason priors (QB/OL recruiting, transfer portal, coaching changes, defensive returning production)", group="priors", skipped=available.get("_why_priors", "data not available yet")))
-
-    # Conversion-level features (reuse the baseline ratings)
-    names = {"score": "Scoring-margin rating (special teams, finishing drives, turnovers)",
-             "direct": "Margin fitted directly (instead of from each team's points)",
-             "qb": "QB change detection", "travel": "Travel and rest", "weather": "Weather at kickoff"}
-    for grp in ("score", "direct", "qb", "travel", "weather"):
+    _, bt, _ = run_chain(SEASONS, lam)
+    wf0 = walk_forward(bt, start, BASE_GROUPS)
+    base = score(wf0, tune_seasons)
+    print(f"  core model: margin {base['margin']}  total {base['total']}")
+    chosen, log = list(BASE_GROUPS), []
+    for grp, name in OPTIONAL.items():
         if grp not in available:
-            log.append(dict(feature=names[grp], group=grp, skipped=available.get(f"_why_{grp}", "data not available yet")))
+            log.append(dict(feature=name, group=grp, skipped=available.get(f"_why_{grp}", "data not available yet")))
             continue
-        sc = score(walk_forward(bt0, start, [grp], gctx), tune_seasons)
+        sc = score(walk_forward(bt, start, BASE_GROUPS + [grp]), tune_seasons)
         ok, dm, dt = _better(sc, base)
-        log.append(dict(feature=names[grp], group=grp, margin=sc["margin"], total=sc["total"],
+        log.append(dict(feature=name, group=grp, margin=sc["margin"], total=sc["total"],
                         gain_margin=dm, gain_total=dt, kept=ok, ok=ok))
         if ok:
-            chosen["groups"].append(grp)
-
-    # Combined check
-    opts = dict(recency=chosen["recency"], priors=chosen["priors"])
-    _, btc, _ = run_chain(SEASONS, lam, opts=opts, prior_extra=prior_extra)
-    wfc = walk_forward(btc, start, chosen["groups"], gctx)
-    wf0 = walk_forward(bt0, start)
-    comb, hold_c, hold_0 = score(wfc, tune_seasons), score(wfc, [holdout]), score(wf0, [holdout])
-    if comb["margin"] is not None and comb["margin"] > base["margin"] + 0.005:
-        chosen = dict(recency=None, priors=False, groups=[])  # combination didn't hold up
-        comb = base
-    return chosen, dict(baseline=base, combined=comb, holdout=dict(season=holdout, baseline=hold_0, selected=hold_c),
-                        tests=log)
+            chosen.append(grp)
+    wfc = walk_forward(bt, start, chosen)
+    return dict(groups=chosen), dict(baseline=base, combined=score(wfc, tune_seasons),
+                                     holdout=dict(season=holdout, baseline=score(wf0, [holdout]),
+                                                  selected=score(wfc, [holdout])),
+                                     tests=log)
 
 
-def fit_state(SEASONS, lam, current_season, features=None, gctx=None, prior_extra=None):
+def fit_state(SEASONS, lam, current_season, features=None):
     """Fit everything needed for live predictions. Run every update."""
-    features = features or {}
-    groups = features.get("groups", [])
-    opts = dict(recency=features.get("recency"), priors=features.get("priors"))
-    finals, bt, info = run_chain(SEASONS, lam, opts=opts, prior_extra=prior_extra)
+    groups = (features or {}).get("groups") or BASE_GROUPS
+    finals, bt, info = run_chain(SEASONS, lam)
     seasons = sorted(SEASONS)
-    wf = walk_forward(bt, seasons[0] + 2, groups, gctx)
-    conv, conv_m = fit_all(side_frame(bt, gctx), groups)
-    allp = predict_bt(bt, conv, groups, gctx, conv_m)
+    wf = walk_forward(bt, seasons[0] + 2, groups)
+    conv = fit_conv(side_frame(bt), groups)
+    allp = predict_bt(bt, conv, groups)
     rh = allp.home_pts - allp.pred_h
     ra = allp.away_pts - allp.pred_a
     team_var = float(np.concatenate([rh, ra]).var())
@@ -344,7 +272,6 @@ def fit_state(SEASONS, lam, current_season, features=None, gctx=None, prior_extr
     state = dict(
         lam=lam,
         conv=conv.tolist(),
-        conv_m=None if conv_m is None else conv_m.tolist(),
         groups=groups,
         team_var=team_var,
         rho=rho,

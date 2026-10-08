@@ -23,6 +23,7 @@ import cfb_site as site
 
 STATE = C.DATA / "model_state.json"
 EXPERIMENTS = C.DATA / "experiments.json"
+MODEL_VERSION = 3  # bump when the model's structure changes, to force re-tuning and re-testing
 
 
 def current_season(now):
@@ -48,48 +49,52 @@ def main(mode):
     tune_seasons = list(range(C.FIRST_SEASON + 2, season - 1))
     holdout = season - 1
 
-    # Extra data for the optional feature groups (downloads capped; odds-only runs use cache only).
+    # Extra data (downloads capped; line-only runs use what's cached).
     if not full:
-        extra.CFBD_BUDGET, extra.WEATHER_BUDGET = 0, 0
-    print("Preparing extra features ...")
-    gctx, prior_extra, available, xstatus = extra.build(SEASONS, season, tune_seasons[0])
-    available["score"] = available["direct"] = True  # built from data the model already has
+        extra.CFBD_BUDGET, extra.PBP_BUDGET = 0, 0
+    print("Preparing extra data ...")
+    qb_ctx, available, xstatus, pbp = extra.build(SEASONS, season, tune_seasons[0])
+    # Attach play-by-play metrics to each team-game row (NaN where not downloaded yet).
+    for y, S in SEASONS.items():
+        a = S["adv"]
+        if len(a):
+            a = a.drop(columns=[c for c in ("ppd", "fin", "fpos") if c in a]).merge(pbp, on=["game_id", "off"], how="left")
+            S["adv"] = a
     for k, v in xstatus.items():
         print(f"  {k}: {v}")
     avail_key = sorted(k for k in available if not k.startswith("_"))
+    exp_old = json.loads(EXPERIMENTS.read_text()) if EXPERIMENTS.exists() else {}
+    new_version = exp_old.get("version") != MODEL_VERSION
 
-    # Learning step 1: tune prior strength (first run, monthly, or on request).
-    lam = state_old.get("lam")
+    # Learning step 1: tune prior strength (first run, new model version, monthly, or on request).
+    lam = None if new_version else state_old.get("lam")
     tuned_at = pd.Timestamp(state_old["tuned_at"]) if state_old.get("tuned_at") else None
     retuned = False
     if lam is None or mode == "retune" or (full and tuned_at is not None and now - tuned_at > pd.Timedelta(days=30)):
         print("Tuning prior strength on the tuning seasons ...")
-        prev = state_old.get("features") or {}
+        prev = (state_old.get("features") or {}) if not new_version else {}
         lam, tune_res = model.tune(SEASONS, C.LAMBDA_GRID, tune_seasons,
-                                   groups=[g for g in prev.get("groups", ["score"]) if g in available], gctx=gctx)
+                                   [g for g in prev.get("groups", model.BASE_GROUPS) if g in model.BASE_GROUPS or g in available])
         tuned_at, retuned = now, True
     else:
         tune_res = state_old.get("tune_results", {})
 
-    # Learning step 2: test each optional feature; keep only those that improve the tuning seasons.
-    features = state_old.get("features")
-    exp_old = json.loads(EXPERIMENTS.read_text()) if EXPERIMENTS.exists() else {}
+    # Learning step 2: test optional features; keep only those that clearly improve the tuning seasons.
+    features = None if new_version else state_old.get("features")
     if full and (features is None or retuned or exp_old.get("available") != avail_key):
         print("Testing optional features ...")
-        features, results = model.select_features(SEASONS, lam, tune_seasons, holdout, gctx, prior_extra, available)
-        exp_old = dict(run=now.isoformat(), available=avail_key, status=xstatus, chosen=features,
-                       tune_seasons=[tune_seasons[0], tune_seasons[-1]], **results)
+        features, results = model.select_features(SEASONS, lam, tune_seasons, holdout, available)
+        exp_old = dict(version=MODEL_VERSION, run=now.isoformat(), available=avail_key, status=xstatus,
+                       chosen=features, tune_seasons=[tune_seasons[0], tune_seasons[-1]], **results)
         EXPERIMENTS.write_text(json.dumps(exp_old, indent=1, default=str))
     features = features or {}
-    # Drop any feature whose data has since become unavailable.
-    features = dict(recency=features.get("recency"),
-                    priors=bool(features.get("priors")) and "priors" in available,
-                    groups=[g for g in features.get("groups", []) if g in available])
-    print("Features in use:", features)
+    groups = [g for g in features.get("groups", []) if g in model.BASE_GROUPS or g in available]
+    features = dict(groups=groups or list(model.BASE_GROUPS))
+    print("Model inputs in use:", features["groups"])
 
     # Learning step 3: refit ratings, points conversion, and simulator variance on all data.
     print(f"Fitting model (prior strength {lam}) ...")
-    state, finals, bt, wf, info = model.fit_state(SEASONS, lam, season, features, gctx, prior_extra)
+    state, finals, bt, wf, info = model.fit_state(SEASONS, lam, season, features)
     state.update(lam=lam, tuned_at=tuned_at.isoformat(), tune_results={str(k): v for k, v in tune_res.items()},
                  updated=now.isoformat(), features=features)
     STATE.write_text(json.dumps(state, indent=1))
@@ -113,7 +118,7 @@ def main(mode):
     ovr = predict.load_overrides()
     wx = predict.game_weather(slate, now) if len(slate) else {}
     gp = int(games.completed.sum() / max(1, len(set(games.home) | set(games.away))) * 2)
-    gidx = gctx.set_index("game_id") if len(gctx) else None
+    gidx = qb_ctx.set_index("game_id") if len(qb_ctx) else None
     preds = []
     for r in slate.itertuples():
         if r.start <= now:
