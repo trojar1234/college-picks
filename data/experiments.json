@@ -1,10 +1,10 @@
 {
- "version": 3,
- "run": "2026-10-08T13:34:33.402072+00:00",
+ "version": 4,
+ "run": "2026-10-08T14:23:39.182206+00:00",
  "available": [],
  "status": {
   "qb_alerts": "ok",
-  "pbp": "partial: 97 weeks of plays still to download"
+  "pbp": "partial: 27 weeks of plays still to download"
  },
  "chosen": {
   "groups": [
@@ -16,24 +16,24 @@
   2024
  ],
  "baseline": {
-  "margin": 13.044,
+  "margin": 13.021,
   "total": 13.251,
   "n": 6828
  },
  "combined": {
-  "margin": 13.044,
+  "margin": 13.021,
   "total": 13.251,
   "n": 6828
  },
  "holdout": {
   "season": 2025,
   "baseline": {
-   "margin": 12.434,
+   "margin": 12.357,
    "total": 12.905,
    "n": 934
   },
   "selected": {
-   "margin": 12.434,
+   "margin": 12.357,
    "total": 12.905,
    "n": 934
   }
@@ -42,7 +42,7 @@
   {
    "feature": "Play-by-play: non-garbage points per drive, finishing drives, field position",
    "group": "pbp",
-   "skipped": "partial: 97 weeks of plays still to download"
+   "skipped": "partial: 27 weeks of plays still to download"
   }
  ]
 }
