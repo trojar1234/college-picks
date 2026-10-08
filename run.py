@@ -23,7 +23,7 @@ import cfb_site as site
 
 STATE = C.DATA / "model_state.json"
 EXPERIMENTS = C.DATA / "experiments.json"
-MODEL_VERSION = 3  # bump when the model's structure changes, to force re-tuning and re-testing
+MODEL_VERSION = 4  # bump when the model's structure changes, to force re-tuning and re-testing
 
 
 def current_season(now):

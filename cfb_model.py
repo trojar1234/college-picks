@@ -60,6 +60,21 @@ def _mu0(adv, col):
     return float(v) if v == v else 0.0
 
 
+def _history(finals, s, years=4):
+    """Average of each team's final ratings over the previous `years` seasons."""
+    past = [finals[y]["abs"] for y in range(s - years, s) if y in finals]
+    out = {}
+    for m in Rt.METRICS:
+        out[m] = {}
+        for side in ("off", "deff"):
+            acc = {}
+            for p in past:
+                for t, v in p[m][side].items():
+                    acc.setdefault(t, []).append(v)
+            out[m][side] = {t: float(np.mean(v)) for t, v in acc.items()}
+    return out
+
+
 def run_chain(SEASONS, lam, backtest=True):
     """Walk through seasons in order. Returns final ratings per season, the
     walk-forward backtest rows, and the context (priors) used per season."""
@@ -80,7 +95,7 @@ def run_chain(SEASONS, lam, backtest=True):
                                    default=(0.0, 0.0), g0=FIRST_G.get(m, (0.0, 0.0)))
         else:
             prev = finals[s - 1]
-            feats = Rt.prior_features(prev["abs"], S["talent"], S["ret"])
+            feats = Rt.prior_features(prev["abs"], S["talent"], S["ret"], _history(finals, s))
             priors, defaults = Rt.make_prior(prev["abs"], feats, Rt.fit_prior_coefs(pairs), prev["tiers"])
             for m in Rt.METRICS:
                 ctx["m"][m] = dict(prior=priors[m], mu0=prev[m]["mu"], hfa0=prev[m]["hfa"],

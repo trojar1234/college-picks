@@ -92,6 +92,9 @@ def absolute(R):
 # ---------- Preseason priors ----------
 
 def _z(d):
+    # A talent score of 0 means "not rated" (the service academies aren't in the recruiting
+    # composites), not "worst roster in the country". Treat it as unknown.
+    d = {k: x for k, x in d.items() if x == x and x > 50}
     v = np.array([x for x in d.values() if x == x])
     if len(v) < 5:
         return {}
@@ -114,19 +117,22 @@ def _ret(ret, t, rmean):
     return (v if v == v else rmean) - rmean
 
 
-def prior_features(prev, talent, ret):
+def prior_features(prev, talent, ret, hist=None):
     """Feature rows per team for building next season's prior (prev = absolute ratings):
-    last season's ratings, returning production, and the roster talent composite."""
+    last season's ratings, the average of the last four seasons (program history, as
+    FPI and SP+ use), returning production, and the roster talent composite."""
     tz = _z(talent)
     rv = [x for x in ret.values() if x == x]
     rmean = float(np.mean(rv)) if rv else 0.5
     teams = set(prev["ppa"]["off"]) | set(tz)
     rows = []
     for t in teams:
-        r = dict(team=t, has_prev=t in prev["ppa"]["off"], ret=_ret(ret, t, rmean), tal=tz.get(t, -1.0))
+        r = dict(team=t, has_prev=t in prev["ppa"]["off"], ret=_ret(ret, t, rmean),
+                 tal=tz.get(t, 0.0), tal_na=float(t not in tz))
         for m in METRICS:
             for side in ("off", "deff"):
                 r[f"p_{m}_{side}"] = prev[m][side].get(t, np.nan)
+                r[f"h_{m}_{side}"] = (hist or {}).get(m, {}).get(side, {}).get(t, np.nan)
         rows.append(r)
     return pd.DataFrame(rows)
 
@@ -135,13 +141,20 @@ def _cols(m, side):
     base = f"p_{m}_{side}"
     if m in NEUTRAL:
         return [base]
-    return [base, f"{base}_ret", "tal"] if side == "off" else [base, "tal"]
+    cols = [base, f"{base}_ret", "tal"] if side == "off" else [base, "tal"]
+    return cols + ["tal_na", f"h_{m}_{side}"]
 
 
 def _design(df, m, side):
     df = df.copy()
     base = f"p_{m}_{side}"
     df[f"{base}_ret"] = (df[base] * df["ret"]).fillna(0.0)
+    h = f"h_{m}_{side}"
+    if h not in df:
+        df[h] = np.nan
+    df[h] = df[h].fillna(df[base]).fillna(0.0)
+    if "tal_na" not in df:
+        df["tal_na"] = 0.0
     df[base] = df[base].fillna(0.0)
     return np.column_stack([np.ones(len(df)), df[_cols(m, side)].to_numpy(dtype=float)])
 
