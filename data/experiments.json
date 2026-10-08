@@ -1,24 +1,28 @@
 {
- "run": "2026-10-08T12:14:16.276930+00:00",
+ "run": "2026-10-08T12:46:48.912652+00:00",
  "available": [
+  "direct",
   "priors",
   "qb",
+  "score",
   "travel"
  ],
  "status": {
   "travel": "ok",
   "qb": "ok",
-  "weather": "partial: 9017 past games still to download",
+  "weather": "partial: 8954 past games still to download",
   "priors/recruiting": "ok",
   "priors/portal": "ok",
   "priors/coaches": "ok",
   "priors/defense_returning": "ok",
-  "cfbd_calls_used_for_extras": 216
+  "cfbd_calls_used_for_extras": 0
  },
  "chosen": {
-  "recency": null,
+  "recency": 8,
   "priors": false,
-  "groups": []
+  "groups": [
+   "score"
+  ]
  },
  "tune_seasons": [
   2017,
@@ -30,8 +34,8 @@
   "n": 6828
  },
  "combined": {
-  "margin": 13.338,
-  "total": 13.599,
+  "margin": 13.152,
+  "total": 13.234,
   "n": 6828
  },
  "holdout": {
@@ -42,8 +46,8 @@
    "n": 934
   },
   "selected": {
-   "margin": 12.981,
-   "total": 12.968,
+   "margin": 12.599,
+   "total": 12.802,
    "n": 934
   }
  },
@@ -89,12 +93,32 @@
    "ok": false
   },
   {
+   "feature": "Scoring-margin rating (special teams, finishing drives, turnovers)",
+   "group": "score",
+   "margin": 13.093,
+   "total": 13.233,
+   "gain_margin": 0.245,
+   "gain_total": 0.366,
+   "kept": true,
+   "ok": true
+  },
+  {
+   "feature": "Margin fitted directly (instead of from each team's points)",
+   "group": "direct",
+   "margin": 13.379,
+   "total": 13.599,
+   "gain_margin": -0.041,
+   "gain_total": 0.0,
+   "kept": false,
+   "ok": false
+  },
+  {
    "feature": "QB change detection",
    "group": "qb",
    "margin": 13.344,
-   "total": 13.599,
+   "total": 13.598,
    "gain_margin": -0.006,
-   "gain_total": 0.0,
+   "gain_total": 0.001,
    "kept": false,
    "ok": false
   },
@@ -111,7 +135,7 @@
   {
    "feature": "Weather at kickoff",
    "group": "weather",
-   "skipped": "partial: 9017 past games still to download"
+   "skipped": "partial: 8954 past games still to download"
   }
  ]
 }
