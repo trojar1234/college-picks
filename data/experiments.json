@@ -1,14 +1,24 @@
 {
- "version": 4,
- "run": "2026-10-08T14:23:39.182206+00:00",
- "available": [],
+ "version": 5,
+ "run": "2026-10-08T16:00:25.333563+00:00",
+ "available": [
+  "pbp",
+  "players",
+  "players_off"
+ ],
  "status": {
   "qb_alerts": "ok",
-  "pbp": "partial: 27 weeks of plays still to download"
+  "pbp": "ok",
+  "players": "seasons with QB data 10, defense 10, offense 11"
  },
  "chosen": {
   "groups": [
    "score"
+  ],
+  "players": [
+   "qb",
+   "def",
+   "off"
   ]
  },
  "tune_seasons": [
@@ -21,8 +31,8 @@
   "n": 6828
  },
  "combined": {
-  "margin": 13.021,
-  "total": 13.251,
+  "margin": 12.941,
+  "total": 13.247,
   "n": 6828
  },
  "holdout": {
@@ -33,16 +43,41 @@
    "n": 934
   },
   "selected": {
-   "margin": 12.357,
-   "total": 12.905,
+   "margin": 12.297,
+   "total": 12.875,
    "n": 934
   }
  },
  "tests": [
   {
+   "feature": "Player-level preseason data: QB quality (transfers included) and defensive returning production counting transfers",
+   "group": "players",
+   "margin": 12.97,
+   "total": 13.247,
+   "gain_margin": 0.051,
+   "gain_total": 0.004,
+   "kept": false,
+   "ok": true
+  },
+  {
+   "feature": "Same, plus offensive returning production counting transfers (player EPA)",
+   "group": "players_off",
+   "margin": 12.941,
+   "total": 13.247,
+   "gain_margin": 0.08,
+   "gain_total": 0.004,
+   "kept": true,
+   "ok": true
+  },
+  {
    "feature": "Play-by-play: non-garbage points per drive, finishing drives, field position",
    "group": "pbp",
-   "skipped": "partial: 27 weeks of plays still to download"
+   "margin": 12.949,
+   "total": 13.238,
+   "gain_margin": -0.008,
+   "gain_total": 0.009,
+   "kept": false,
+   "ok": false
   }
  ]
 }
