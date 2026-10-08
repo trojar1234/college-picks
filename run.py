@@ -13,6 +13,7 @@ import pandas as pd
 
 import cfb_config as C
 import cfb_data as Dt
+import cfb_extra as extra
 import cfb_fetch as fetch
 import cfb_lines as lines
 import cfb_model as model
@@ -21,6 +22,7 @@ import cfb_report as report
 import cfb_site as site
 
 STATE = C.DATA / "model_state.json"
+EXPERIMENTS = C.DATA / "experiments.json"
 
 
 def current_season(now):
@@ -42,21 +44,51 @@ def main(mode):
     if games.empty:
         raise SystemExit(f"No {season} games found. Check the CFBD key.")
 
+    # Seasons used for tuning, and one untouched holdout season for an honest check.
+    tune_seasons = list(range(C.FIRST_SEASON + 2, season - 1))
+    holdout = season - 1
+
+    # Extra data for the optional feature groups (downloads capped; odds-only runs use cache only).
+    if not full:
+        extra.CFBD_BUDGET, extra.WEATHER_BUDGET = 0, 0
+    print("Preparing extra features ...")
+    gctx, prior_extra, available, xstatus = extra.build(SEASONS, season, tune_seasons[0])
+    for k, v in xstatus.items():
+        print(f"  {k}: {v}")
+    avail_key = sorted(k for k in available if not k.startswith("_"))
+
     # Learning step 1: tune prior strength (first run, monthly, or on request).
     lam = state_old.get("lam")
     tuned_at = pd.Timestamp(state_old["tuned_at"]) if state_old.get("tuned_at") else None
+    retuned = False
     if lam is None or mode == "retune" or (full and tuned_at is not None and now - tuned_at > pd.Timedelta(days=30)):
-        print("Tuning prior strength on the backtest ...")
-        lam, tune_res = model.tune(SEASONS, C.LAMBDA_GRID, season)
-        tuned_at = now
+        print("Tuning prior strength on the tuning seasons ...")
+        lam, tune_res = model.tune(SEASONS, C.LAMBDA_GRID, tune_seasons)
+        tuned_at, retuned = now, True
     else:
         tune_res = state_old.get("tune_results", {})
 
-    # Learning step 2: refit ratings, points conversion, and simulator variance on all data.
+    # Learning step 2: test each optional feature; keep only those that improve the tuning seasons.
+    features = state_old.get("features")
+    exp_old = json.loads(EXPERIMENTS.read_text()) if EXPERIMENTS.exists() else {}
+    if full and (features is None or retuned or exp_old.get("available") != avail_key):
+        print("Testing optional features ...")
+        features, results = model.select_features(SEASONS, lam, tune_seasons, holdout, gctx, prior_extra, available)
+        exp_old = dict(run=now.isoformat(), available=avail_key, status=xstatus, chosen=features,
+                       tune_seasons=[tune_seasons[0], tune_seasons[-1]], **results)
+        EXPERIMENTS.write_text(json.dumps(exp_old, indent=1, default=str))
+    features = features or {}
+    # Drop any feature whose data has since become unavailable.
+    features = dict(recency=features.get("recency"),
+                    priors=bool(features.get("priors")) and "priors" in available,
+                    groups=[g for g in features.get("groups", []) if g in available])
+    print("Features in use:", features)
+
+    # Learning step 3: refit ratings, points conversion, and simulator variance on all data.
     print(f"Fitting model (prior strength {lam}) ...")
-    state, finals, bt, wf, info = model.fit_state(SEASONS, lam, season)
+    state, finals, bt, wf, info = model.fit_state(SEASONS, lam, season, features, gctx, prior_extra)
     state.update(lam=lam, tuned_at=tuned_at.isoformat(), tune_results={str(k): v for k, v in tune_res.items()},
-                 updated=now.isoformat())
+                 updated=now.isoformat(), features=features)
     STATE.write_text(json.dumps(state, indent=1))
 
     # Lines
@@ -67,6 +99,8 @@ def main(mode):
 
     # Backtest report first: its calibration tells us how far to trust cover probabilities.
     bt_rep = report.backtest(wf[wf.season < season] if len(wf) else wf, SEASONS)
+    for srow in bt_rep.get("seasons", []):
+        srow["holdout"] = srow["season"] == holdout
     shrink = (bt_rep.get("shrink_spread", 1.0), bt_rep.get("shrink_total", 1.0))
 
     # Predictions for this week's games that haven't kicked off
@@ -76,6 +110,7 @@ def main(mode):
     ovr = predict.load_overrides()
     wx = predict.game_weather(slate, now) if len(slate) else {}
     gp = int(games.completed.sum() / max(1, len(set(games.home) | set(games.away))) * 2)
+    gidx = gctx.set_index("game_id") if len(gctx) else None
     preds = []
     for r in slate.itertuples():
         if r.start <= now:
@@ -87,7 +122,8 @@ def main(mode):
         if m.get("total") is None and cfbd_ln is not None and r.game_id in cfbd_ln.index:
             m["total"] = lines._f(cfbd_ln.loc[r.game_id, "cfbd_total"])
             m["open_total"] = m.get("open_total") or lines._f(cfbd_ln.loc[r.game_id, "cfbd_total_open"])
-        preds.append(predict.predict_game(r, state, R, m, wx.get(r.game_id), ovr, tiers, gp, shrink))
+        grow = gidx.loc[r.game_id].to_dict() if gidx is not None and r.game_id in gidx.index else {}
+        preds.append(predict.predict_game(r, state, R, m, wx.get(r.game_id), ovr, tiers, gp, shrink, grow))
 
     store = predict.load_store()
     store = predict.update_store(store, preds, now)
@@ -100,6 +136,8 @@ def main(mode):
         live=report.live(store, season),
         state={k: state[k] for k in ("lam", "rho", "sim_sd", "margin_sd", "total_sd", "updated", "tuned_at")},
         tune=state["tune_results"],
+        experiments=exp_old,
+        features=features,
     )
     site.build(season, wk, slate, store, rep, finals[season], now, unmatched)
     print(f"Done. Week {wk}: {len(preds)} games projected, {sum(p.get('spread_flag', False) for p in preds)} spread edges.")

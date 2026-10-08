@@ -7,6 +7,7 @@ import pandas as pd
 import cfb_config as C
 import cfb_fetch as fetch
 import cfb_model as model
+import cfb_extra as Ex
 import cfb_ratings as Rt
 import cfb_sim as sim
 from cfb_lines import _f
@@ -87,12 +88,25 @@ def game_weather(slate, now):
     return out
 
 
-def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0)):
+def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_row=None):
     f = model.game_feats(R, r.home, r.away, r.neutral)
     conv = np.array(state["conv"])
-    eh = float(model.points(conv, [f["p_h"]], [f["q_h"]], [f["s_h"]], [f["h"]])[0])
-    ea = float(model.points(conv, [f["p_a"]], [f["q_a"]], [f["s_a"]], [-f["h"]])[0])
+    groups = state.get("groups", [])
+    gx = dict(gctx_row or {}, game_id=r.game_id)
+    if "weather" in groups:
+        w = wx or {}
+        gx.update(Ex.weather_cols(w.get("wind"), w.get("precip"), w.get("temp"), dome=bool(w.get("dome"))))
+    bt1 = pd.DataFrame([dict(season=r.season, game_id=r.game_id, **f)])
+    pr = model.predict_bt(bt1, conv, groups, pd.DataFrame([gx]))
+    eh, ea = float(pr.pred_h.iloc[0]), float(pr.pred_a.iloc[0])
     notes, low = [], []
+    if "qb" in groups:
+        for side, team in (("h", r.home), ("a", r.away)):
+            d = gx.get(f"qbd_{side}")
+            if d is not None and d == d and abs(d) > 0.05:
+                notes.append(f"{team}: expected starter {gx.get(f'qb_exp_{side}') or 'backup'} "
+                             f"({'+' if d > 0 else ''}{d:.1f} yds/att vs regular starter)")
+                low.append("QB change")
     for team, side in ((r.home, "h"), (r.away, "a")):
         if team in ovr:
             pts, note = ovr[team]
@@ -102,7 +116,7 @@ def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0)):
                 ea += pts
             notes.append(f"{team} {pts:+g} ({note})" if note else f"{team} {pts:+g}")
             low.append("manual adjustment")
-    if wx and wx.get("wind", 0) > C.WIND_START:
+    if "weather" not in groups and wx and wx.get("wind", 0) > C.WIND_START:
         k = max(0.75, 1 - C.WIND_PER_MPH * (wx["wind"] - C.WIND_START))
         eh, ea = eh * k, ea * k
         notes.append(f"wind {wx['wind']:.0f} mph")

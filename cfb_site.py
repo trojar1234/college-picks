@@ -152,6 +152,10 @@ REPORT_BODY = NAV("r") + r"""
 <p class="sub">Walk-forward: each week predicted using only data available before it. Flagged bets are graded against the opening line (when the model's edges are meant to be bet) and the closing line. Opening lines exist for only part of the history.</p>
 <div class="cards" id="btcards"></div>
 <div class="tbl"><table><thead><tr><th>Season</th><th>Games</th><th>Margin MAE</th><th class="hide-sm">Market margin MAE</th><th class="hide-sm">Total MAE</th><th>ATS vs open</th><th>ATS vs close</th><th>O/U vs open</th><th class="hide-sm">O/U vs close</th></tr></thead><tbody id="bt"></tbody></table></div>
+<h2>Model improvements tested</h2>
+<p class="sub" id="expsub"></p>
+<div class="tbl"><table><thead><tr><th>Feature</th><th>Margin error change</th><th>Total error change</th><th>Result</th></tr></thead><tbody id="exp"></tbody></table></div>
+<p class="sub" id="exphold"></p>
 <h2>Calibration</h2>
 <p class="sub">When the model gives the home team X% to cover, how often do they?</p>
 <div class="tbl"><table><thead><tr><th>Model said</th><th>Average</th><th>Actually covered</th><th>Games</th></tr></thead><tbody id="cal"></tbody></table></div>
@@ -259,7 +263,7 @@ document.getElementById('live').innerHTML=L.graded?[
  card('Avg CLV',L.clv_avg==null?'—':sgn(L.clv_avg)+' pts'),card('Beat closing line',L.clv_beat_pct==null?'—':pct(L.clv_beat_pct)+` <span class="sub">of ${L.clv_n}</span>`)].join('')
  :card('Games graded','0')+'<p class="sub" style="grid-column:1/-1">Results appear here once games the model projected before kickoff are final.</p>';
 const rp=r=>r?`${rec(r)} <span class="when">${pct(r.pct)}</span>`:'—';
-const bt=(B.seasons||[]).map(s=>`<tr><td>${s.season}</td><td>${s.games}</td><td>${fmt(s.margin_mae)}</td><td class="hide-sm">${fmt(s.mkt_margin_mae)}</td><td class="hide-sm">${fmt(s.total_mae)}</td><td>${rp(s.ats_open)}</td><td>${rp(s.ats)}</td><td>${rp(s.ou_open)}</td><td class="hide-sm">${rp(s.ou)}</td></tr>`);
+const bt=(B.seasons||[]).map(s=>`<tr><td>${s.season}${s.holdout?' <span class="pill p-acc">holdout</span>':''}</td><td>${s.games}</td><td>${fmt(s.margin_mae)}</td><td class="hide-sm">${fmt(s.mkt_margin_mae)}</td><td class="hide-sm">${fmt(s.total_mae)}</td><td>${rp(s.ats_open)}</td><td>${rp(s.ats)}</td><td>${rp(s.ou_open)}</td><td class="hide-sm">${rp(s.ou)}</td></tr>`);
 const o=B.overall;if(o)bt.push(`<tr><td><b>All</b></td><td>${o.games}</td><td>${fmt(o.margin_mae)}</td><td class="hide-sm">${fmt(o.mkt_margin_mae)}</td><td class="hide-sm">${fmt(o.total_mae)}</td><td><b>${rp(o.ats_open)}</b></td><td><b>${rp(o.ats)}</b></td><td><b>${rp(o.ou_open)}</b></td><td class="hide-sm"><b>${rp(o.ou)}</b></td></tr>`);
 document.getElementById('bt').innerHTML=bt.join('')||'<tr><td colspan="9" class="muted">Backtest not available yet.</td></tr>';
 if(o){const mv=B.line_move||{};document.getElementById('btcards').innerHTML=[
@@ -268,6 +272,13 @@ if(o){const mv=B.line_move||{};document.getElementById('btcards').innerHTML=[
  card('Margin MAE (model / market)',`${fmt(o.margin_mae)} <span class="sub">/ ${fmt(o.mkt_margin_mae)}</span>`)].join('');}
 document.getElementById('cal').innerHTML=(B.calibration||[]).map(c=>`<tr><td>${c.bin}</td><td>${pct(c.predicted)}</td><td>${pct(c.actual)}</td><td>${c.n}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">—</td></tr>';
 document.getElementById('shrink').textContent=B.shrink_spread!=null?`Learned from this table: cover probabilities shown on the projections page keep ${pct(B.shrink_spread)} of the model's raw confidence for spreads and ${pct(B.shrink_total)} for totals.`:'';
+const E=R.experiments||{};
+if(E.tests){
+ const ch=v=>v==null?'—':`<span class="${v>0?'up':v<0?'down':''}">${v>0?'−':v<0?'+':''}${Math.abs(v).toFixed(3)}</span>`;
+ document.getElementById('expsub').textContent=`Each feature is tested on ${E.tune_seasons?E.tune_seasons.join('–'):'the tuning seasons'} against the baseline (margin MAE ${fmt(E.baseline&&E.baseline.margin)}, total MAE ${fmt(E.baseline&&E.baseline.total)}). It's kept only if it lowers error by at least 0.02 points without hurting the other measure. Green means less error. Last tested ${new Date(E.run).toLocaleDateString()}.`;
+ document.getElementById('exp').innerHTML=E.tests.map(t=>`<tr><td>${esc(t.feature)}</td><td>${t.skipped?'—':ch(t.gain_margin)}</td><td>${t.skipped?'—':ch(t.gain_total)}</td><td>${t.skipped?`<span class="muted">Not tested: ${esc(t.skipped)}</span>`:t.kept?'<span class="pill p-good">Kept</span>':'<span class="muted">Not kept</span>'}</td></tr>`).join('');
+ const H=E.holdout||{};if(H.baseline&&H.selected)document.getElementById('exphold').textContent=`Holdout check on ${H.season}, a season never used for tuning: baseline margin MAE ${fmt(H.baseline.margin)} vs selected features ${fmt(H.selected.margin)}; total MAE ${fmt(H.baseline.total)} vs ${fmt(H.selected.total)}.`;
+}
 const S=B.segments||{};const names={margin_by_week:'Margin by week',margin_by_matchup:'Margin by matchup',margin_by_fav_size:'Margin by projected favorite size',total_by_week:'Total by week',total_by_matchup:'Total by matchup'};
 document.getElementById('seg').innerHTML=Object.entries(names).filter(([k])=>S[k]).map(([k,n])=>`<h4 class="sub" style="margin:14px 0 6px">${n}</h4><div class="tbl"><table><thead><tr><th>Group</th><th>Games</th><th>Bias</th><th>MAE</th></tr></thead><tbody>${S[k].map(r=>`<tr><td>${r.group}</td><td>${r.n}</td><td class="${r.flag?'flag':''}">${sgn(r.bias)}</td><td>${fmt(r.mae)}</td></tr>`).join('')}</tbody></table></div>`).join('');
 const pill=v=>v?`<span class="pill ${v==='win'?'p-good':v==='loss'?'p-bad':'p-acc'}">${v}</span>`:'<span class="muted">—</span>';

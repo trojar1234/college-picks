@@ -44,8 +44,9 @@ def fit(rows, ycol, prior, mu0, hfa0, lam, default=(0.0, 0.0), fcs=frozenset(), 
         X[:, GO] = of
         X[:, GD] = df
         y = rows[ycol].to_numpy(dtype=float)
-        A += X.T @ X
-        b += X.T @ y
+        w = rows["w"].to_numpy(dtype=float) if "w" in rows else np.ones(m)
+        A += (X * w[:, None]).T @ X
+        b += (X * w[:, None]).T @ y
     b0 = np.zeros(k)
     b0[0], b0[HI], b0[GO], b0[GD] = mu0, hfa0, g0[0], g0[1]
     for t, i in idx.items():
@@ -106,8 +107,12 @@ def _ret(ret, t, rmean):
     return (v if v == v else rmean) - rmean
 
 
-def prior_features(prev, talent, ret):
-    """Feature rows per team for building next season's prior (prev = absolute ratings)."""
+EXTRA = ["qbrec", "olrec", "portal", "hc", "defret"]
+
+
+def prior_features(prev, talent, ret, extra=None):
+    """Feature rows per team for building next season's prior (prev = absolute ratings).
+    extra: optional {team: {qbrec, olrec, portal, hc, defret}} for richer priors."""
     tz = _z(talent)
     rv = [x for x in ret.values() if x == x]
     rmean = float(np.mean(rv)) if rv else 0.5
@@ -118,22 +123,43 @@ def prior_features(prev, talent, ret):
         for m in METRICS:
             for side in ("off", "deff"):
                 r[f"p_{m}_{side}"] = prev[m][side].get(t, np.nan)
+        ex = (extra or {}).get(t, {})
+        for k in EXTRA:
+            r[f"ex_{k}"] = ex.get(k, np.nan)
         rows.append(r)
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    # Standardize the extras (z-scores; coaching change stays 0/1), missing -> average.
+    for k in EXTRA:
+        c = df[f"ex_{k}"].astype(float)
+        if k != "hc" and c.notna().sum() > 5 and c.std() > 0:
+            c = (c - c.mean()) / c.std()
+        df[f"ex_{k}"] = c.fillna(0.0)
+    return df
 
 
-def _cols(m, side):
+def _cols(m, side, extra=False):
     base = f"p_{m}_{side}"
     if m == "pace":
         return [base]
-    return [base, f"{base}_ret", "tal"] if side == "off" else [base, "tal"]
+    cols = [base, f"{base}_ret", "tal"] if side == "off" else [base, "tal"]
+    if extra:
+        if side == "off":
+            cols += ["ex_qbrec", "ex_olrec", "ex_portal", f"{base}_hc"]
+        else:
+            cols += [f"{base}_defret", "ex_portal", f"{base}_hc"]
+    return cols
 
 
-def _design(df, m, side):
+def _design(df, m, side, extra=False):
     df = df.copy()
     base = f"p_{m}_{side}"
     df[f"{base}_ret"] = df[base] * df["ret"]
-    return np.column_stack([np.ones(len(df)), df[_cols(m, side)].to_numpy(dtype=float)])
+    for k in EXTRA:
+        if f"ex_{k}" not in df:
+            df[f"ex_{k}"] = 0.0
+    df[f"{base}_hc"] = df[base] * df["ex_hc"]
+    df[f"{base}_defret"] = df[base] * df["ex_defret"]
+    return np.column_stack([np.ones(len(df)), df[_cols(m, side, extra)].to_numpy(dtype=float)])
 
 
 def _usable(f):
@@ -141,7 +167,7 @@ def _usable(f):
     return f[f.has_prev & f[need].notna().all(axis=1)]
 
 
-def fit_prior_coefs(pairs):
+def fit_prior_coefs(pairs, extra=False):
     """pairs: list of (features for season s, absolute final ratings of season s)."""
     coefs = {}
     for m in METRICS:
@@ -152,7 +178,7 @@ def fit_prior_coefs(pairs):
                 f["y"] = f.team.map(final[m][side])
                 f = f.dropna(subset=["y"])
                 if len(f):
-                    Xs.append(_design(f, m, side))
+                    Xs.append(_design(f, m, side, extra))
                     ys.append(f["y"].to_numpy())
             if not Xs or sum(len(y) for y in ys) < 150:
                 coefs[(m, side)] = None
@@ -164,7 +190,7 @@ def fit_prior_coefs(pairs):
     return coefs
 
 
-def make_prior(prev, feats, coefs, tiers_prev):
+def make_prior(prev, feats, coefs, tiers_prev, extra=False):
     """Returns ({metric: {team: (off, def)}}, {metric: default (off, def)})."""
     def tier_mean(m, side):
         vals = [v for t, v in prev[m][side].items() if tiers_prev.get(t) == "FCS"]
@@ -175,7 +201,7 @@ def make_prior(prev, feats, coefs, tiers_prev):
     for m in METRICS:
         for side in ("off", "deff"):
             c = coefs.get((m, side))
-            X = _design(has, m, side)
+            X = _design(has, m, side, extra)
             pred = X @ c if c is not None else X[:, 1] * (0.5 if m == "pace" else 0.6)
             col = f"pr_{m}_{side}"
             f[col] = np.nan

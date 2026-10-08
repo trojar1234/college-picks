@@ -61,7 +61,7 @@ def games_table(raw, season):
 
 def adv_table(raw, games):
     """One row per team per game: offensive PPA (EPA/play) and play count."""
-    hmap = games.set_index("game_id")[["home", "neutral"]].to_dict("index")
+    hmap = games.set_index("game_id")[["home", "neutral", "start"]].to_dict("index")
     rows = []
     for d in raw:
         gid = _g(d, "gameId", "game_id")
@@ -86,6 +86,7 @@ def adv_table(raw, games):
                 drives=_num(_g(off, "drives")),
                 sr=_num(_g(off, "successRate", "success_rate")),
                 h=h,
+                start=info["start"],
             )
         )
     return pd.DataFrame(rows)
