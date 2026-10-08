@@ -120,7 +120,8 @@ __BODY__
 <script>
 const D=window.DATA;
 const fmt=x=>x==null?'—':(Math.round(x*10)/10).toString();
-const sgn=x=>x==null?'—':(x>0?'+':x<0?'−':'')+Math.abs(Math.round(x*10)/10);
+const sgn=x=>{if(x==null)return '—';const r=Math.round(x*10)/10;return r===0?'0':(r>0?'+':'−')+Math.abs(r);};
+const f2=x=>x==null?'—':x.toFixed(2);
 const pct=x=>x==null?'—':Math.round(x*100)+'%';
 const pct1=x=>x==null?'—':(Math.round(x*1000)/10)+'%';
 const epa=x=>x==null?'—':(x>0?'+':x<0?'−':'')+Math.abs(x).toFixed(3);
@@ -156,7 +157,7 @@ REPORT_BODY = NAV("r") + r"""
 <p class="sub" id="expsub"></p>
 <div class="tbl"><table><thead><tr><th>Feature</th><th>Margin error change</th><th>Total error change</th><th>Result</th></tr></thead><tbody id="exp"></tbody></table></div>
 <p class="sub" id="exphold"></p>
-<p class="sub">Tested on 2018–2024 and removed because they didn't improve accuracy: weather at kickoff, travel and rest, recency weighting, run/pass matchups, fitting the margin directly, and recruiting/portal/coaching/defensive-returning preseason data. QB changes are shown as alerts instead of being a model input.</p>
+<p class="sub">Tested earlier and removed because they didn't improve accuracy: weather at kickoff, travel and rest, recency weighting, run/pass matchups, fitting the margin directly, a diminishing-returns margin rating, per-team home field, coaching changes, turnover-based preseason weighting, and star-rating-based recruiting/portal data.</p>
 <h2>Calibration</h2>
 <p class="sub">When the model gives the home team X% to cover, how often do they?</p>
 <div class="tbl"><table><thead><tr><th>Model said</th><th>Average</th><th>Actually covered</th><th>Games</th></tr></thead><tbody id="cal"></tbody></table></div>
@@ -278,9 +279,9 @@ document.getElementById('shrink').textContent=B.shrink_spread!=null?`Learned fro
 const E=R.experiments||{};
 if(E.tests){
  const ch=v=>v==null?'—':`<span class="${v>0?'up':v<0?'down':''}">${v>0?'−':v<0?'+':''}${Math.abs(v).toFixed(3)}</span>`;
- document.getElementById('expsub').textContent=`Each feature is tested on ${E.tune_seasons?E.tune_seasons.join('–'):'the tuning seasons'} against the baseline (margin MAE ${fmt(E.baseline&&E.baseline.margin)}, total MAE ${fmt(E.baseline&&E.baseline.total)}). It's kept only if it lowers error by at least 0.05 points without hurting the other measure. Green means less error. Last tested ${new Date(E.run).toLocaleDateString()}.`;
+ document.getElementById('expsub').textContent=`Each feature is tested on ${E.tune_seasons?E.tune_seasons.join('–'):'the tuning seasons'} against the core model (margin MAE ${f2(E.baseline&&E.baseline.margin)}, total MAE ${f2(E.baseline&&E.baseline.total)}). It's kept only if it lowers error by at least 0.05 points without hurting the other measure. Green means less error. Last tested ${new Date(E.run).toLocaleDateString()}.`;
  document.getElementById('exp').innerHTML=E.tests.map(t=>`<tr><td>${esc(t.feature)}</td><td>${t.skipped?'—':ch(t.gain_margin)}</td><td>${t.skipped?'—':ch(t.gain_total)}</td><td>${t.skipped?`<span class="muted">Not tested: ${esc(t.skipped)}</span>`:t.kept?'<span class="pill p-good">Kept</span>':'<span class="muted">Not kept</span>'}</td></tr>`).join('');
- const H=E.holdout||{};if(H.baseline&&H.selected)document.getElementById('exphold').textContent=`Holdout check on ${H.season}, a season never used for tuning: baseline margin MAE ${fmt(H.baseline.margin)} vs selected features ${fmt(H.selected.margin)}; total MAE ${fmt(H.baseline.total)} vs ${fmt(H.selected.total)}.`;
+ const H=E.holdout||{};if(H.baseline&&H.selected)document.getElementById('exphold').textContent=`Holdout check on ${H.season}, a season never used for tuning: core model margin MAE ${f2(H.baseline.margin)} vs with kept features ${f2(H.selected.margin)}; total MAE ${f2(H.baseline.total)} vs ${f2(H.selected.total)}.`;
 }
 const S=B.segments||{};const names={margin_by_week:'Margin by week',margin_by_matchup:'Margin by matchup',margin_by_fav_size:'Margin by projected favorite size',total_by_week:'Total by week',total_by_matchup:'Total by matchup'};
 document.getElementById('seg').innerHTML=Object.entries(names).filter(([k])=>S[k]).map(([k,n])=>`<h4 class="sub" style="margin:14px 0 6px">${n}</h4><div class="tbl"><table><thead><tr><th>Group</th><th>Games</th><th>Bias</th><th>MAE</th></tr></thead><tbody>${S[k].map(r=>`<tr><td>${r.group}</td><td>${r.n}</td><td class="${r.flag?'flag':''}">${sgn(r.bias)}</td><td>${fmt(r.mae)}</td></tr>`).join('')}</tbody></table></div>`).join('');

@@ -117,10 +117,14 @@ def _ret(ret, t, rmean):
     return (v if v == v else rmean) - rmean
 
 
-def prior_features(prev, talent, ret, hist=None):
+PX = ("qbd", "qbl", "dret", "oret")  # player-level preseason features (see cfb_players.py)
+
+
+def prior_features(prev, talent, ret, hist=None, players=None):
     """Feature rows per team for building next season's prior (prev = absolute ratings):
     last season's ratings, the average of the last four seasons (program history, as
-    FPI and SP+ use), returning production, and the roster talent composite."""
+    FPI and SP+ use), returning production, the roster talent composite, and optional
+    player-level information (QB quality, returning production counting transfers)."""
     tz = _z(talent)
     rv = [x for x in ret.values() if x == x]
     rmean = float(np.mean(rv)) if rv else 0.5
@@ -133,19 +137,36 @@ def prior_features(prev, talent, ret, hist=None):
             for side in ("off", "deff"):
                 r[f"p_{m}_{side}"] = prev[m][side].get(t, np.nan)
                 r[f"h_{m}_{side}"] = (hist or {}).get(m, {}).get(side, {}).get(t, np.nan)
+        px = (players or {}).get(t, {})
+        for k in PX:
+            r[k] = px.get(k, np.nan)
         rows.append(r)
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    for k in PX:
+        if k not in df:
+            df[k] = np.nan
+        df[k] = df[k].astype(float)
+    for k in ("qbl", "dret", "oret"):  # center so "average" is 0
+        df[k] = df[k] - df[k].mean()
+    return df
 
 
-def _cols(m, side):
+def _cols(m, side, use=()):
     base = f"p_{m}_{side}"
     if m in NEUTRAL:
         return [base]
     cols = [base, f"{base}_ret", "tal"] if side == "off" else [base, "tal"]
-    return cols + ["tal_na", f"h_{m}_{side}"]
+    cols += ["tal_na", f"h_{m}_{side}"]
+    if side == "off" and "qb" in use:
+        cols += ["qbd", "qbl"]
+    if side == "off" and "off" in use:
+        cols += [f"{base}_oret", "oret"]
+    if side == "deff" and "def" in use:
+        cols += [f"{base}_dret", "dret"]
+    return cols
 
 
-def _design(df, m, side):
+def _design(df, m, side, use=()):
     df = df.copy()
     base = f"p_{m}_{side}"
     df[f"{base}_ret"] = (df[base] * df["ret"]).fillna(0.0)
@@ -155,8 +176,12 @@ def _design(df, m, side):
     df[h] = df[h].fillna(df[base]).fillna(0.0)
     if "tal_na" not in df:
         df["tal_na"] = 0.0
+    for k in PX:
+        df[k] = df[k].astype(float).fillna(0.0) if k in df else 0.0
     df[base] = df[base].fillna(0.0)
-    return np.column_stack([np.ones(len(df)), df[_cols(m, side)].to_numpy(dtype=float)])
+    df[f"{base}_dret"] = df[base] * df["dret"]
+    df[f"{base}_oret"] = df[base] * df["oret"]
+    return np.column_stack([np.ones(len(df)), df[_cols(m, side, use)].to_numpy(dtype=float)])
 
 
 def _usable(f):
@@ -164,7 +189,7 @@ def _usable(f):
     return f[f.has_prev & f[need].notna().all(axis=1)]
 
 
-def fit_prior_coefs(pairs):
+def fit_prior_coefs(pairs, use=()):
     """pairs: list of (features for season s, absolute final ratings of season s)."""
     coefs = {}
     for m in METRICS:
@@ -175,7 +200,7 @@ def fit_prior_coefs(pairs):
                 f["y"] = f.team.map(final[m][side])
                 f = f.dropna(subset=["y"])
                 if len(f):
-                    Xs.append(_design(f, m, side))
+                    Xs.append(_design(f, m, side, use))
                     ys.append(f["y"].to_numpy())
             if not Xs or sum(len(y) for y in ys) < 150:
                 coefs[(m, side)] = None
@@ -187,7 +212,7 @@ def fit_prior_coefs(pairs):
     return coefs
 
 
-def make_prior(prev, feats, coefs, tiers_prev):
+def make_prior(prev, feats, coefs, tiers_prev, use=()):
     """Returns ({metric: {team: (off, def)}}, {metric: default (off, def)})."""
     def tier_mean(m, side):
         vals = [v for t, v in prev[m][side].items() if tiers_prev.get(t) == "FCS" and v == v]
@@ -198,7 +223,7 @@ def make_prior(prev, feats, coefs, tiers_prev):
     for m in METRICS:
         for side in ("off", "deff"):
             c = coefs.get((m, side))
-            X = _design(has, m, side)
+            X = _design(has, m, side, use)
             pred = X @ c if c is not None else X[:, 1] * (0.5 if m in NEUTRAL else 0.6)
             col = f"pr_{m}_{side}"
             f[col] = np.nan

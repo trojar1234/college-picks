@@ -75,9 +75,12 @@ def _history(finals, s, years=4):
     return out
 
 
-def run_chain(SEASONS, lam, backtest=True):
+def run_chain(SEASONS, lam, backtest=True, players=None, use=()):
     """Walk through seasons in order. Returns final ratings per season, the
-    walk-forward backtest rows, and the context (priors) used per season."""
+    walk-forward backtest rows, and the context (priors) used per season.
+    players: {season: {team: {...}}} player-level preseason features; use: which of
+    them to include ("qb", "def", "off")."""
+    use = tuple(use or ())
     seasons = sorted(SEASONS)
     first = seasons[0]
     finals, pairs, bt, info = {}, [], [], {}
@@ -95,8 +98,9 @@ def run_chain(SEASONS, lam, backtest=True):
                                    default=(0.0, 0.0), g0=FIRST_G.get(m, (0.0, 0.0)))
         else:
             prev = finals[s - 1]
-            feats = Rt.prior_features(prev["abs"], S["talent"], S["ret"], _history(finals, s))
-            priors, defaults = Rt.make_prior(prev["abs"], feats, Rt.fit_prior_coefs(pairs), prev["tiers"])
+            feats = Rt.prior_features(prev["abs"], S["talent"], S["ret"], _history(finals, s),
+                                      (players or {}).get(s) if use else None)
+            priors, defaults = Rt.make_prior(prev["abs"], feats, Rt.fit_prior_coefs(pairs, use), prev["tiers"], use)
             for m in Rt.METRICS:
                 ctx["m"][m] = dict(prior=priors[m], mu0=prev[m]["mu"], hfa0=prev[m]["hfa"],
                                    default=defaults[m], g0=prev[m]["g"])
@@ -215,12 +219,12 @@ def score(wf, seasons):
     )
 
 
-def tune(SEASONS, grid, tune_seasons, groups=None):
+def tune(SEASONS, grid, tune_seasons, groups=None, players=None, use=()):
     """Pick the prior strength with the lowest margin error on the tuning seasons."""
     groups = groups or BASE_GROUPS
     results = {}
     for lam in grid:
-        _, bt, _ = run_chain(SEASONS, lam)
+        _, bt, _ = run_chain(SEASONS, lam, players=players, use=use)
         sc = score(walk_forward(bt, min(tune_seasons), groups), tune_seasons)
         if sc["margin"] is None:
             continue
@@ -241,36 +245,63 @@ def _better(sc, base):
     return (dm >= MIN_GAIN or dt >= MIN_GAIN) and dm > -0.01 and dt > -0.01, round(dm, 3), round(dt, 3)
 
 
-def select_features(SEASONS, lam, tune_seasons, holdout, available):
-    """Test each optional group against the core model on the tuning seasons only,
+PLAYER_OPTIONS = {
+    "players": (("qb", "def"), "Player-level preseason data: QB quality (transfers included) and defensive returning production counting transfers"),
+    "players_off": (("qb", "def", "off"), "Same, plus offensive returning production counting transfers (player EPA)"),
+}
+
+
+def select_features(SEASONS, lam, tune_seasons, holdout, available, players=None):
+    """Test each optional input against the core model on the tuning seasons only,
     and report the result once on the untouched holdout season."""
     start = min(tune_seasons)
-    _, bt, _ = run_chain(SEASONS, lam)
-    wf0 = walk_forward(bt, start, BASE_GROUPS)
+    _, bt0, _ = run_chain(SEASONS, lam)
+    wf0 = walk_forward(bt0, start, BASE_GROUPS)
     base = score(wf0, tune_seasons)
     print(f"  core model: margin {base['margin']}  total {base['total']}")
-    chosen, log = list(BASE_GROUPS), []
+    log, use, bt, ref = [], (), bt0, base
+
+    # 1) player-level preseason data (changes the ratings, so each option re-runs the chain)
+    best = None
+    for key, (u, name) in PLAYER_OPTIONS.items():
+        if key not in available:
+            log.append(dict(feature=name, group=key, skipped=available.get(f"_why_{key}", "data not available yet")))
+            continue
+        _, b, _ = run_chain(SEASONS, lam, players=players, use=u)
+        sc = score(walk_forward(b, start, BASE_GROUPS), tune_seasons)
+        ok, dm, dt = _better(sc, base)
+        log.append(dict(feature=name, group=key, margin=sc["margin"], total=sc["total"],
+                        gain_margin=dm, gain_total=dt, kept=False, ok=ok))
+        if ok and (best is None or sc["margin"] < best[1]["margin"]):
+            best = (u, sc, b, len(log) - 1)
+    if best:
+        use, ref, bt = best[0], best[1], best[2]
+        log[best[3]]["kept"] = True
+
+    # 2) optional conversion inputs, tested on top of whatever was kept above
+    chosen = list(BASE_GROUPS)
     for grp, name in OPTIONAL.items():
         if grp not in available:
             log.append(dict(feature=name, group=grp, skipped=available.get(f"_why_{grp}", "data not available yet")))
             continue
         sc = score(walk_forward(bt, start, BASE_GROUPS + [grp]), tune_seasons)
-        ok, dm, dt = _better(sc, base)
+        ok, dm, dt = _better(sc, ref)
         log.append(dict(feature=name, group=grp, margin=sc["margin"], total=sc["total"],
                         gain_margin=dm, gain_total=dt, kept=ok, ok=ok))
         if ok:
             chosen.append(grp)
     wfc = walk_forward(bt, start, chosen)
-    return dict(groups=chosen), dict(baseline=base, combined=score(wfc, tune_seasons),
-                                     holdout=dict(season=holdout, baseline=score(wf0, [holdout]),
-                                                  selected=score(wfc, [holdout])),
-                                     tests=log)
+    return dict(groups=chosen, players=list(use)), dict(
+        baseline=base, combined=score(wfc, tune_seasons),
+        holdout=dict(season=holdout, baseline=score(wf0, [holdout]), selected=score(wfc, [holdout])),
+        tests=log)
 
 
-def fit_state(SEASONS, lam, current_season, features=None):
+def fit_state(SEASONS, lam, current_season, features=None, players=None):
     """Fit everything needed for live predictions. Run every update."""
     groups = (features or {}).get("groups") or BASE_GROUPS
-    finals, bt, info = run_chain(SEASONS, lam)
+    use = tuple((features or {}).get("players") or ())
+    finals, bt, info = run_chain(SEASONS, lam, players=players, use=use)
     seasons = sorted(SEASONS)
     wf = walk_forward(bt, seasons[0] + 2, groups)
     conv = fit_conv(side_frame(bt), groups)

@@ -14,6 +14,7 @@ import pandas as pd
 import cfb_config as C
 import cfb_data as Dt
 import cfb_extra as extra
+import cfb_players as players
 import cfb_fetch as fetch
 import cfb_lines as lines
 import cfb_model as model
@@ -23,7 +24,7 @@ import cfb_site as site
 
 STATE = C.DATA / "model_state.json"
 EXPERIMENTS = C.DATA / "experiments.json"
-MODEL_VERSION = 4  # bump when the model's structure changes, to force re-tuning and re-testing
+MODEL_VERSION = 5  # bump when the model's structure changes, to force re-tuning and re-testing
 
 
 def current_season(now):
@@ -51,7 +52,7 @@ def main(mode):
 
     # Extra data (downloads capped; line-only runs use what's cached).
     if not full:
-        extra.CFBD_BUDGET, extra.PBP_BUDGET = 0, 0
+        extra.CFBD_BUDGET, extra.PBP_BUDGET, players.PLAYER_BUDGET = 0, 0, 0
     print("Preparing extra data ...")
     qb_ctx, available, xstatus, pbp = extra.build(SEASONS, season, tune_seasons[0])
     # Attach play-by-play metrics to each team-game row (NaN where not downloaded yet).
@@ -60,6 +61,29 @@ def main(mode):
         if len(a):
             a = a.drop(columns=[c for c in ("ppd", "fin", "fpos") if c in a]).merge(pbp, on=["game_id", "off"], how="left")
             S["adv"] = a
+    # Player-level preseason data (QB quality, returning production counting transfers).
+    pseasons = list(range(C.FIRST_SEASON + 1, season + 1))
+    pmissing = players.ensure_data(pseasons, season, C.FIRST_SEASON + 1)
+    pfeat, pstat, pcount = players.build(pseasons)
+    need = len(pseasons) - 1  # every season but the newest must have data for a fair test
+    def _short(lst):
+        return ", ".join(lst[:4]) + (" ..." if len(lst) > 4 else "")
+    xstatus["players"] = pstat
+    if pmissing["core"]:
+        available["_why_players"] = f"partial: still downloading {_short(pmissing['core'])}"
+    elif pcount["qb"] >= need - 1 and pcount["defense"] >= need:
+        available["players"] = True
+    else:
+        available["_why_players"] = "not enough seasons of QB/defense data"
+    if pmissing["off"]:
+        available["_why_players_off"] = f"partial: still downloading {_short(pmissing['off'])}"
+    elif "players" in available and pcount["offense"] >= need:
+        available["players_off"] = True
+    else:
+        available["_why_players_off"] = available.get("_why_players") or "player EPA data not available"
+    for k in ("players", "players_off"):
+        if f"_why_{k}" in available:
+            xstatus[k] = available[f"_why_{k}"]
     for k, v in xstatus.items():
         print(f"  {k}: {v}")
     avail_key = sorted(k for k in available if not k.startswith("_"))
@@ -74,7 +98,8 @@ def main(mode):
         print("Tuning prior strength on the tuning seasons ...")
         prev = (state_old.get("features") or {}) if not new_version else {}
         lam, tune_res = model.tune(SEASONS, C.LAMBDA_GRID, tune_seasons,
-                                   [g for g in prev.get("groups", model.BASE_GROUPS) if g in model.BASE_GROUPS or g in available])
+                                   [g for g in prev.get("groups", model.BASE_GROUPS) if g in model.BASE_GROUPS or g in available],
+                                   pfeat, tuple(prev.get("players") or ()))
         tuned_at, retuned = now, True
     else:
         tune_res = state_old.get("tune_results", {})
@@ -83,18 +108,21 @@ def main(mode):
     features = None if new_version else state_old.get("features")
     if full and (features is None or retuned or exp_old.get("available") != avail_key):
         print("Testing optional features ...")
-        features, results = model.select_features(SEASONS, lam, tune_seasons, holdout, available)
+        features, results = model.select_features(SEASONS, lam, tune_seasons, holdout, available, pfeat)
         exp_old = dict(version=MODEL_VERSION, run=now.isoformat(), available=avail_key, status=xstatus,
                        chosen=features, tune_seasons=[tune_seasons[0], tune_seasons[-1]], **results)
         EXPERIMENTS.write_text(json.dumps(exp_old, indent=1, default=str))
     features = features or {}
     groups = [g for g in features.get("groups", []) if g in model.BASE_GROUPS or g in available]
-    features = dict(groups=groups or list(model.BASE_GROUPS))
-    print("Model inputs in use:", features["groups"])
+    use = list(features.get("players") or [])
+    if use and not ("players_off" in available if "off" in use else "players" in available):
+        use = []  # data for the chosen player option is no longer available
+    features = dict(groups=groups or list(model.BASE_GROUPS), players=use)
+    print("Model inputs in use:", features["groups"], "player data:", use or "none")
 
     # Learning step 3: refit ratings, points conversion, and simulator variance on all data.
     print(f"Fitting model (prior strength {lam}) ...")
-    state, finals, bt, wf, info = model.fit_state(SEASONS, lam, season, features)
+    state, finals, bt, wf, info = model.fit_state(SEASONS, lam, season, features, pfeat)
     state.update(lam=lam, tuned_at=tuned_at.isoformat(), tune_results={str(k): v for k, v in tune_res.items()},
                  updated=now.isoformat(), features=features)
     STATE.write_text(json.dumps(state, indent=1))
