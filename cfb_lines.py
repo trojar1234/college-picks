@@ -18,6 +18,7 @@ ALIASES = {
     "louisiana monroe": "ul monroe",
     "ul lafayette": "louisiana",
     "louisiana lafayette": "louisiana",
+    "umass": "massachusetts",
     "massachusetts": "umass",
     "connecticut": "uconn",
     "appalachian state": "app state",
