@@ -100,8 +100,10 @@ def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_r
     for side, team in (("h", r.home), ("a", r.away)):
         d = gx.get(f"qbd_{side}")
         if d is not None and d == d and abs(d) > 0.05:
-            notes.append(f"{team}: expected starter {gx.get(f'qb_exp_{side}') or 'backup'} "
-                         f"({'+' if d > 0 else ''}{d:.1f} yds/att vs regular starter)")
+            reg = gx.get(f"qb_reg_{side}")
+            notes.append(f"{team}: {gx.get(f'qb_exp_{side}') or 'a backup'} started last game"
+                         f"{f' instead of {reg}' if reg else ' instead of the usual starter'}"
+                         f" ({abs(d):.1f} yds/att {'better' if d > 0 else 'worse'} career)")
             low.append("QB change")
     for team, side in ((r.home, "h"), (r.away, "a")):
         if team in ovr:

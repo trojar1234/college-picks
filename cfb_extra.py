@@ -137,6 +137,7 @@ def qb_deltas(all_games, qb):
             reg = max(sa, key=sa.get) if sa else None
             row[f"qbd_{side}"] = 0.0 if (exp is None or reg is None or exp == reg) else quality(exp) - quality(reg)
             row[f"qb_exp_{side}"] = names.get(exp, exp)
+            row[f"qb_reg_{side}"] = names.get(reg, reg)
         out.append(row)
         # After the game: update careers and who started (only for completed games).
         if r.completed and r.game_id in qb_by_game:
