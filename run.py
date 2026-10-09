@@ -55,6 +55,7 @@ def main(mode):
         extra.CFBD_BUDGET, extra.PBP_BUDGET, players.PLAYER_BUDGET = 0, 0, 0
     print("Preparing extra data ...")
     qb_ctx, available, xstatus, pbp = extra.build(SEASONS, season, tune_seasons[0])
+    available["matchup"] = True  # built from the schedule, always available
     # Attach play-by-play metrics to each team-game row (NaN where not downloaded yet).
     for y, S in SEASONS.items():
         a = S["adv"]

@@ -92,7 +92,8 @@ def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_r
     conv = np.array(state["conv"])
     groups = state.get("groups", [])
     gx = dict(gctx_row or {})
-    bt1 = pd.DataFrame([dict(season=r.season, game_id=r.game_id, **f)])
+    bt1 = pd.DataFrame([dict(season=r.season, game_id=r.game_id, home_tier=tiers.get(r.home, "FCS"),
+                             away_tier=tiers.get(r.away, "FCS"), **f)])
     pr = model.predict_bt(bt1, conv, groups)
     eh, ea = float(pr.pred_h.iloc[0]), float(pr.pred_a.iloc[0])
     notes, low = [], []

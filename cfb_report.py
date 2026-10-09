@@ -144,6 +144,10 @@ def backtest(wf, SEASONS):
             ats_all=_rec(sa.res), ou_all=_rec(ta.res),
         ),
         line_move=move,
+        by_phase=[dict(label=lab, ats_open=_rec(so[(so.wk >= lo) & (so.wk <= hi)].res),
+                       ou_open=_rec(to[(to.wk >= lo) & (to.wk <= hi)].res))
+                  for lab, lo, hi in (("Weeks 1–4", 0, 4), ("Weeks 5–8", 5, 8), ("Weeks 9+", 9, 99))]
+        if "wk" in so and "wk" in to else [],
         calibration=cal,
         segments=segments(d),
     )

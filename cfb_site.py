@@ -92,6 +92,7 @@ def build(season, wk, slate, store, rep, final, now, unmatched, state=None):
     ver = now.strftime("%Y%m%d%H%M%S")
     (C.SITE / "index.html").write_text(_page(INDEX_BODY, INDEX_JS, "Projections", ver))
     (C.SITE / "report.html").write_text(_page(REPORT_BODY, REPORT_JS, "Report card", ver))
+    (C.SITE / "ratings.html").write_text(_page(RATINGS_BODY, RATINGS_JS, "Team ratings", ver))
     (C.SITE / "robots.txt").write_text("User-agent: *\nDisallow: /\n")
     (C.SITE / ".nojekyll").write_text("")
 
@@ -129,11 +130,13 @@ nav a.on{color:var(--text);font-weight:600}
 .sitem:hover .t{text-decoration:underline}
 tr.day td{background:var(--soft);font-size:12px;font-weight:600;color:var(--muted);padding:7px 12px;letter-spacing:.02em}
 .pick .t.weak{color:var(--muted)}
+.summary p.gl{margin:6px 0;font-size:14px;line-height:1.5}
 tr.g.flash td{background:var(--accbg)}.card .v .when{display:block;font-size:12px}
 .pick{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:2px 0}.pick .t{font-size:13px}.pick .e{font-size:12px;color:var(--faint)}
 .bet{font-weight:600}.notes{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.4}
 .bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
 .chip{font:inherit;font-size:13px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer}
+.chip:is(select){padding-right:8px}
 .chip.on{background:var(--accbg);color:var(--acc);border-color:transparent}
 input[type=search]{font:inherit;font-size:14px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);min-width:180px;flex:1;max-width:260px}
 .tbl{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
@@ -197,7 +200,7 @@ document.getElementById('foot').innerHTML=`Updated ${new Date(D.generated).toLoc
 </body></html>"""
 
 NAV = lambda on: f"""<header><div><h1>College football model</h1><div class="sub" id="sub"></div></div>
-<nav><a href="index.html" class="{'on' if on=='p' else ''}">Projections</a><a href="report.html" class="{'on' if on=='r' else ''}">Report card</a></nav></header>"""
+<nav><a href="index.html" class="{'on' if on=='p' else ''}">Projections</a><a href="ratings.html" class="{'on' if on=='t' else ''}">Team ratings</a><a href="report.html" class="{'on' if on=='r' else ''}">Report card</a></nav></header>"""
 
 INDEX_BODY = NAV("p") + r"""
 <div class="cards" id="cards"></div>
@@ -211,6 +214,7 @@ INDEX_BODY = NAV("p") + r"""
 """.replace("</div>\n<p", "</div>\n<p", 1) + "<script>window.PAGE='index'</script>"
 
 REPORT_BODY = NAV("r") + r"""
+<div class="summary" id="glance"></div>
 <h2>This season (live, graded at kickoff)</h2>
 <div class="cards" id="live"></div>
 <h2>Backtest by season</h2>
@@ -232,9 +236,6 @@ REPORT_BODY = NAV("r") + r"""
 <h2>Recent results</h2>
 <p class="sub">Scores are away–home. Every game shows the model's spread and total picks against the closing line; <span class="pill p-good">BET</span> marks flagged bets, graded at the line when they were first flagged.</p>
 <div class="tbl"><table><thead><tr><th>Game</th><th>Final</th><th class="hide-sm">Projected</th><th>Spread pick</th><th>Total pick</th><th class="hide-sm">CLV</th></tr></thead><tbody id="hist"></tbody></table></div>
-<h2>Team ratings</h2>
-<p class="sub">Ranked by the model's power rating: projected margin in points against an average FBS team on a neutral field, using the same ratings and formula as the game predictions. EPA columns are opponent-adjusted expected points per play (garbage time excluded); lower defensive EPA is better.</p>
-<div class="tbl"><table><thead><tr><th>#</th><th>Team</th><th>Rating</th><th class="hide-sm">Proj. score vs avg</th><th>Off EPA (rank)</th><th>Def EPA (rank)</th><th class="hide-sm">Plays/game</th></tr></thead><tbody id="teams"></tbody></table></div>
 <h2>Model settings</h2><div class="sub" id="settings"></div>
 <script>window.PAGE='report'</script>
 """
@@ -253,7 +254,8 @@ const F=[['all','All games'],['bets','Bets'],['edges','All flags'],['P4','Power 
 let cur='all',hideLow=false,q='';
 const fb=document.getElementById('filters');
 fb.innerHTML=F.map(([k,l])=>`<button class="chip${k==='all'?' on':''}" data-k="${k}">${l}</button>`).join('')+
-`<button class="chip" id="low">Hide low confidence</button><input type="search" id="q" placeholder="Find a team">`;
+`<button class="chip" id="low">Hide low confidence</button><select id="sort" class="chip"><option value="time">Sort: kickoff</option><option value="edge">Sort: biggest edge</option></select><input type="search" id="q" placeholder="Find a team">`;
+let sortBy='time';document.getElementById('sort').onchange=e=>{sortBy=e.target.value;draw();};
 fb.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{cur=b.dataset.k;fb.querySelectorAll('[data-k]').forEach(x=>x.classList.toggle('on',x===b));draw();});
 document.getElementById('low').onclick=e=>{hideLow=!hideLow;e.target.classList.toggle('on',hideLow);draw();};
 document.getElementById('q').oninput=e=>{q=e.target.value.toLowerCase();draw();};
@@ -293,7 +295,7 @@ function picksCell(g){
   if(m.spread!=null&&m.spread!==sb.line)sp.now=sl(home?m.spread:-m.spread);sSt='bet';}
  if(tb){tp={side:tb.side==='over'?'Over':'Under',line:tb.line,edge:Math.abs(g.model_total-tb.line),was:Math.abs(tb.model-tb.line)};
   if(m.total!=null&&m.total!==tb.line)tp.now=m.total;tSt='bet';}
- const why=[...((sSt||tSt)?(g.low_conf||[]):[]),...((tSt==='caution'&&(g.total_caution||[]).length)?g.total_caution:[])];
+ const why=[...((sSt||tSt)?(g.low_conf||[]):[]),...((tSt&&(g.total_caution||[]).length)?g.total_caution:[])];
  return pickRow('Spread',sp,sSt)+pickRow('Total',tp,tSt)+(why.length?`<div class="when">${esc([...new Set(why.map(REASON))].join(' · '))}</div>`:'')+
   `<div class="when show-sm">Model ${line(g.home,g.away,g.model_spread)}, ${fmt(g.model_total)} · Line ${line(g.home,g.away,m.spread)}, ${fmt(m.total)}</div>`;}
 function moveCell(g){const m=g.market||{};if(m.open_spread==null||m.spread==null)return '<span class="muted">—</span>';
@@ -317,7 +319,7 @@ function detail(g){
  const likely=(g.likely||[]).map(([a,b,p])=>`<div class="kv"><span>${esc(g.away)} ${b}, ${esc(g.home)} ${a}</span><span>${pct1(p)}</span></div>`).join('');
  const books=(m.books||[]).map(b=>`<div class="kv"><span>${esc(b.book)}</span><span>${line(g.home,g.away,b.spread)} · ${fmt(b.total)}</span></div>`).join('')||'<div class="sub">No sportsbook snapshot yet.</div>';
  const R=g.ratings||{};const wx=g.weather||{};
- const wtxt=wx.dome?'Dome':wx.wind!=null?`${Math.round(wx.temp)}°F · ${Math.round(wx.wind)} mph wind · ${wx.precip>=0.01?fmt(wx.precip)+' in rain':'no rain'}`:null;
+ const wtxt=wx.dome?'Dome':wx.wind!=null?`${Math.round(wx.temp)}°F · ${Math.round(wx.wind)} mph wind · ${wx.precip>=0.01?wx.precip.toFixed(2)+' in rain':'no rain'}`:null;
  const fs=g.spread_bet,ft=g.total_bet;
  return `<div class="dgrid">
  <div><h4>Probabilities</h4>
@@ -353,12 +355,19 @@ function rowHtml(g){
   <td class="c-proj">${proj}</td><td class="hide-sm">${line(g.home,g.away,g.model_spread)}<div class="when">line ${line(g.home,g.away,m.spread)}</div></td>
   <td class="hide-sm">${fmt(g.model_total)}<div class="when">line ${fmt(m.total)}</div></td><td class="hide-sm">${moveCell(g)}</td><td class="c-picks">${picksCell(g)}</td></tr>
   <tr class="detail" id="d${g.game_id}" hidden><td colspan="6">${detail(g)}</td></tr>`;}
+// Largest gap between the model and the line in a game (a bet keeps its flagged line)
+function maxEdge(g){const m=g.market||{};const e=[];
+ if(g.spread_bet)e.push(Math.abs(g.spread_bet.line-g.model_spread));else if(m.spread!=null&&g.model_spread!=null)e.push(Math.abs(m.spread-g.model_spread));
+ if(g.total_bet)e.push(Math.abs(g.model_total-g.total_bet.line));else if(m.total!=null&&g.model_total!=null)e.push(Math.abs(g.model_total-m.total));
+ return e.length?Math.max(...e):-1;}
 function draw(){
  const rows=G.filter(keep);const tb=document.getElementById('rows');
  if(!rows.length){tb.innerHTML='<tr><td colspan="6" class="muted">No games match.</td></tr>';return;}
  // Upcoming games grouped by day, finished games at the bottom
  const up=rows.filter(g=>!g.completed),done=rows.filter(g=>g.completed);
- const groups=[];up.forEach(g=>{const k=day(g.start);if(!groups.length||groups[groups.length-1][0]!==k)groups.push([k,[]]);groups[groups.length-1][1].push(g);});
+ const groups=[];
+ if(sortBy==='edge'){groups.push(['Biggest edge first (spread or total)',[...up].sort((a,b)=>maxEdge(b)-maxEdge(a))]);}
+ else up.forEach(g=>{const k=day(g.start);if(!groups.length||groups[groups.length-1][0]!==k)groups.push([k,[]]);groups[groups.length-1][1].push(g);});
  if(done.length)groups.push(['Final',done]);
  const n=k=>`${k.length} game${k.length===1?'':'s'}`;
  tb.innerHTML=groups.map(([k,gs])=>`<tr class="day"><td colspan="6">${k} · ${n(gs)}</td></tr>`+gs.map(rowHtml).join('')).join('');
@@ -372,7 +381,7 @@ function summary(){
    edge:Math.abs(b.line-g.model_spread),note:[m.spread!=null&&m.spread!==b.line?`line now ${sl(home?m.spread:-m.spread)}`:'',...low.map(REASON)].filter(Boolean).join(' · ')});}
   else if(g.spread_flag&&low.length){const p=spreadPick(g,m.spread,g.model_spread);if(p&&!p.none)items.push({k:'flag',g,txt:`${esc(p.team)} ${sl(p.line)}`,gm,edge:p.edge,note:low.map(REASON).join(' · ')});}
   if(g.total_bet){const b=g.total_bet;items.push({k:'bet',g,txt:`${b.side==='over'?'Over':'Under'} ${b.line}`,gm,edge:Math.abs(g.model_total-b.line),
-   note:[m.total!=null&&m.total!==b.line?`line now ${m.total}`:'',...low.map(REASON)].filter(Boolean).join(' · ')});}
+   note:[m.total!=null&&m.total!==b.line?`line now ${m.total}`:'',...[...low,...(g.total_caution||[])].map(REASON)].filter(Boolean).join(' · ')});}
   else if(g.total_flag&&isLowTotal(g)){const p=totalPick(m.total,g.model_total);if(p&&!p.none)items.push({k:'flag',g,txt:`${p.side} ${p.line}`,gm,edge:p.edge,note:[...new Set([...low,...(g.total_caution||[])].map(REASON))].join(' · ')});}
  });
  const el=document.getElementById('summary');
@@ -429,8 +438,34 @@ document.getElementById('hist').innerHTML=(D.history||[]).slice(0,200).map(p=>{c
    (tp&&!tp.none?`${tp.side} ${tp.line} ${resPill(r.ou_all)}`:'<span class="muted">—</span>');
  return `<tr><td>${esc(p.away)} ${p.neutral?'vs':'@'} <span class="home">${esc(p.home)}</span><div class="when">Week ${p.wk}</div></td><td>${r.away_pts}–${r.home_pts}</td><td class="hide-sm">${projScore(p)||'—'}</td>
  <td>${sCell}</td><td>${tCell}</td><td class="hide-sm">${clv.length?clv.map(sgn).join(', '):'—'}</td></tr>`;}).join('')||'<tr><td colspan="6" class="muted">No graded games yet.</td></tr>';
-document.getElementById('teams').innerHTML=(D.teams||[]).map((t,i)=>`<tr><td>${i+1}</td><td>${esc(t.team)} <span class="when">${t.tier}</span></td><td>${t.power==null?'—':s1(t.power)}</td><td class="hide-sm">${t.pf==null?'—':`${f1(t.pf)}–${f1(t.pa)}`}</td><td>${epa(t.off)} <span class="when">${t.off_rank}</span></td><td>${epa(t.deff)} <span class="when">${t.def_rank}</span></td><td class="hide-sm">${f1(t.pace)}</td></tr>`).join('');
-const st=R.state||{};document.getElementById('settings').innerHTML=`Prior strength ${st.lam} (games' worth, tuned ${st.tuned_at?new Date(st.tuned_at).toLocaleDateString():'—'}) · Game-script correlation ${f1(st.rho)} · Margin error SD ${f1(st.margin_sd)} · Total error SD ${f1(st.total_sd)}<br>Tuning results (margin MAE by prior strength): ${Object.entries(R.tune||{}).map(([k,v])=>`${k}: ${f2(v)}`).join(' · ')||'—'}`;
+const st=R.state||{};// At a glance: the three things worth knowing, in plain words
+(()=>{const o=B.overall||{},S=B.seasons||[],H=S.find(x=>x.holdout)||S[S.length-1]||{};const ph=B.by_phase||[];
+ const lines=[];
+ lines.push(L.graded?`<b>This season:</b> ${L.graded} games graded. Picks on every game are ${rec(L.ats_all)} against the spread and ${rec(L.ou_all)} on totals; ${(L.ats&&(L.ats.w+L.ats.l+L.ats.p))||(L.ou&&(L.ou.w+L.ou.l+L.ou.p))?`flagged bets are ${rec(L.ats)} ATS and ${rec(L.ou)} O/U.`:'no flagged bets have been graded yet.'}`:
+  '<b>This season:</b> no games graded yet.');
+ if(H.margin_mae!=null&&H.mkt_margin_mae!=null)lines.push(`<b>Model vs market:</b> on ${H.season}, a season the model never trained on, its average miss on the final margin was ${f1(H.margin_mae)} points vs ${f1(H.mkt_margin_mae)} for the closing line. The closing line is ${H.margin_mae>H.mkt_margin_mae?'still more accurate overall':'no more accurate'}: it sees injury and depth-chart news the model can't.`);
+ if(o.ats_open&&(o.ats_open.w+o.ats_open.l))lines.push(`<b>Where the edge is:</b> flagged bets went ${rp(o.ats_open)} ATS and ${rp(o.ou_open)} O/U against opening lines in the backtest${ph.length?` (spreads by part of season: ${ph.map(x=>`${x.label} ${rp(x.ats_open)}`).join(', ')})`:''}. Bet early in the week, before the line moves.`);
+ document.getElementById('glance').innerHTML=`<h3>At a glance</h3>${lines.map(x=>`<p class="gl">${x}</p>`).join('')}`;})();
+document.getElementById('settings').innerHTML=`Prior strength ${st.lam} (games' worth, tuned ${st.tuned_at?new Date(st.tuned_at).toLocaleDateString():'—'}) · Game-script correlation ${f1(st.rho)} · Margin error SD ${f1(st.margin_sd)} · Total error SD ${f1(st.total_sd)}<br>Tuning results (margin MAE by prior strength): ${Object.entries(R.tune||{}).map(([k,v])=>`${k}: ${f2(v)}`).join(' · ')||'—'}`;
+"""
+
+RATINGS_BODY = NAV("t") + r"""
+<p class="sub">Ranked by the model's power rating: how many points better than an average FBS team on a neutral field, using the same ratings and formula as the game projections. "Vs average team" is the projected score of that game. EPA is opponent-adjusted expected points per play with garbage time removed; for defense, lower is better.</p>
+<div class="bar" id="tfilters"></div>
+<div class="tbl"><table><thead><tr><th>#</th><th>Team</th><th>Rating</th><th>Vs average team</th><th class="hide-sm">Off EPA (rank)</th><th class="hide-sm">Def EPA (rank)</th><th class="hide-sm">Plays/game</th></tr></thead><tbody id="teams"></tbody></table></div>
+"""
+
+RATINGS_JS = r"""
+document.getElementById('sub').textContent=`${D.season} season · through Week ${D.week??'—'}`;
+const f1=x=>x==null?'—':x.toFixed(1);const s1=x=>x==null?'—':(Math.abs(x)<0.05?'0.0':(x>0?'+':'−')+Math.abs(x).toFixed(1));
+const T=(D.teams||[]).map((t,i)=>({...t,rank:i+1}));
+let tc='all',tq='';const tf=document.getElementById('tfilters');
+tf.innerHTML=[['all','All FBS'],['P4','Power 4'],['G5','Group of 5']].map(([k,l])=>`<button class="chip${k==='all'?' on':''}" data-k="${k}">${l}</button>`).join('')+'<input type="search" id="tq" placeholder="Find a team">';
+tf.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{tc=b.dataset.k;tf.querySelectorAll('[data-k]').forEach(x=>x.classList.toggle('on',x===b));drawT();});
+document.getElementById('tq').oninput=e=>{tq=e.target.value.toLowerCase();drawT();};
+function drawT(){const rows=T.filter(t=>(tc==='all'||t.tier===tc)&&(!tq||t.team.toLowerCase().includes(tq)));
+ document.getElementById('teams').innerHTML=rows.map(t=>`<tr><td>${t.rank}</td><td>${esc(t.team)} <span class="when">${t.tier}</span></td><td><b>${s1(t.power)}</b></td><td>${t.pf==null?'—':`${f1(t.pf)}–${f1(t.pa)}`}</td><td class="hide-sm">${epa(t.off)} <span class="when">${t.off_rank}</span></td><td class="hide-sm">${epa(t.deff)} <span class="when">${t.def_rank}</span></td><td class="hide-sm">${f1(t.pace)}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No teams match.</td></tr>';}
+drawT();
 """
 
 INDEX_BODY = INDEX_BODY.replace("<script>window.PAGE='index'</script>", "")

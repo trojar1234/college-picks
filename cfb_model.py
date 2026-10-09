@@ -20,7 +20,10 @@ import cfb_ratings as Rt
 import cfb_sim as sim
 
 BASE_GROUPS = ["score"]  # always in the conversion
-OPTIONAL = {"pbp": "Play-by-play: non-garbage points per drive, finishing drives, field position"}
+OPTIONAL = {
+    "matchup": "Totals correction by matchup type (Power 4 vs Power 4, FCS opponent)",
+    "pbp": "Play-by-play: non-garbage points per drive, finishing drives, field position",
+}
 
 
 def season_tiers(games):
@@ -137,6 +140,7 @@ def ratings_from(rows, ctx, lam):
 GROUP_COLS = {
     "score": ["R"],             # scoring-margin rating
     "pbp": ["DP", "FN", "FP"],  # non-garbage pts/drive x pace, finishing, field position
+    "matchup": ["M4", "MF"],    # same shift to both teams' points: corrects totals, leaves margins alone
 }
 CONV_DECAY = 0.6  # weight per season of age: scoring environments drift (rule changes, pace)
 
@@ -156,6 +160,13 @@ def side_frame(bt):
 
     df = pd.concat([side("h", 1), side("a", -1)], ignore_index=True)
     df["DP"] = df.D * df.P / 10
+    if "home_tier" in bt and "away_tier" in bt:
+        ht, at = bt.home_tier.to_numpy(), bt.away_tier.to_numpy()
+        m4 = ((ht == "P4") & (at == "P4")).astype(float)
+        mf = ((ht == "FCS") | (at == "FCS")).astype(float)
+        df["M4"], df["MF"] = np.concatenate([m4, m4]), np.concatenate([mf, mf])
+    else:
+        df["M4"], df["MF"] = 0.0, 0.0
     for c in ("R", "DP", "FN", "FP"):
         df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0.0)
     return df
