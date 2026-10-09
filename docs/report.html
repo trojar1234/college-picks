@@ -18,9 +18,12 @@ h2{font-size:17px;margin:28px 0 10px;font-weight:600}
 nav a{color:var(--muted);text-decoration:none;margin-left:16px;font-size:14px}
 nav a.on{color:var(--text);font-weight:600}
 .sub{color:var(--muted);font-size:13px}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin-bottom:16px}
 .card{background:var(--soft);border-radius:10px;padding:12px 14px}
 .card .l{font-size:12px;color:var(--muted)}.card .v{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.card .v .push{font-size:14px;color:var(--muted);font-weight:500}.card .v .nw{white-space:nowrap}.card .v .when{display:block;font-size:12px}
+.pick{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:2px 0}.pick .t{font-size:13px}.pick .e{font-size:12px;color:var(--faint)}
+.bet{font-weight:600}.notes{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.4}
 .bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
 .chip{font:inherit;font-size:13px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer}
 .chip.on{background:var(--accbg);color:var(--acc);border-color:transparent}
@@ -45,16 +48,21 @@ tr:last-child td{border-bottom:0}
 .hist div.z{opacity:.35}
 .note{font-size:12px;color:var(--muted);margin-top:10px}
 .flag{color:var(--bad);font-weight:600}
-@media (max-width:720px){.hide-sm{display:none}td,th{padding:8px 6px;font-size:13px}}
+@media (max-width:720px){.hide-sm{display:none}td,th{padding:8px 6px;font-size:13px}.card .v{font-size:19px}}
+.show-sm{display:none}@media (max-width:720px){.show-sm{display:block}}
+.nw{white-space:nowrap}
+@media (max-width:720px){table.games thead{display:none}table.games tr.g{display:grid;grid-template-columns:1fr auto;border-bottom:1px solid var(--line)}
+table.games tr.g td{border:0;padding:10px 12px 2px}table.games td.c-proj{text-align:right}table.games td.c-picks{grid-column:1/-1;padding:2px 12px 12px}
+table.games tr.g td.hide-sm{display:none}table.games tr.detail td{display:block}}
 </style></head><body><div class="wrap">
 <header><div><h1>College football model</h1><div class="sub" id="sub"></div></div>
 <nav><a href="index.html" class="">Projections</a><a href="report.html" class="on">Report card</a></nav></header>
 <h2>This season (live, graded at kickoff)</h2>
 <div class="cards" id="live"></div>
 <h2>Backtest by season</h2>
-<p class="sub">Walk-forward: each week predicted using only data available before it. Flagged bets are graded against the opening line (when the model's edges are meant to be bet) and the closing line. Opening lines exist for only part of the history.</p>
+<p class="sub">Walk-forward: each week predicted using only data available before it. "Bets" are games the model flags (7+ point disagreement); they're graded against the opening line (when the model's edges are meant to be bet) and the closing line. "All games" grades the model's side in every game against the closing line. Opening lines exist for only part of the history. Small grey numbers after a record are pushes.</p>
 <div class="cards" id="btcards"></div>
-<div class="tbl"><table><thead><tr><th>Season</th><th>Games</th><th>Margin MAE</th><th class="hide-sm">Market margin MAE</th><th class="hide-sm">Total MAE</th><th>ATS vs open</th><th>ATS vs close</th><th>O/U vs open</th><th class="hide-sm">O/U vs close</th></tr></thead><tbody id="bt"></tbody></table></div>
+<div class="tbl"><table><thead><tr><th>Season</th><th>Games</th><th>Margin MAE</th><th class="hide-sm">Market margin MAE</th><th class="hide-sm">Total MAE</th><th>Bets ATS vs open</th><th>Bets ATS vs close</th><th>Bets O/U vs open</th><th class="hide-sm">Bets O/U vs close</th><th class="hide-sm">All games ATS vs close</th></tr></thead><tbody id="bt"></tbody></table></div>
 <h2>Model improvements tested</h2>
 <p class="sub" id="expsub"></p>
 <div class="tbl"><table><thead><tr><th>Feature</th><th>Margin error change</th><th>Total error change</th><th>Result</th></tr></thead><tbody id="exp"></tbody></table></div>
@@ -68,10 +76,11 @@ tr:last-child td{border-bottom:0}
 <p class="sub">Bias = average of (predicted − actual). Red rows are biases unlikely to be chance (100+ games, more than 2.5 standard errors).</p>
 <div id="seg"></div>
 <h2>Recent results</h2>
-<div class="tbl"><table><thead><tr><th>Game</th><th>Final</th><th>Projected</th><th class="hide-sm">Bet line</th><th>Spread</th><th>Total</th><th class="hide-sm">CLV</th></tr></thead><tbody id="hist"></tbody></table></div>
+<p class="sub">Scores are away–home. Every game shows the model's spread and total picks against the closing line; <span class="pill p-good">BET</span> marks flagged bets, graded at the line when they were first flagged.</p>
+<div class="tbl"><table><thead><tr><th>Game</th><th>Final</th><th class="hide-sm">Projected</th><th>Spread pick</th><th>Total pick</th><th class="hide-sm">CLV</th></tr></thead><tbody id="hist"></tbody></table></div>
 <h2>Team ratings</h2>
-<p class="sub">Opponent-adjusted EPA per play (garbage time excluded). Net = offense − defense allowed.</p>
-<div class="tbl"><table><thead><tr><th>#</th><th>Team</th><th>Net</th><th>Off (rank)</th><th>Def (rank)</th><th class="hide-sm">Plays/game</th></tr></thead><tbody id="teams"></tbody></table></div>
+<p class="sub">Ranked by the model's power rating: projected margin in points against an average FBS team on a neutral field, using the same ratings and formula as the game predictions. EPA columns are opponent-adjusted expected points per play (garbage time excluded); lower defensive EPA is better.</p>
+<div class="tbl"><table><thead><tr><th>#</th><th>Team</th><th>Rating</th><th class="hide-sm">Proj. score vs avg</th><th>Off EPA (rank)</th><th>Def EPA (rank)</th><th class="hide-sm">Plays/game</th></tr></thead><tbody id="teams"></tbody></table></div>
 <h2>Model settings</h2><div class="sub" id="settings"></div>
 
 
@@ -84,9 +93,21 @@ const fmt=x=>x==null?'—':(Math.round(x*10)/10).toString();
 const sgn=x=>{if(x==null)return '—';const r=Math.round(x*10)/10;return r===0?'0':(r>0?'+':'−')+Math.abs(r);};
 const f2=x=>x==null?'—':x.toFixed(2);
 const pct=x=>x==null?'—':Math.round(x*100)+'%';
-const pct1=x=>x==null?'—':(Math.round(x*1000)/10)+'%';
+const pct1=x=>x==null?'—':(x*100).toFixed(1)+'%';
 const epa=x=>x==null?'—':(x>0?'+':x<0?'−':'')+Math.abs(x).toFixed(3);
-const rec=r=>!r||(r.w+r.l+r.p)===0?'—':`${r.w}–${r.l}${r.p?'–'+r.p:''}`;
+const rec=r=>!r||(r.w+r.l+r.p)===0?'—':`${r.w}–${r.l}${r.p?`<span class="push">–${r.p}</span>`:''}`;
+const sl=x=>x==null?'—':(x===0?'PK':(x>0?'+':'−')+Math.abs(x));
+// The model's pick against a line, for every game. Spread lines are from the home team's view.
+function spreadPick(g,lineVal,model){if(lineVal==null||model==null)return null;const e=lineVal-model;if(Math.abs(e)<0.05)return {none:true};
+ const home=e>0;return {team:home?g.home:g.away,line:home?lineVal:-lineVal,side:home?'home':'away',edge:Math.abs(e)};}
+function totalPick(lineVal,model){if(lineVal==null||model==null)return null;const e=model-lineVal;if(Math.abs(e)<0.05)return {none:true};
+ return {side:e>0?'Over':'Under',line:lineVal,edge:Math.abs(e)};}
+// Projected score that matches the model's spread and total exactly (away–home)
+function projScore(g){const S=g.model_spread,T=g.model_total;if(S==null||T==null)return g.home_med==null?null:`${g.away_med}–${g.home_med}`;
+ const h=(T-S)/2,a=(T+S)/2;let H=Math.round(h),A=Math.round(a);
+ if(H===A&&Math.abs(S)>=0.05){if(S<0){H=Math.ceil(h);A=Math.floor(a);}else{H=Math.floor(h);A=Math.ceil(a);}if(H===A){if(S<0)H++;else A++;}}
+ return `${A}–${H}`;}
+const resPill=(v,label)=>v?`<span class="pill ${v==='win'?'p-good':v==='loss'?'p-bad':'p-acc'}">${label?label+' ':''}${v==='win'?'W':v==='loss'?'L':'Push'}</span>`:'';
 const when=s=>new Date(s).toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',hour:'numeric',minute:'2-digit'});
 function line(home,away,s){if(s==null)return '—';if(s===0)return 'Pick';return s<0?`${home} −${Math.abs(s)}`:`${away} −${s}`;}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -94,22 +115,23 @@ document.getElementById('foot').innerHTML=`Updated ${new Date(D.generated).toLoc
 </script>
 <script>
 document.getElementById('sub').textContent=`${D.season} season`;
+const f1=x=>x==null?'—':x.toFixed(1);const s1=x=>x==null?'—':(Math.abs(x)<0.05?'0.0':(x>0?'+':'−')+Math.abs(x).toFixed(1));
 const R=D.report,L=R.live||{},B=R.backtest||{};
+const rp=r=>!r||(r.w+r.l+r.p)===0?'<span class="muted">—</span>':`<span class="nw">${rec(r)}</span> <span class="when nw">${pct(r.pct)}</span>`;
 const card=(l,v)=>`<div class="card"><div class="l">${l}</div><div class="v">${v}</div></div>`;
 document.getElementById('live').innerHTML=L.graded?[
- card('Games graded',L.graded),card('Team score MAE',fmt(L.team_mae)),card('Margin MAE',fmt(L.margin_mae)+(L.mkt_margin_mae?` <span class="sub">mkt ${fmt(L.mkt_margin_mae)}</span>`:'')),
- card('Flagged ATS',rec(L.ats)+(L.ats&&L.ats.pct!=null?` <span class="sub">${pct(L.ats.pct)}</span>`:'')),card('Flagged O/U',rec(L.ou)),card('ATS, all games',rec(L.ats_all)+(L.ats_all&&L.ats_all.pct!=null?` <span class="sub">${pct(L.ats_all.pct)}</span>`:'')),card('O/U, all games',rec(L.ou_all)+(L.ou_all&&L.ou_all.pct!=null?` <span class="sub">${pct(L.ou_all.pct)}</span>`:'')),
- card('Avg CLV',L.clv_avg==null?'—':sgn(L.clv_avg)+' pts'),card('Beat closing line',L.clv_beat_pct==null?'—':pct(L.clv_beat_pct)+` <span class="sub">of ${L.clv_n}</span>`)].join('')
+ card('Games graded',L.graded),card('Team score MAE',f1(L.team_mae)),card('Margin MAE',f1(L.margin_mae)+(L.mkt_margin_mae?` <span class="sub">mkt ${f1(L.mkt_margin_mae)}</span>`:'')),
+ card('Bets ATS',rp(L.ats)),card('Bets O/U',rp(L.ou)),card('ATS, all games',rp(L.ats_all)),card('O/U, all games',rp(L.ou_all)),
+ card('Avg CLV',L.clv_avg==null?'—':s1(L.clv_avg)+' pts'),card('Beat closing line',L.clv_beat_pct==null?'—':pct(L.clv_beat_pct)+` <span class="sub">of ${L.clv_n}</span>`)].join('')
  :card('Games graded','0')+'<p class="sub" style="grid-column:1/-1">Results appear here once games the model projected before kickoff are final.</p>';
-const rp=r=>r?`${rec(r)} <span class="when">${pct(r.pct)}</span>`:'—';
-const bt=(B.seasons||[]).map(s=>`<tr><td>${s.season}${s.holdout?' <span class="pill p-acc">holdout</span>':''}</td><td>${s.games}</td><td>${fmt(s.margin_mae)}</td><td class="hide-sm">${fmt(s.mkt_margin_mae)}</td><td class="hide-sm">${fmt(s.total_mae)}</td><td>${rp(s.ats_open)}</td><td>${rp(s.ats)}</td><td>${rp(s.ou_open)}</td><td class="hide-sm">${rp(s.ou)}</td></tr>`);
-const o=B.overall;if(o)bt.push(`<tr><td><b>All</b></td><td>${o.games}</td><td>${fmt(o.margin_mae)}</td><td class="hide-sm">${fmt(o.mkt_margin_mae)}</td><td class="hide-sm">${fmt(o.total_mae)}</td><td><b>${rp(o.ats_open)}</b></td><td><b>${rp(o.ats)}</b></td><td><b>${rp(o.ou_open)}</b></td><td class="hide-sm"><b>${rp(o.ou)}</b></td></tr>`);
-document.getElementById('bt').innerHTML=bt.join('')||'<tr><td colspan="9" class="muted">Backtest not available yet.</td></tr>';
+const bt=(B.seasons||[]).map(s=>`<tr><td>${s.season}${s.holdout?' <span class="pill p-acc">holdout</span>':''}</td><td>${s.games}</td><td>${f1(s.margin_mae)}</td><td class="hide-sm">${f1(s.mkt_margin_mae)}</td><td class="hide-sm">${f1(s.total_mae)}</td><td>${rp(s.ats_open)}</td><td>${rp(s.ats)}</td><td>${rp(s.ou_open)}</td><td class="hide-sm">${rp(s.ou)}</td><td class="hide-sm">${rp(s.ats_all)}</td></tr>`);
+const o=B.overall;if(o)bt.push(`<tr><td><b>All</b></td><td>${o.games}</td><td>${f1(o.margin_mae)}</td><td class="hide-sm">${f1(o.mkt_margin_mae)}</td><td class="hide-sm">${f1(o.total_mae)}</td><td><b>${rp(o.ats_open)}</b></td><td><b>${rp(o.ats)}</b></td><td><b>${rp(o.ou_open)}</b></td><td class="hide-sm"><b>${rp(o.ou)}</b></td><td class="hide-sm"><b>${rp(o.ats_all)}</b></td></tr>`);
+document.getElementById('bt').innerHTML=bt.join('')||'<tr><td colspan="10" class="muted">Backtest not available yet.</td></tr>';
 if(o){const mv=B.line_move||{};document.getElementById('btcards').innerHTML=[
- card('Flagged ATS vs open',rp(o.ats_open)),card('Flagged O/U vs open',rp(o.ou_open)),
- card('ATS vs close, all games',rp(o.ats_all)),card('O/U vs close, all games',rp(o.ou_all)),
+ card('Bets ATS vs open',rp(o.ats_open)),card('Bets O/U vs open',rp(o.ou_open)),
+ card('All games ATS vs close',rp(o.ats_all)),card('All games O/U vs close',rp(o.ou_all)),
  card('Lines moving toward model',mv.pct==null?'—':pct(mv.pct)+` <span class="sub">of ${mv.n}</span>`),
- card('Margin MAE (model / market)',`${fmt(o.margin_mae)} <span class="sub">/ ${fmt(o.mkt_margin_mae)}</span>`)].join('');}
+ card('Margin MAE (model / market)',`${f1(o.margin_mae)} <span class="sub">/ ${f1(o.mkt_margin_mae)}</span>`)].join('');}
 document.getElementById('cal').innerHTML=(B.calibration||[]).map(c=>`<tr><td>${c.bin}</td><td>${pct(c.predicted)}</td><td>${pct(c.actual)}</td><td>${c.n}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">—</td></tr>';
 document.getElementById('shrink').textContent=B.shrink_spread!=null?`Learned from this table: cover probabilities shown on the projections page keep ${pct(B.shrink_spread)} of the model's raw confidence for spreads and ${pct(B.shrink_total)} for totals.`:'';
 const E=R.experiments||{};
@@ -120,13 +142,18 @@ if(E.tests){
  const H=E.holdout||{};if(H.baseline&&H.selected)document.getElementById('exphold').textContent=`Holdout check on ${H.season}, a season never used for tuning: core model margin MAE ${f2(H.baseline.margin)} vs with kept features ${f2(H.selected.margin)}; total MAE ${f2(H.baseline.total)} vs ${f2(H.selected.total)}.`;
 }
 const S=B.segments||{};const names={margin_by_week:'Margin by week',margin_by_matchup:'Margin by matchup',margin_by_fav_size:'Margin by projected favorite size',total_by_week:'Total by week',total_by_matchup:'Total by matchup'};
-document.getElementById('seg').innerHTML=Object.entries(names).filter(([k])=>S[k]).map(([k,n])=>`<h4 class="sub" style="margin:14px 0 6px">${n}</h4><div class="tbl"><table><thead><tr><th>Group</th><th>Games</th><th>Bias</th><th>MAE</th></tr></thead><tbody>${S[k].map(r=>`<tr><td>${r.group}</td><td>${r.n}</td><td class="${r.flag?'flag':''}">${sgn(r.bias)}</td><td>${fmt(r.mae)}</td></tr>`).join('')}</tbody></table></div>`).join('');
+document.getElementById('seg').innerHTML=Object.entries(names).filter(([k])=>S[k]).map(([k,n])=>`<h4 class="sub" style="margin:14px 0 6px">${n}</h4><div class="tbl"><table><thead><tr><th>Group</th><th>Games</th><th>Bias</th><th>MAE</th></tr></thead><tbody>${S[k].map(r=>`<tr><td>${r.group}</td><td>${r.n}</td><td class="${r.flag?'flag':''}">${s1(r.bias)}</td><td>${f1(r.mae)}</td></tr>`).join('')}</tbody></table></div>`).join('');
 const pill=v=>v?`<span class="pill ${v==='win'?'p-good':v==='loss'?'p-bad':'p-acc'}">${v}</span>`:'<span class="muted">—</span>';
-document.getElementById('hist').innerHTML=(D.history||[]).slice(0,150).map(p=>{const r=p.result;const fs=p.first_spread_flag;
+document.getElementById('hist').innerHTML=(D.history||[]).slice(0,200).map(p=>{const r=p.result;const fs=p.first_spread_flag,ft=p.first_total_flag;
  const clv=[r.clv_spread,r.clv_total].filter(x=>x!=null);
- return `<tr><td>${esc(p.away)} @ <span class="home">${esc(p.home)}</span><div class="when">Week ${p.wk}</div></td><td>${r.home_pts}–${r.away_pts}</td><td>${p.home_med}–${p.away_med}</td>
- <td class="hide-sm">${fs&&r.ats?esc((fs.side==='home'?p.home:p.away))+' '+fmt(fs.side==='home'?fs.line:-fs.line):'—'}</td><td>${pill(r.ats)}</td><td>${pill(r.ou)}</td><td class="hide-sm">${clv.length?clv.map(sgn).join(', '):'—'}</td></tr>`;}).join('')||'<tr><td colspan="7" class="muted">No graded games yet.</td></tr>';
-document.getElementById('teams').innerHTML=(D.teams||[]).map((t,i)=>`<tr><td>${i+1}</td><td>${esc(t.team)} <span class="when">${t.tier}</span></td><td>${epa(t.net)}</td><td>${epa(t.off)} <span class="when">${t.off_rank}</span></td><td>${epa(t.deff)} <span class="when">${t.def_rank}</span></td><td class="hide-sm">${fmt(t.pace)}</td></tr>`).join('');
-const st=R.state||{};document.getElementById('settings').innerHTML=`Prior strength ${st.lam} (games' worth, tuned ${st.tuned_at?new Date(st.tuned_at).toLocaleDateString():'—'}) · Game-script correlation ${fmt(st.rho)} · Margin error SD ${fmt(st.margin_sd)} · Total error SD ${fmt(st.total_sd)}<br>Tuning results (margin MAE by prior strength): ${Object.entries(R.tune||{}).map(([k,v])=>`${k}: ${fmt(v)}`).join(' · ')||'—'}`;
+ const sp=spreadPick(p,r.close_spread,p.model_spread),tp=totalPick(r.close_total,p.model_total);
+ const sCell=r.ats?`<span class="pill p-good">BET</span> <span class="bet">${esc(fs.side==='home'?p.home:p.away)} ${sl(fs.side==='home'?fs.line:-fs.line)}</span> ${resPill(r.ats)}`:
+   (sp&&!sp.none?`${esc(sp.team)} ${sl(sp.line)} ${resPill(r.ats_all)}`:'<span class="muted">—</span>');
+ const tCell=r.ou?`<span class="pill p-good">BET</span> <span class="bet">${ft.side==='over'?'Over':'Under'} ${fmt(ft.line)}</span> ${resPill(r.ou)}`:
+   (tp&&!tp.none?`${tp.side} ${tp.line} ${resPill(r.ou_all)}`:'<span class="muted">—</span>');
+ return `<tr><td>${esc(p.away)} ${p.neutral?'vs':'@'} <span class="home">${esc(p.home)}</span><div class="when">Week ${p.wk}</div></td><td>${r.away_pts}–${r.home_pts}</td><td class="hide-sm">${projScore(p)||'—'}</td>
+ <td>${sCell}</td><td>${tCell}</td><td class="hide-sm">${clv.length?clv.map(sgn).join(', '):'—'}</td></tr>`;}).join('')||'<tr><td colspan="6" class="muted">No graded games yet.</td></tr>';
+document.getElementById('teams').innerHTML=(D.teams||[]).map((t,i)=>`<tr><td>${i+1}</td><td>${esc(t.team)} <span class="when">${t.tier}</span></td><td>${t.power==null?'—':s1(t.power)}</td><td class="hide-sm">${t.pf==null?'—':`${f1(t.pf)}–${f1(t.pa)}`}</td><td>${epa(t.off)} <span class="when">${t.off_rank}</span></td><td>${epa(t.deff)} <span class="when">${t.def_rank}</span></td><td class="hide-sm">${f1(t.pace)}</td></tr>`).join('');
+const st=R.state||{};document.getElementById('settings').innerHTML=`Prior strength ${st.lam} (games' worth, tuned ${st.tuned_at?new Date(st.tuned_at).toLocaleDateString():'—'}) · Game-script correlation ${f1(st.rho)} · Margin error SD ${f1(st.margin_sd)} · Total error SD ${f1(st.total_sd)}<br>Tuning results (margin MAE by prior strength): ${Object.entries(R.tune||{}).map(([k,v])=>`${k}: ${f2(v)}`).join(' · ')||'—'}`;
 </script>
 </body></html>
