@@ -18,9 +18,9 @@ h2{font-size:17px;margin:28px 0 10px;font-weight:600}
 nav a{color:var(--muted);text-decoration:none;margin-left:16px;font-size:14px}
 nav a.on{color:var(--text);font-weight:600}
 .sub{color:var(--muted);font-size:13px}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin-bottom:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
 .card{background:var(--soft);border-radius:10px;padding:12px 14px}
-.card .l{font-size:12px;color:var(--muted)}.card .v{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.card .l{font-size:12px;color:var(--muted)}.card{min-width:0}.card .v{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
 .card .v .push{font-size:14px;color:var(--muted);font-weight:500}.card .v .nw{white-space:nowrap}.card .v .when{display:block;font-size:12px}
 .pick{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:2px 0}.pick .t{font-size:13px}.pick .e{font-size:12px;color:var(--faint)}
 .bet{font-weight:600}.notes{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.4}
@@ -95,7 +95,7 @@ const f2=x=>x==null?'—':x.toFixed(2);
 const pct=x=>x==null?'—':Math.round(x*100)+'%';
 const pct1=x=>x==null?'—':(x*100).toFixed(1)+'%';
 const epa=x=>x==null?'—':(x>0?'+':x<0?'−':'')+Math.abs(x).toFixed(3);
-const rec=r=>!r||(r.w+r.l+r.p)===0?'—':`${r.w}–${r.l}${r.p?`<span class="push">–${r.p}</span>`:''}`;
+const rec=r=>!r||(r.w+r.l+r.p)===0?'—':`<span class="nw">${r.w}–${r.l}</span>${r.p?`<wbr><span class="push nw">–${r.p}</span>`:''}`;
 const sl=x=>x==null?'—':(x===0?'PK':(x>0?'+':'−')+Math.abs(x));
 // The model's pick against a line, for every game. Spread lines are from the home team's view.
 function spreadPick(g,lineVal,model){if(lineVal==null||model==null)return null;const e=lineVal-model;if(Math.abs(e)<0.05)return {none:true};
@@ -117,7 +117,7 @@ document.getElementById('foot').innerHTML=`Updated ${new Date(D.generated).toLoc
 document.getElementById('sub').textContent=`${D.season} season`;
 const f1=x=>x==null?'—':x.toFixed(1);const s1=x=>x==null?'—':(Math.abs(x)<0.05?'0.0':(x>0?'+':'−')+Math.abs(x).toFixed(1));
 const R=D.report,L=R.live||{},B=R.backtest||{};
-const rp=r=>!r||(r.w+r.l+r.p)===0?'<span class="muted">—</span>':`<span class="nw">${rec(r)}</span> <span class="when nw">${pct(r.pct)}</span>`;
+const rp=r=>!r||(r.w+r.l+r.p)===0?'<span class="muted">—</span>':`${rec(r)} <span class="when nw">${pct(r.pct)}</span>`;
 const card=(l,v)=>`<div class="card"><div class="l">${l}</div><div class="v">${v}</div></div>`;
 document.getElementById('live').innerHTML=L.graded?[
  card('Games graded',L.graded),card('Team score MAE',f1(L.team_mae)),card('Margin MAE',f1(L.margin_mae)+(L.mkt_margin_mae?` <span class="sub">mkt ${f1(L.mkt_margin_mae)}</span>`:'')),

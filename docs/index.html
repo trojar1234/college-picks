@@ -18,9 +18,9 @@ h2{font-size:17px;margin:28px 0 10px;font-weight:600}
 nav a{color:var(--muted);text-decoration:none;margin-left:16px;font-size:14px}
 nav a.on{color:var(--text);font-weight:600}
 .sub{color:var(--muted);font-size:13px}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin-bottom:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
 .card{background:var(--soft);border-radius:10px;padding:12px 14px}
-.card .l{font-size:12px;color:var(--muted)}.card .v{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.card .l{font-size:12px;color:var(--muted)}.card{min-width:0}.card .v{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
 .card .v .push{font-size:14px;color:var(--muted);font-weight:500}.card .v .nw{white-space:nowrap}.card .v .when{display:block;font-size:12px}
 .pick{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:2px 0}.pick .t{font-size:13px}.pick .e{font-size:12px;color:var(--faint)}
 .bet{font-weight:600}.notes{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.4}
@@ -75,7 +75,7 @@ const f2=x=>x==null?'—':x.toFixed(2);
 const pct=x=>x==null?'—':Math.round(x*100)+'%';
 const pct1=x=>x==null?'—':(x*100).toFixed(1)+'%';
 const epa=x=>x==null?'—':(x>0?'+':x<0?'−':'')+Math.abs(x).toFixed(3);
-const rec=r=>!r||(r.w+r.l+r.p)===0?'—':`${r.w}–${r.l}${r.p?`<span class="push">–${r.p}</span>`:''}`;
+const rec=r=>!r||(r.w+r.l+r.p)===0?'—':`<span class="nw">${r.w}–${r.l}</span>${r.p?`<wbr><span class="push nw">–${r.p}</span>`:''}`;
 const sl=x=>x==null?'—':(x===0?'PK':(x>0?'+':'−')+Math.abs(x));
 // The model's pick against a line, for every game. Spread lines are from the home team's view.
 function spreadPick(g,lineVal,model){if(lineVal==null||model==null)return null;const e=lineVal-model;if(Math.abs(e)<0.05)return {none:true};
@@ -99,7 +99,7 @@ document.getElementById('sub').textContent=`${D.season} season · Week ${D.week?
 const L=D.report.live||{};
 const isLowTotal=g=>(g.low_conf||[]).length||(g.total_caution||[]).length;
 const bets=G.filter(g=>!g.started&&(g.spread_bet||g.total_bet));
-const withPct=r=>!r||(r.w+r.l+r.p)===0?'—':`<span class="nw">${rec(r)}</span><span class="when">${pct(r.pct)}</span>`;
+const withPct=r=>!r||(r.w+r.l+r.p)===0?'—':`${rec(r)}<span class="when">${pct(r.pct)}</span>`;
 document.getElementById('cards').innerHTML=[
 ['Games',G.length],['Bets this week',bets.length],['Season ATS (bets)',withPct(L.ats)],['Season O/U (bets)',withPct(L.ou)],
 ['Season ATS (all games)',withPct(L.ats_all)],['Season O/U (all games)',withPct(L.ou_all)],
@@ -117,7 +117,7 @@ function keep(g){
  if(q&&!(g.home+' '+g.away).toLowerCase().includes(q))return false;
  if(hideLow&&(g.low_conf||[]).length)return false;
  if(cur==='bets')return g.completed?!!(g.result&&(g.result.ats||g.result.ou)):isBet(g);
- if(cur==='edges')return !!(g.spread_flag||g.total_flag||g.spread_bet||g.total_bet);
+ if(cur==='edges')return g.completed?!!(g.result&&(g.result.ats||g.result.ou)):!!(g.spread_flag||g.total_flag||g.spread_bet||g.total_bet);
  if(cur==='P4')return g.home_tier==='P4'||g.away_tier==='P4';
  if(cur==='G5')return g.home_tier==='G5'||g.away_tier==='G5';
  return true;}
@@ -153,7 +153,7 @@ function moveCell(g){const m=g.market||{};if(m.open_spread==null||m.spread==null
  let toward='';if(g.model_spread!=null){toward=Math.abs(g.model_spread-m.spread)<Math.abs(g.model_spread-m.open_spread)?'up':'down';}
  return `<span class="${toward}">${line(g.home,g.away,m.open_spread)} → ${line(g.home,g.away,m.spread)}</span><div class="when">${toward==='up'?'toward model':'away from model'}</div>`;}
 function icons(g){const w=g.weather||{};let s='';
- if(!w.dome&&(w.wind>=15||w.precip>=0.1))s+=` <span class="pill p-warn" title="Wind/rain forecast">${w.wind>=15?Math.round(w.wind)+' mph':''}${w.wind>=15&&w.precip>=0.1?' · ':''}${w.precip>=0.1?'rain':''}</span>`;
+ if(!g.completed&&!w.dome&&(w.wind>=15||w.precip>=0.1))s+=` <span class="pill p-warn" title="Wind/rain forecast">${w.wind>=15?Math.round(w.wind)+' mph':''}${w.wind>=15&&w.precip>=0.1?' · ':''}${w.precip>=0.1?'rain':''}</span>`;
  const n=g.notes||[];if(n.some(x=>x.includes('expected starter')))s+=' <span class="pill p-bad" title="QB change">QB</span>';
  if(n.some(x=>!x.includes('expected starter')))s+=' <span class="pill p-bad" title="Manual adjustment">adj</span>';
  if((g.low_conf||[]).some(x=>x.startsWith('big disagreement')))s+=' <span class="pill p-warn" title="Model and market differ a lot: check injury/QB news">check news</span>';return s;}
