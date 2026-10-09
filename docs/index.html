@@ -31,11 +31,13 @@ nav a.on{color:var(--text);font-weight:600}
 .sitem:hover .t{text-decoration:underline}
 tr.day td{background:var(--soft);font-size:12px;font-weight:600;color:var(--muted);padding:7px 12px;letter-spacing:.02em}
 .pick .t.weak{color:var(--muted)}
+.summary p.gl{margin:6px 0;font-size:14px;line-height:1.5}
 tr.g.flash td{background:var(--accbg)}.card .v .when{display:block;font-size:12px}
 .pick{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:2px 0}.pick .t{font-size:13px}.pick .e{font-size:12px;color:var(--faint)}
 .bet{font-weight:600}.notes{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.4}
 .bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
 .chip{font:inherit;font-size:13px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer}
+.chip:is(select){padding-right:8px}
 .chip.on{background:var(--accbg);color:var(--acc);border-color:transparent}
 input[type=search]{font:inherit;font-size:14px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);min-width:180px;flex:1;max-width:260px}
 .tbl{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
@@ -66,7 +68,7 @@ table.games tr.g td{border:0;padding:10px 12px 2px}table.games td.c-proj{text-al
 #cards{grid-template-columns:repeat(3,1fr);gap:8px}#cards .card{padding:8px 10px}#cards .card .v{font-size:17px}#cards .card .l{font-size:11px}table.games tr.g td.hide-sm{display:none}table.games tr.detail td{display:block}table.games tr.day td{display:block}.sitem{grid-template-columns:auto 1fr}.sitem .r{grid-column:1/-1;text-align:left}}
 </style></head><body><div class="wrap">
 <header><div><h1>College football model</h1><div class="sub" id="sub"></div></div>
-<nav><a href="index.html" class="on">Projections</a><a href="report.html" class="">Report card</a></nav></header>
+<nav><a href="index.html" class="on">Projections</a><a href="ratings.html" class="">Team ratings</a><a href="report.html" class="">Report card</a></nav></header>
 <div class="cards" id="cards"></div>
 <div id="summary"></div>
 <div class="bar" id="filters"></div>
@@ -78,7 +80,7 @@ table.games tr.g td{border:0;padding:10px 12px 2px}table.games td.c-proj{text-al
 
 <p class="note" id="foot"></p>
 </div>
-<script src="data.js?v=20261009212419"></script>
+<script src="data.js?v=20261009224633"></script>
 <script>
 const D=window.DATA;
 const fmt=x=>x==null?'—':(Math.round(x*10)/10).toString();
@@ -119,7 +121,8 @@ const F=[['all','All games'],['bets','Bets'],['edges','All flags'],['P4','Power 
 let cur='all',hideLow=false,q='';
 const fb=document.getElementById('filters');
 fb.innerHTML=F.map(([k,l])=>`<button class="chip${k==='all'?' on':''}" data-k="${k}">${l}</button>`).join('')+
-`<button class="chip" id="low">Hide low confidence</button><input type="search" id="q" placeholder="Find a team">`;
+`<button class="chip" id="low">Hide low confidence</button><select id="sort" class="chip"><option value="time">Sort: kickoff</option><option value="edge">Sort: biggest edge</option></select><input type="search" id="q" placeholder="Find a team">`;
+let sortBy='time';document.getElementById('sort').onchange=e=>{sortBy=e.target.value;draw();};
 fb.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{cur=b.dataset.k;fb.querySelectorAll('[data-k]').forEach(x=>x.classList.toggle('on',x===b));draw();});
 document.getElementById('low').onclick=e=>{hideLow=!hideLow;e.target.classList.toggle('on',hideLow);draw();};
 document.getElementById('q').oninput=e=>{q=e.target.value.toLowerCase();draw();};
@@ -159,7 +162,7 @@ function picksCell(g){
   if(m.spread!=null&&m.spread!==sb.line)sp.now=sl(home?m.spread:-m.spread);sSt='bet';}
  if(tb){tp={side:tb.side==='over'?'Over':'Under',line:tb.line,edge:Math.abs(g.model_total-tb.line),was:Math.abs(tb.model-tb.line)};
   if(m.total!=null&&m.total!==tb.line)tp.now=m.total;tSt='bet';}
- const why=[...((sSt||tSt)?(g.low_conf||[]):[]),...((tSt==='caution'&&(g.total_caution||[]).length)?g.total_caution:[])];
+ const why=[...((sSt||tSt)?(g.low_conf||[]):[]),...((tSt&&(g.total_caution||[]).length)?g.total_caution:[])];
  return pickRow('Spread',sp,sSt)+pickRow('Total',tp,tSt)+(why.length?`<div class="when">${esc([...new Set(why.map(REASON))].join(' · '))}</div>`:'')+
   `<div class="when show-sm">Model ${line(g.home,g.away,g.model_spread)}, ${fmt(g.model_total)} · Line ${line(g.home,g.away,m.spread)}, ${fmt(m.total)}</div>`;}
 function moveCell(g){const m=g.market||{};if(m.open_spread==null||m.spread==null)return '<span class="muted">—</span>';
@@ -183,7 +186,7 @@ function detail(g){
  const likely=(g.likely||[]).map(([a,b,p])=>`<div class="kv"><span>${esc(g.away)} ${b}, ${esc(g.home)} ${a}</span><span>${pct1(p)}</span></div>`).join('');
  const books=(m.books||[]).map(b=>`<div class="kv"><span>${esc(b.book)}</span><span>${line(g.home,g.away,b.spread)} · ${fmt(b.total)}</span></div>`).join('')||'<div class="sub">No sportsbook snapshot yet.</div>';
  const R=g.ratings||{};const wx=g.weather||{};
- const wtxt=wx.dome?'Dome':wx.wind!=null?`${Math.round(wx.temp)}°F · ${Math.round(wx.wind)} mph wind · ${wx.precip>=0.01?fmt(wx.precip)+' in rain':'no rain'}`:null;
+ const wtxt=wx.dome?'Dome':wx.wind!=null?`${Math.round(wx.temp)}°F · ${Math.round(wx.wind)} mph wind · ${wx.precip>=0.01?wx.precip.toFixed(2)+' in rain':'no rain'}`:null;
  const fs=g.spread_bet,ft=g.total_bet;
  return `<div class="dgrid">
  <div><h4>Probabilities</h4>
@@ -219,12 +222,19 @@ function rowHtml(g){
   <td class="c-proj">${proj}</td><td class="hide-sm">${line(g.home,g.away,g.model_spread)}<div class="when">line ${line(g.home,g.away,m.spread)}</div></td>
   <td class="hide-sm">${fmt(g.model_total)}<div class="when">line ${fmt(m.total)}</div></td><td class="hide-sm">${moveCell(g)}</td><td class="c-picks">${picksCell(g)}</td></tr>
   <tr class="detail" id="d${g.game_id}" hidden><td colspan="6">${detail(g)}</td></tr>`;}
+// Largest gap between the model and the line in a game (a bet keeps its flagged line)
+function maxEdge(g){const m=g.market||{};const e=[];
+ if(g.spread_bet)e.push(Math.abs(g.spread_bet.line-g.model_spread));else if(m.spread!=null&&g.model_spread!=null)e.push(Math.abs(m.spread-g.model_spread));
+ if(g.total_bet)e.push(Math.abs(g.model_total-g.total_bet.line));else if(m.total!=null&&g.model_total!=null)e.push(Math.abs(g.model_total-m.total));
+ return e.length?Math.max(...e):-1;}
 function draw(){
  const rows=G.filter(keep);const tb=document.getElementById('rows');
  if(!rows.length){tb.innerHTML='<tr><td colspan="6" class="muted">No games match.</td></tr>';return;}
  // Upcoming games grouped by day, finished games at the bottom
  const up=rows.filter(g=>!g.completed),done=rows.filter(g=>g.completed);
- const groups=[];up.forEach(g=>{const k=day(g.start);if(!groups.length||groups[groups.length-1][0]!==k)groups.push([k,[]]);groups[groups.length-1][1].push(g);});
+ const groups=[];
+ if(sortBy==='edge'){groups.push(['Biggest edge first (spread or total)',[...up].sort((a,b)=>maxEdge(b)-maxEdge(a))]);}
+ else up.forEach(g=>{const k=day(g.start);if(!groups.length||groups[groups.length-1][0]!==k)groups.push([k,[]]);groups[groups.length-1][1].push(g);});
  if(done.length)groups.push(['Final',done]);
  const n=k=>`${k.length} game${k.length===1?'':'s'}`;
  tb.innerHTML=groups.map(([k,gs])=>`<tr class="day"><td colspan="6">${k} · ${n(gs)}</td></tr>`+gs.map(rowHtml).join('')).join('');
@@ -238,7 +248,7 @@ function summary(){
    edge:Math.abs(b.line-g.model_spread),note:[m.spread!=null&&m.spread!==b.line?`line now ${sl(home?m.spread:-m.spread)}`:'',...low.map(REASON)].filter(Boolean).join(' · ')});}
   else if(g.spread_flag&&low.length){const p=spreadPick(g,m.spread,g.model_spread);if(p&&!p.none)items.push({k:'flag',g,txt:`${esc(p.team)} ${sl(p.line)}`,gm,edge:p.edge,note:low.map(REASON).join(' · ')});}
   if(g.total_bet){const b=g.total_bet;items.push({k:'bet',g,txt:`${b.side==='over'?'Over':'Under'} ${b.line}`,gm,edge:Math.abs(g.model_total-b.line),
-   note:[m.total!=null&&m.total!==b.line?`line now ${m.total}`:'',...low.map(REASON)].filter(Boolean).join(' · ')});}
+   note:[m.total!=null&&m.total!==b.line?`line now ${m.total}`:'',...[...low,...(g.total_caution||[])].map(REASON)].filter(Boolean).join(' · ')});}
   else if(g.total_flag&&isLowTotal(g)){const p=totalPick(m.total,g.model_total);if(p&&!p.none)items.push({k:'flag',g,txt:`${p.side} ${p.line}`,gm,edge:p.edge,note:[...new Set([...low,...(g.total_caution||[])].map(REASON))].join(' · ')});}
  });
  const el=document.getElementById('summary');

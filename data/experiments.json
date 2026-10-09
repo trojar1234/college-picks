@@ -1,7 +1,8 @@
 {
  "version": 5,
- "run": "2026-10-08T16:00:25.333563+00:00",
+ "run": "2026-10-09T22:46:33.760015+00:00",
  "available": [
+  "matchup",
   "pbp",
   "players",
   "players_off"
@@ -68,6 +69,16 @@
    "gain_total": 0.004,
    "kept": true,
    "ok": true
+  },
+  {
+   "feature": "Totals correction by matchup type (Power 4 vs Power 4, FCS opponent)",
+   "group": "matchup",
+   "margin": 12.943,
+   "total": 13.226,
+   "gain_margin": -0.002,
+   "gain_total": 0.021,
+   "kept": false,
+   "ok": false
   },
   {
    "feature": "Play-by-play: non-garbage points per drive, finishing drives, field position",

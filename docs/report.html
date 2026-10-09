@@ -31,11 +31,13 @@ nav a.on{color:var(--text);font-weight:600}
 .sitem:hover .t{text-decoration:underline}
 tr.day td{background:var(--soft);font-size:12px;font-weight:600;color:var(--muted);padding:7px 12px;letter-spacing:.02em}
 .pick .t.weak{color:var(--muted)}
+.summary p.gl{margin:6px 0;font-size:14px;line-height:1.5}
 tr.g.flash td{background:var(--accbg)}.card .v .when{display:block;font-size:12px}
 .pick{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:2px 0}.pick .t{font-size:13px}.pick .e{font-size:12px;color:var(--faint)}
 .bet{font-weight:600}.notes{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.4}
 .bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
 .chip{font:inherit;font-size:13px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer}
+.chip:is(select){padding-right:8px}
 .chip.on{background:var(--accbg);color:var(--acc);border-color:transparent}
 input[type=search]{font:inherit;font-size:14px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);min-width:180px;flex:1;max-width:260px}
 .tbl{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
@@ -66,7 +68,8 @@ table.games tr.g td{border:0;padding:10px 12px 2px}table.games td.c-proj{text-al
 #cards{grid-template-columns:repeat(3,1fr);gap:8px}#cards .card{padding:8px 10px}#cards .card .v{font-size:17px}#cards .card .l{font-size:11px}table.games tr.g td.hide-sm{display:none}table.games tr.detail td{display:block}table.games tr.day td{display:block}.sitem{grid-template-columns:auto 1fr}.sitem .r{grid-column:1/-1;text-align:left}}
 </style></head><body><div class="wrap">
 <header><div><h1>College football model</h1><div class="sub" id="sub"></div></div>
-<nav><a href="index.html" class="">Projections</a><a href="report.html" class="on">Report card</a></nav></header>
+<nav><a href="index.html" class="">Projections</a><a href="ratings.html" class="">Team ratings</a><a href="report.html" class="on">Report card</a></nav></header>
+<div class="summary" id="glance"></div>
 <h2>This season (live, graded at kickoff)</h2>
 <div class="cards" id="live"></div>
 <h2>Backtest by season</h2>
@@ -88,15 +91,12 @@ table.games tr.g td{border:0;padding:10px 12px 2px}table.games td.c-proj{text-al
 <h2>Recent results</h2>
 <p class="sub">Scores are away–home. Every game shows the model's spread and total picks against the closing line; <span class="pill p-good">BET</span> marks flagged bets, graded at the line when they were first flagged.</p>
 <div class="tbl"><table><thead><tr><th>Game</th><th>Final</th><th class="hide-sm">Projected</th><th>Spread pick</th><th>Total pick</th><th class="hide-sm">CLV</th></tr></thead><tbody id="hist"></tbody></table></div>
-<h2>Team ratings</h2>
-<p class="sub">Ranked by the model's power rating: projected margin in points against an average FBS team on a neutral field, using the same ratings and formula as the game predictions. EPA columns are opponent-adjusted expected points per play (garbage time excluded); lower defensive EPA is better.</p>
-<div class="tbl"><table><thead><tr><th>#</th><th>Team</th><th>Rating</th><th class="hide-sm">Proj. score vs avg</th><th>Off EPA (rank)</th><th>Def EPA (rank)</th><th class="hide-sm">Plays/game</th></tr></thead><tbody id="teams"></tbody></table></div>
 <h2>Model settings</h2><div class="sub" id="settings"></div>
 
 
 <p class="note" id="foot"></p>
 </div>
-<script src="data.js?v=20261009212419"></script>
+<script src="data.js?v=20261009224633"></script>
 <script>
 const D=window.DATA;
 const fmt=x=>x==null?'—':(Math.round(x*10)/10).toString();
@@ -163,7 +163,14 @@ document.getElementById('hist').innerHTML=(D.history||[]).slice(0,200).map(p=>{c
    (tp&&!tp.none?`${tp.side} ${tp.line} ${resPill(r.ou_all)}`:'<span class="muted">—</span>');
  return `<tr><td>${esc(p.away)} ${p.neutral?'vs':'@'} <span class="home">${esc(p.home)}</span><div class="when">Week ${p.wk}</div></td><td>${r.away_pts}–${r.home_pts}</td><td class="hide-sm">${projScore(p)||'—'}</td>
  <td>${sCell}</td><td>${tCell}</td><td class="hide-sm">${clv.length?clv.map(sgn).join(', '):'—'}</td></tr>`;}).join('')||'<tr><td colspan="6" class="muted">No graded games yet.</td></tr>';
-document.getElementById('teams').innerHTML=(D.teams||[]).map((t,i)=>`<tr><td>${i+1}</td><td>${esc(t.team)} <span class="when">${t.tier}</span></td><td>${t.power==null?'—':s1(t.power)}</td><td class="hide-sm">${t.pf==null?'—':`${f1(t.pf)}–${f1(t.pa)}`}</td><td>${epa(t.off)} <span class="when">${t.off_rank}</span></td><td>${epa(t.deff)} <span class="when">${t.def_rank}</span></td><td class="hide-sm">${f1(t.pace)}</td></tr>`).join('');
-const st=R.state||{};document.getElementById('settings').innerHTML=`Prior strength ${st.lam} (games' worth, tuned ${st.tuned_at?new Date(st.tuned_at).toLocaleDateString():'—'}) · Game-script correlation ${f1(st.rho)} · Margin error SD ${f1(st.margin_sd)} · Total error SD ${f1(st.total_sd)}<br>Tuning results (margin MAE by prior strength): ${Object.entries(R.tune||{}).map(([k,v])=>`${k}: ${f2(v)}`).join(' · ')||'—'}`;
+const st=R.state||{};// At a glance: the three things worth knowing, in plain words
+(()=>{const o=B.overall||{},S=B.seasons||[],H=S.find(x=>x.holdout)||S[S.length-1]||{};const ph=B.by_phase||[];
+ const lines=[];
+ lines.push(L.graded?`<b>This season:</b> ${L.graded} games graded. Picks on every game are ${rec(L.ats_all)} against the spread and ${rec(L.ou_all)} on totals; ${(L.ats&&(L.ats.w+L.ats.l+L.ats.p))||(L.ou&&(L.ou.w+L.ou.l+L.ou.p))?`flagged bets are ${rec(L.ats)} ATS and ${rec(L.ou)} O/U.`:'no flagged bets have been graded yet.'}`:
+  '<b>This season:</b> no games graded yet.');
+ if(H.margin_mae!=null&&H.mkt_margin_mae!=null)lines.push(`<b>Model vs market:</b> on ${H.season}, a season the model never trained on, its average miss on the final margin was ${f1(H.margin_mae)} points vs ${f1(H.mkt_margin_mae)} for the closing line. The closing line is ${H.margin_mae>H.mkt_margin_mae?'still more accurate overall':'no more accurate'}: it sees injury and depth-chart news the model can't.`);
+ if(o.ats_open&&(o.ats_open.w+o.ats_open.l))lines.push(`<b>Where the edge is:</b> flagged bets went ${rp(o.ats_open)} ATS and ${rp(o.ou_open)} O/U against opening lines in the backtest${ph.length?` (spreads by part of season: ${ph.map(x=>`${x.label} ${rp(x.ats_open)}`).join(', ')})`:''}. Bet early in the week, before the line moves.`);
+ document.getElementById('glance').innerHTML=`<h3>At a glance</h3>${lines.map(x=>`<p class="gl">${x}</p>`).join('')}`;})();
+document.getElementById('settings').innerHTML=`Prior strength ${st.lam} (games' worth, tuned ${st.tuned_at?new Date(st.tuned_at).toLocaleDateString():'—'}) · Game-script correlation ${f1(st.rho)} · Margin error SD ${f1(st.margin_sd)} · Total error SD ${f1(st.total_sd)}<br>Tuning results (margin MAE by prior strength): ${Object.entries(R.tune||{}).map(([k,v])=>`${k}: ${f2(v)}`).join(' · ')||'—'}`;
 </script>
 </body></html>
