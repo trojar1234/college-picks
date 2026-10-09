@@ -2,6 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Cache-Control" content="no-cache">
 <title>Report card · CFB model</title>
 <style>
 :root{--bg:#f7f6f2;--card:#fff;--soft:#efede6;--text:#1d1c1a;--muted:#6b6a64;--faint:#9a988f;--line:#e2dfd6;
@@ -18,10 +19,19 @@ h2{font-size:17px;margin:28px 0 10px;font-weight:600}
 nav a{color:var(--muted);text-decoration:none;margin-left:16px;font-size:14px}
 nav a.on{color:var(--text);font-weight:600}
 .sub{color:var(--muted);font-size:13px}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
 .card{background:var(--soft);border-radius:10px;padding:12px 14px}
 .card .l{font-size:12px;color:var(--muted)}.card{min-width:0}.card .v{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
-.card .v .push{font-size:14px;color:var(--muted);font-weight:500}.card .v .nw{white-space:nowrap}.card .v .when{display:block;font-size:12px}
+.card .v .push{font-size:14px;color:var(--muted);font-weight:500}.card .v .nw{white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--muted);margin:0 0 10px;align-items:center}
+.summary{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:14px}
+.summary h3{font-size:13px;font-weight:600;margin:0 0 8px}.summary .grp+.grp{margin-top:12px}
+.sitem{display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;align-items:baseline;padding:6px 0;border-top:1px solid var(--line);cursor:pointer;font-size:14px}
+.sitem:first-of-type{border-top:0}.sitem .g2{color:var(--muted);font-size:12px}.sitem .r{font-size:12px;color:var(--faint);text-align:right}
+.sitem:hover .t{text-decoration:underline}
+tr.day td{background:var(--soft);font-size:12px;font-weight:600;color:var(--muted);padding:7px 12px;letter-spacing:.02em}
+.pick .t.weak{color:var(--muted)}
+tr.g.flash td{background:var(--accbg)}.card .v .when{display:block;font-size:12px}
 .pick{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:2px 0}.pick .t{font-size:13px}.pick .e{font-size:12px;color:var(--faint)}
 .bet{font-weight:600}.notes{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.4}
 .bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
@@ -53,7 +63,7 @@ tr:last-child td{border-bottom:0}
 .nw{white-space:nowrap}
 @media (max-width:720px){table.games thead{display:none}table.games tr.g{display:grid;grid-template-columns:1fr auto;border-bottom:1px solid var(--line)}
 table.games tr.g td{border:0;padding:10px 12px 2px}table.games td.c-proj{text-align:right}table.games td.c-picks{grid-column:1/-1;padding:2px 12px 12px}
-table.games tr.g td.hide-sm{display:none}table.games tr.detail td{display:block}}
+#cards{grid-template-columns:repeat(3,1fr);gap:8px}#cards .card{padding:8px 10px}#cards .card .v{font-size:17px}#cards .card .l{font-size:11px}table.games tr.g td.hide-sm{display:none}table.games tr.detail td{display:block}table.games tr.day td{display:block}.sitem{grid-template-columns:auto 1fr}.sitem .r{grid-column:1/-1;text-align:left}}
 </style></head><body><div class="wrap">
 <header><div><h1>College football model</h1><div class="sub" id="sub"></div></div>
 <nav><a href="index.html" class="">Projections</a><a href="report.html" class="on">Report card</a></nav></header>
@@ -86,7 +96,7 @@ table.games tr.g td.hide-sm{display:none}table.games tr.detail td{display:block}
 
 <p class="note" id="foot"></p>
 </div>
-<script src="data.js"></script>
+<script src="data.js?v=20261009212419"></script>
 <script>
 const D=window.DATA;
 const fmt=x=>x==null?'—':(Math.round(x*10)/10).toString();
