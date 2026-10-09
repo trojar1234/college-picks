@@ -68,6 +68,10 @@ def backtest(wf, SEASONS):
     ht["res"] = np.where(vt == 0, "push", np.where(vt > 0, "win", "loss"))
     ht["flag"] = et.abs() >= C.TOTAL_EDGE
 
+    sa = _grade_spread(d, "cfbd_spread", 0)   # every game vs the closing line
+    sa = sa[(sa.pm + sa.cfbd_spread) != 0]   # model exactly on the line = no pick
+    ta = _grade_total(d, "cfbd_total", 0)
+    ta = ta[ta.pt != ta.cfbd_total]
     so = _grade_spread(d, "cfbd_spread_open", C.SPREAD_EDGE)
     to = _grade_total(d, "cfbd_total_open", C.TOTAL_EDGE)
     # Does the line move toward the model? (opening -> closing, games with a real disagreement)
@@ -89,6 +93,7 @@ def backtest(wf, SEASONS):
             total_mae=round(float((g.pt - g["at"]).abs().mean()), 2),
             ats=_rec(hs[hs.flag].res), ou=_rec(tt[tt.flag].res),
             ats_open=_rec(so[so.season == s].res), ou_open=_rec(to[to.season == s].res),
+            ats_all=_rec(sa[sa.season == s].res), ou_all=_rec(ta[ta.season == s].res),
         ))
 
     # Calibration: when the model says the home team covers X% of the time, how often does it?
@@ -136,6 +141,7 @@ def backtest(wf, SEASONS):
             mkt_total_mae=round(float((ht.cfbd_total - ht["at"]).abs().mean()), 2) if len(ht) else None,
             ats=_rec(has[has.flag].res), ou=_rec(ht[ht.flag].res),
             ats_open=_rec(so.res), ou_open=_rec(to.res),
+            ats_all=_rec(sa.res), ou_all=_rec(ta.res),
         ),
         line_move=move,
         calibration=cal,
@@ -185,6 +191,8 @@ def live(store, season):
         mkt_margin_mae=round(float(r.mkt_err_margin.abs().mean()), 2) if "mkt_err_margin" in r and r.mkt_err_margin.notna().any() else None,
         ats=_rec(r["ats"]) if "ats" in r else _rec(pd.Series([], dtype=str)),
         ou=_rec(r["ou"]) if "ou" in r else _rec(pd.Series([], dtype=str)),
+        ats_all=_rec(r["ats_all"]) if "ats_all" in r else _rec(pd.Series([], dtype=str)),
+        ou_all=_rec(r["ou_all"]) if "ou_all" in r else _rec(pd.Series([], dtype=str)),
     )
     clv = []
     for c in ("clv_spread", "clv_total"):

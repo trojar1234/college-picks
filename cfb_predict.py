@@ -161,24 +161,26 @@ def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_r
     return out
 
 
-def update_store(store, preds, now):
+def update_store(store, preds, now, version):
     """Keep the latest pre-kickoff prediction per game (frozen at kickoff) and
-    remember when and at what line each edge was first flagged."""
+    remember when and at what line each edge was first flagged.
+
+    `version` identifies the model and edge thresholds. A flag only counts as a bet
+    if it was made by the same version that made the final pre-kickoff prediction,
+    so changing the model or the thresholds never leaves stale bets behind."""
     for p in preds:
         key = str(p["game_id"])
         old = store.get(key, {})
         if pd.Timestamp(p["start"]) <= now and old:
             continue  # frozen
-        new = {**p, "updated": now.isoformat()}
+        new = {**p, "updated": now.isoformat(), "version": version}
         for kind, line_key in (("spread", "spread"), ("total", "total")):
             fk = f"first_{kind}_flag"
-            if old.get(fk):
-                new[fk] = old[fk]
+            if old.get(fk) and old[fk].get("version") == version:
+                new[fk] = old[fk]  # already bet at an earlier line: keep that line
             elif p.get(f"{kind}_flag") and not p["low_conf"]:
-                new[fk] = dict(ts=now.isoformat(), side=p[f"{kind}_side"],
+                new[fk] = dict(ts=now.isoformat(), side=p[f"{kind}_side"], version=version,
                                line=p["market"].get(line_key), model=p[f"model_{kind}"])
-        if old.get("result"):
-            new["result"] = old["result"]
         store[key] = new
     return store
 
@@ -198,11 +200,13 @@ def _ou(total, side, line):
 
 
 def grade(store, games, mview, cfbd_lines):
+    """(Re)grade every finished game from its frozen pre-kickoff prediction. A game counts
+    toward the ATS / O-U record only if that prediction's own model version flagged it."""
     g = games.set_index("game_id")
     cl = cfbd_lines.set_index("game_id") if len(cfbd_lines) else None
     for key, p in store.items():
         gid = int(key)
-        if p.get("result") or gid not in g.index or not g.loc[gid, "completed"]:
+        if gid not in g.index or not g.loc[gid, "completed"]:
             continue
         hp, ap = float(g.loc[gid, "home_pts"]), float(g.loc[gid, "away_pts"])
         mv = mview.get(gid, {})
@@ -221,13 +225,21 @@ def grade(store, games, mview, cfbd_lines):
             res["mkt_err_margin"] = -close_s - (hp - ap)
         if close_t is not None:
             res["mkt_err_total"] = close_t - (hp + ap)
+        # Every game, regardless of flags: the model's side against the closing line.
+        # A model number exactly on the line is "no pick" and isn't counted.
+        if close_s is not None and close_s - p["model_spread"] != 0:
+            res["ats_all"] = _ats(hp - ap, "home" if close_s - p["model_spread"] > 0 else "away", close_s)
+        if close_t is not None and p["model_total"] - close_t != 0:
+            res["ou_all"] = _ou(hp + ap, "over" if p["model_total"] > close_t else "under", close_t)
+        same = lambda f: f and f.get("line") is not None and f.get("version") is not None \
+            and f.get("version") == p.get("version")
         fs = p.get("first_spread_flag")
-        if fs and fs.get("line") is not None:
+        if same(fs):
             res["ats"] = _ats(hp - ap, fs["side"], fs["line"])
             if close_s is not None:
                 res["clv_spread"] = (fs["line"] - close_s) if fs["side"] == "home" else (close_s - fs["line"])
         ft = p.get("first_total_flag")
-        if ft and ft.get("line") is not None:
+        if same(ft):
             res["ou"] = _ou(hp + ap, ft["side"], ft["line"])
             if close_t is not None:
                 res["clv_total"] = (close_t - ft["line"]) if ft["side"] == "over" else (ft["line"] - close_t)

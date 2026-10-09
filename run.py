@@ -162,7 +162,8 @@ def main(mode):
         preds.append(predict.predict_game(r, state, R, m, wx.get(r.game_id), ovr, tiers, gp, shrink, grow))
 
     store = predict.load_store()
-    store = predict.update_store(store, preds, now)
+    version = f"{MODEL_VERSION}|spread {C.SPREAD_EDGE}|total {C.TOTAL_EDGE}"
+    store = predict.update_store(store, preds, now, version)
     store = predict.grade(store, games, mview, SEASONS[season]["lines"])
     predict.save_store(store)
 
