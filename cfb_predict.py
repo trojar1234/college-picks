@@ -128,13 +128,17 @@ def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_r
     if (spread is not None and abs(model_spread - spread) >= C.DISAGREE_SPREAD) or \
             (total is not None and abs(model_total - total) >= C.DISAGREE_TOTAL):
         low.append("big disagreement: check injury/QB news")
+    total_caution = []
+    w = wx or {}
+    if not w.get("dome") and ((w.get("wind") or 0) >= C.WEATHER_WIND or (w.get("precip") or 0) >= C.WEATHER_RAIN):
+        total_caution.append("wind/rain forecast: the model doesn't use weather, the market does")
     out = dict(
         game_id=int(r.game_id), start=r.start.isoformat(), wk=int(r.wk),
         home=r.home, away=r.away, neutral=bool(r.neutral),
         home_tier=tiers.get(r.home, "FCS"), away_tier=tiers.get(r.away, "FCS"),
         exp_home=round(eh, 1), exp_away=round(ea, 1),
         model_spread=model_spread, model_total=model_total,
-        market=mkt, weather=wx or {}, notes=notes, low_conf=sorted(set(low)),
+        market=mkt, weather=wx or {}, notes=notes, low_conf=sorted(set(low)), total_caution=total_caution,
         ratings=dict(
             home_off=Rt._side(R["ppa"], r.home, 0), home_def=Rt._side(R["ppa"], r.home, 1),
             away_off=Rt._side(R["ppa"], r.away, 0), away_def=Rt._side(R["ppa"], r.away, 1),
@@ -178,7 +182,7 @@ def update_store(store, preds, now, version):
             fk = f"first_{kind}_flag"
             if old.get(fk) and old[fk].get("version") == version:
                 new[fk] = old[fk]  # already bet at an earlier line: keep that line
-            elif p.get(f"{kind}_flag") and not p["low_conf"]:
+            elif p.get(f"{kind}_flag") and not p["low_conf"] and not (kind == "total" and p.get("total_caution")):
                 new[fk] = dict(ts=now.isoformat(), side=p[f"{kind}_side"], version=version,
                                line=p["market"].get(line_key), model=p[f"model_{kind}"])
         store[key] = new
@@ -216,7 +220,8 @@ def grade(store, games, mview, cfbd_lines):
             close_t = close_t if close_t is not None else _f(cl.loc[gid, "cfbd_total"])
         res = dict(
             home_pts=hp, away_pts=ap,
-            err_home=p["home_med"] - hp, err_away=p["away_med"] - ap,
+            err_home=(p["model_total"] - p["model_spread"]) / 2 - hp,  # the projected score shown on the site
+            err_away=(p["model_total"] + p["model_spread"]) / 2 - ap,
             err_margin=-p["model_spread"] - (hp - ap),
             err_total=p["model_total"] - (hp + ap),
             close_spread=close_s, close_total=close_t,

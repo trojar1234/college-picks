@@ -34,6 +34,12 @@ LAMBDA_GRID = [2, 3, 4, 6, 8]
 DISAGREE_SPREAD = 8.0
 DISAGREE_TOTAL = 10.0
 
+# The model doesn't use weather (it didn't improve backtests), but the market does. Total
+# edges in games with this much wind (mph) or rain (inches, kickoff to ~halftime) are marked
+# low confidence.
+WEATHER_WIND = 15.0
+WEATHER_RAIN = 0.10
+
 SIMS = 10000
 
 POWER_CONFS = {"SEC", "Big Ten", "Big 12", "ACC"}

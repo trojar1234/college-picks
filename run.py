@@ -176,7 +176,7 @@ def main(mode):
         experiments=exp_old,
         features=features,
     )
-    site.build(season, wk, slate, store, rep, finals[season], now, unmatched)
+    site.build(season, wk, slate, store, rep, finals[season], now, unmatched, state)
     print(f"Done. Week {wk}: {len(preds)} games projected, {sum(p.get('spread_flag', False) for p in preds)} spread edges.")
     if unmatched:
         print("Unmatched odds games:", unmatched[:10])

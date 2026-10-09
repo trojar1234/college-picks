@@ -117,6 +117,7 @@ def weather(points):
                     "hourly": "wind_speed_10m,precipitation,temperature_2m",
                     "wind_speed_unit": "mph",
                     "temperature_unit": "fahrenheit",
+                    "precipitation_unit": "inch",
                     "timezone": "UTC",
                     "forecast_days": 8,
                 },

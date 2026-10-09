@@ -123,6 +123,8 @@ def market_view(hist, games):
         if pre.empty:
             pre = grp
         snaps = pre.groupby("ts").agg(spread=("home_spread", "median"), total=("total", "median")).sort_index()
+        # Consensus = median of the books, rounded to the half point books actually use.
+        snaps = (np.floor(snaps * 2 + 0.5) / 2)
         latest = pre[pre.ts == pre.ts.max()]
         out[int(gid)] = dict(
             open_spread=_f(snaps.spread.dropna().iloc[0]) if snaps.spread.notna().any() else None,
