@@ -79,7 +79,7 @@ document.getElementById('sub').textContent=`${D.season} season · Week ${D.week?
 const L=D.report.live||{};
 const edges=G.filter(g=>(g.spread_flag||g.total_flag)&&!g.started&&!(g.low_conf||[]).length);
 document.getElementById('cards').innerHTML=[
-['Games',G.length],['Edges this week',edges.length],['Season ATS (flagged)',rec(L.ats)],['Season O/U (flagged)',rec(L.ou)],
+['Games',G.length],['Edges this week',edges.length],['Season ATS (flagged bets)',rec(L.ats)],['Season O/U (flagged bets)',rec(L.ou)],['Season ATS (all games)',rec(L.ats_all)+(L.ats_all&&L.ats_all.pct!=null?` <span class="sub">${pct(L.ats_all.pct)}</span>`:'')],
 ['Avg CLV',L.clv_avg==null?'—':sgn(L.clv_avg)+' pts']].map(([l,v])=>`<div class="card"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
 const F=[['all','All games'],['edges','Edges'],['spread','Spread edges'],['total','Total edges'],['P4','Power 4'],['G5','Group of 5']];
 let cur='all',hideLow=false,q='';

@@ -98,7 +98,7 @@ const R=D.report,L=R.live||{},B=R.backtest||{};
 const card=(l,v)=>`<div class="card"><div class="l">${l}</div><div class="v">${v}</div></div>`;
 document.getElementById('live').innerHTML=L.graded?[
  card('Games graded',L.graded),card('Team score MAE',fmt(L.team_mae)),card('Margin MAE',fmt(L.margin_mae)+(L.mkt_margin_mae?` <span class="sub">mkt ${fmt(L.mkt_margin_mae)}</span>`:'')),
- card('Flagged ATS',rec(L.ats)+(L.ats&&L.ats.pct!=null?` <span class="sub">${pct(L.ats.pct)}</span>`:'')),card('Flagged O/U',rec(L.ou)),
+ card('Flagged ATS',rec(L.ats)+(L.ats&&L.ats.pct!=null?` <span class="sub">${pct(L.ats.pct)}</span>`:'')),card('Flagged O/U',rec(L.ou)),card('ATS, all games',rec(L.ats_all)+(L.ats_all&&L.ats_all.pct!=null?` <span class="sub">${pct(L.ats_all.pct)}</span>`:'')),card('O/U, all games',rec(L.ou_all)+(L.ou_all&&L.ou_all.pct!=null?` <span class="sub">${pct(L.ou_all.pct)}</span>`:'')),
  card('Avg CLV',L.clv_avg==null?'—':sgn(L.clv_avg)+' pts'),card('Beat closing line',L.clv_beat_pct==null?'—':pct(L.clv_beat_pct)+` <span class="sub">of ${L.clv_n}</span>`)].join('')
  :card('Games graded','0')+'<p class="sub" style="grid-column:1/-1">Results appear here once games the model projected before kickoff are final.</p>';
 const rp=r=>r?`${rec(r)} <span class="when">${pct(r.pct)}</span>`:'—';
@@ -107,6 +107,7 @@ const o=B.overall;if(o)bt.push(`<tr><td><b>All</b></td><td>${o.games}</td><td>${
 document.getElementById('bt').innerHTML=bt.join('')||'<tr><td colspan="9" class="muted">Backtest not available yet.</td></tr>';
 if(o){const mv=B.line_move||{};document.getElementById('btcards').innerHTML=[
  card('Flagged ATS vs open',rp(o.ats_open)),card('Flagged O/U vs open',rp(o.ou_open)),
+ card('ATS vs close, all games',rp(o.ats_all)),card('O/U vs close, all games',rp(o.ou_all)),
  card('Lines moving toward model',mv.pct==null?'—':pct(mv.pct)+` <span class="sub">of ${mv.n}</span>`),
  card('Margin MAE (model / market)',`${fmt(o.margin_mae)} <span class="sub">/ ${fmt(o.mkt_margin_mae)}</span>`)].join('');}
 document.getElementById('cal').innerHTML=(B.calibration||[]).map(c=>`<tr><td>${c.bin}</td><td>${pct(c.predicted)}</td><td>${pct(c.actual)}</td><td>${c.n}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">—</td></tr>';
@@ -124,7 +125,7 @@ const pill=v=>v?`<span class="pill ${v==='win'?'p-good':v==='loss'?'p-bad':'p-ac
 document.getElementById('hist').innerHTML=(D.history||[]).slice(0,150).map(p=>{const r=p.result;const fs=p.first_spread_flag;
  const clv=[r.clv_spread,r.clv_total].filter(x=>x!=null);
  return `<tr><td>${esc(p.away)} @ <span class="home">${esc(p.home)}</span><div class="when">Week ${p.wk}</div></td><td>${r.home_pts}–${r.away_pts}</td><td>${p.home_med}–${p.away_med}</td>
- <td class="hide-sm">${fs?esc((fs.side==='home'?p.home:p.away))+' '+fmt(fs.side==='home'?fs.line:-fs.line):'—'}</td><td>${pill(r.ats)}</td><td>${pill(r.ou)}</td><td class="hide-sm">${clv.length?clv.map(sgn).join(', '):'—'}</td></tr>`;}).join('')||'<tr><td colspan="7" class="muted">No graded games yet.</td></tr>';
+ <td class="hide-sm">${fs&&r.ats?esc((fs.side==='home'?p.home:p.away))+' '+fmt(fs.side==='home'?fs.line:-fs.line):'—'}</td><td>${pill(r.ats)}</td><td>${pill(r.ou)}</td><td class="hide-sm">${clv.length?clv.map(sgn).join(', '):'—'}</td></tr>`;}).join('')||'<tr><td colspan="7" class="muted">No graded games yet.</td></tr>';
 document.getElementById('teams').innerHTML=(D.teams||[]).map((t,i)=>`<tr><td>${i+1}</td><td>${esc(t.team)} <span class="when">${t.tier}</span></td><td>${epa(t.net)}</td><td>${epa(t.off)} <span class="when">${t.off_rank}</span></td><td>${epa(t.deff)} <span class="when">${t.def_rank}</span></td><td class="hide-sm">${fmt(t.pace)}</td></tr>`).join('');
 const st=R.state||{};document.getElementById('settings').innerHTML=`Prior strength ${st.lam} (games' worth, tuned ${st.tuned_at?new Date(st.tuned_at).toLocaleDateString():'—'}) · Game-script correlation ${fmt(st.rho)} · Margin error SD ${fmt(st.margin_sd)} · Total error SD ${fmt(st.total_sd)}<br>Tuning results (margin MAE by prior strength): ${Object.entries(R.tune||{}).map(([k,v])=>`${k}: ${fmt(v)}`).join(' · ')||'—'}`;
 </script>
