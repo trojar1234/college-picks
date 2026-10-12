@@ -52,7 +52,7 @@ tr:last-child td{border-bottom:0}
 .home{font-weight:600}.when{font-size:12px;color:var(--faint)}
 .pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;white-space:nowrap;margin:1px 0}
 .p-good{background:var(--goodbg);color:var(--good)}.p-warn{background:var(--warnbg);color:var(--warn)}
-.p-bad{background:var(--badbg);color:var(--bad)}.p-acc{background:var(--accbg);color:var(--acc)}
+.p-bad{background:var(--badbg);color:var(--bad)}.p-mv{background:var(--soft);color:var(--muted);border:1px solid var(--line)}.p-acc{background:var(--accbg);color:var(--acc)}
 .muted{color:var(--faint)}.up{color:var(--good)}.down{color:var(--bad)}
 .detail td{background:var(--soft);padding:14px 16px}
 .dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
@@ -79,7 +79,7 @@ table.games tr.g td{border:0;padding:10px 12px 2px}table.games td.c-proj{text-al
 <div class="cards" id="cards"></div>
 <div id="summary"></div>
 <div class="bar" id="filters"></div>
-<div class="legend"><span><span class="pill p-good">BET</span> model and line 7+ points apart, nothing shaky</span><span><span class="pill p-warn">FLAG</span> 7+ apart, but there's a reason for caution</span><span><b>edge</b> = points between the model and the line</span><span>Picks in <b>bold</b> · away @ home · scores away–home · tap a game for details</span></div>
+<div class="legend"><span><span class="pill p-good">BET</span> model and line 7+ points apart, nothing shaky</span><span><span class="pill p-warn">FLAG</span> 7+ apart, but there's a reason for caution</span><span><span class="pill p-mv">LINE MOVED</span> recorded bet, but today's line no longer clears the bar</span><span><b>edge</b> = points between the model and the line</span><span>Picks in <b>bold</b> · away @ home · scores away–home · tap a game for details</span></div>
 <div class="tbl"><table class="games"><thead><tr>
 <th>Game</th><th>Prediction</th><th class="hide-sm">Line</th><th class="hide-sm">Model</th><th class="hide-sm">Edge</th><th>Pick</th>
 </tr></thead><tbody id="rows"></tbody></table></div>
@@ -87,7 +87,7 @@ table.games tr.g td{border:0;padding:10px 12px 2px}table.games td.c-proj{text-al
 
 <p class="note" id="foot"></p>
 </div>
-<script src="data.js?v=20261012204530"></script>
+<script src="data.js?v=20261012211247"></script>
 <script>
 const D=window.DATA;
 const fmt=x=>x==null?'—':(Math.round(x*10)/10).toString();
@@ -121,10 +121,19 @@ const L=D.report.live||{};
 const isLowTotal=g=>(g.low_conf||[]).length||(g.total_caution||[]).length;
 const isLowSpread=g=>(g.low_conf||[]).length||(g.spread_caution||[]).length;
 const SOFT=(g,k)=>(g.soft_notes||{})[k];
+// A recorded bet whose current line no longer clears the bar: still graded at the flagged line,
+// but not something to act on now.
+const TH=D.thresholds||{spread:7,total:7};
+const movedS=g=>{const b=g.spread_bet,m=g.market||{};if(!b||g.started||m.spread==null||g.model_spread==null)return false;
+ const e=m.spread-g.model_spread;return b.side==='home'?e<TH.spread:-e<TH.spread;};
+const movedT=g=>{const b=g.total_bet,m=g.market||{};if(!b||g.started||m.total==null||g.model_total==null)return false;
+ const e=g.model_total-m.total;return b.side==='over'?e<TH.total:-e<TH.total;};
 const bets=G.filter(g=>!g.started&&(g.spread_bet||g.total_bet));
+const nW=G.filter(g=>!g.started).reduce((n,g)=>n+(g.spread_bet?1:0)+(g.total_bet?1:0),0);
+const nMv=G.filter(g=>!g.started).reduce((n,g)=>n+(movedS(g)?1:0)+(movedT(g)?1:0),0);
 const withPct=r=>!r||(r.w+r.l+r.p)===0?'—':`${rec(r)}<span class="when">${pct(r.pct)}</span>`;
 document.getElementById('cards').innerHTML=[
-['Games',G.length],['Bets this week',bets.length],['Bets ATS',withPct(L.ats)],['Bets O/U',withPct(L.ou)],
+['Games',G.length],['Bets this week',`${nW}${nMv?`<span class="when">${nMv} line moved</span>`:''}`],['Bets ATS',withPct(L.ats)],['Bets O/U',withPct(L.ou)],
 ['All games ATS',withPct(L.ats_all)],['All games O/U',withPct(L.ou_all)]].map(([l,v])=>`<div class="card"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
 const F=[['all','All games'],['bets','Bets'],['edges','All flags'],['P4','Power 4'],['G5','Group of 5']];
 let cur='all',hideLow=false,q='';
@@ -170,16 +179,16 @@ function pickData(g){
  // A bet stays at the line where it was first flagged, even if the line has moved since
  const sb=g.spread_bet,tb=g.total_bet;
  if(sb){const home=sb.side==='home';sp={team:home?g.home:g.away,line:home?sb.line:-sb.line,edge:Math.abs(sb.line-g.model_spread)};
-  if(m.spread!=null&&m.spread!==sb.line)sp.now=sl(home?m.spread:-m.spread);sSt='bet';}
+  if(m.spread!=null&&m.spread!==sb.line)sp.now=sl(home?m.spread:-m.spread);sSt=movedS(g)?'moved':'bet';}
  if(tb){tp={side:tb.side==='over'?'Over':'Under',line:tb.line,edge:Math.abs(g.model_total-tb.line)};
-  if(m.total!=null&&m.total!==tb.line)tp.now=m.total;tSt='bet';}
+  if(m.total!=null&&m.total!==tb.line)tp.now=m.total;tSt=movedT(g)?'moved':'bet';}
  const why=[...((sSt||tSt)?(g.low_conf||[]):[]),...(sSt?(g.spread_caution||[]):[]),...(tSt?(g.total_caution||[]):[]),...(sSt&&SOFT(g,'spread')?[SOFT(g,'spread')]:[]),...(tSt&&SOFT(g,'total')?[SOFT(g,'total')]:[])];
  return {sp,tp,sSt,tSt,sRes:'',tRes:'',why,lineS:m.spread,lineT:m.total,closing:false};}
 function pickLine(kind,p,status,result){
  if(!p)return `<div class="ln muted">${kind==='Spread'?'No spread line':'No total line'}</div>`;
  if(p.none)return `<div class="ln muted">${kind==='Spread'?'Spread':'Total'}: no pick</div>`;
  const txt=kind==='Spread'?`${esc(p.team)} ${sl(p.line)}`:`${p.side} ${p.line}`;
- const tag=status==='bet'?'<span class="pill p-good">BET</span> ':status==='caution'?'<span class="pill p-warn">FLAG</span> ':'';
+ const tag=status==='bet'?'<span class="pill p-good">BET</span> ':status==='moved'?'<span class="pill p-mv" title="Recorded at this line; the current line no longer clears the bar">LINE MOVED</span> ':status==='caution'?'<span class="pill p-warn">FLAG</span> ':'';
  const weak=!status&&!result&&p.edge<2;
  return `<div class="ln">${tag}<b class="${weak?'weak':''}">${txt}</b> ${result||''}<span class="sm-inline e"> edge ${p.edge.toFixed(1)}</span>${p.now?`<span class="e"> · now ${p.now}</span>`:''}</div>`;}
 const edgeCell=p=>!p||p.none?'<div class="ln muted">—</div>':`<div class="ln ${p.edge>=7?'hot':p.edge<2?'muted':''}">${p.edge.toFixed(1)}</div>`;
@@ -270,16 +279,16 @@ function summary(){
  const open=G.filter(g=>!g.started);const items=[];
  open.forEach(g=>{const m=g.market||{};const gm=`${esc(g.away)} ${g.neutral?'vs':'@'} ${esc(g.home)} · ${when(g.start)}`;
   const low=(g.low_conf||[]);
-  if(g.spread_bet){const b=g.spread_bet,home=b.side==='home';items.push({k:'bet',g,txt:`${esc(home?g.home:g.away)} ${sl(home?b.line:-b.line)}`,gm,
-   edge:Math.abs(b.line-g.model_spread),note:[m.spread!=null&&m.spread!==b.line?`line now ${sl(home?m.spread:-m.spread)}`:'',...[...low,...(g.spread_caution||[]),SOFT(g,'spread')].filter(Boolean).map(REASON)].filter(Boolean).join(' · ')});}
+  if(g.spread_bet){const b=g.spread_bet,home=b.side==='home';items.push({k:movedS(g)?'moved':'bet',g,txt:`${esc(home?g.home:g.away)} ${sl(home?b.line:-b.line)}`,gm,
+   edge:Math.abs(b.line-g.model_spread),note:[m.spread!=null&&m.spread!==b.line?`line now ${sl(home?m.spread:-m.spread)}${movedS(g)?` (edge now ${Math.abs(m.spread-g.model_spread).toFixed(1)})`:''}`:'',...[...low,...(g.spread_caution||[]),SOFT(g,'spread')].filter(Boolean).map(REASON)].filter(Boolean).join(' · ')});}
   else if(g.spread_flag&&isLowSpread(g)){const p=spreadPick(g,m.spread,g.model_spread);if(p&&!p.none)items.push({k:'flag',g,txt:`${esc(p.team)} ${sl(p.line)}`,gm,edge:p.edge,note:[...new Set([...low,...(g.spread_caution||[])].map(REASON))].join(' · ')});}
-  if(g.total_bet){const b=g.total_bet;items.push({k:'bet',g,txt:`${b.side==='over'?'Over':'Under'} ${b.line}`,gm,edge:Math.abs(g.model_total-b.line),
-   note:[m.total!=null&&m.total!==b.line?`line now ${m.total}`:'',...[...low,...(g.total_caution||[]),SOFT(g,'total')].filter(Boolean).map(REASON)].filter(Boolean).join(' · ')});}
+  if(g.total_bet){const b=g.total_bet;items.push({k:movedT(g)?'moved':'bet',g,txt:`${b.side==='over'?'Over':'Under'} ${b.line}`,gm,edge:Math.abs(g.model_total-b.line),
+   note:[m.total!=null&&m.total!==b.line?`line now ${m.total}${movedT(g)?` (edge now ${Math.abs(g.model_total-m.total).toFixed(1)})`:''}`:'',...[...low,...(g.total_caution||[]),SOFT(g,'total')].filter(Boolean).map(REASON)].filter(Boolean).join(' · ')});}
   else if(g.total_flag&&isLowTotal(g)){const p=totalPick(m.total,g.model_total);if(p&&!p.none)items.push({k:'flag',g,txt:`${p.side} ${p.line}`,gm,edge:p.edge,note:[...new Set([...low,...(g.total_caution||[])].map(REASON))].join(' · ')});}
  });
  const el=document.getElementById('summary');
- const row=i=>`<div class="sitem" data-id="${i.g.game_id}"><span class="pill ${i.k==='bet'?'p-good':'p-warn'}">${i.k==='bet'?'BET':'FLAG'}</span><span><span class="t ${i.k==='bet'?'bet':''}">${i.txt}</span> <span class="g2">${i.gm}</span></span><span class="r">edge ${i.edge.toFixed(1)}${i.note?` · ${esc(i.note)}`:''}</span></div>`;
- const b=items.filter(i=>i.k==='bet'),f=items.filter(i=>i.k==='flag');
+ const row=i=>`<div class="sitem" data-id="${i.g.game_id}"><span class="pill ${i.k==='bet'?'p-good':i.k==='moved'?'p-mv':'p-warn'}">${i.k==='bet'?'BET':i.k==='moved'?'LINE MOVED':'FLAG'}</span><span><span class="t ${i.k==='bet'?'bet':''}">${i.txt}</span> <span class="g2">${i.gm}</span></span><span class="r">edge ${i.edge.toFixed(1)}${i.note?` · ${esc(i.note)}`:''}</span></div>`;
+ const b=items.filter(i=>i.k==='bet'||i.k==='moved').sort((x,y)=>(x.k==='moved')-(y.k==='moved')),f=items.filter(i=>i.k==='flag');
  el.className='summary';
  el.innerHTML=`<div class="grp"><h3>This week's bets</h3>${b.length?b.map(row).join(''):'<div class="sub">No bets right now: no game has a clean 7-point edge.</div>'}</div>`+
   (f.length?`<div class="grp"><h3>Flags: check before betting</h3>${f.map(row).join('')}</div>`:'');
