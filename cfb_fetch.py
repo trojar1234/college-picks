@@ -5,7 +5,7 @@ season at once and past seasons are cached forever in data/raw/.
 """
 import json
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import requests
 
@@ -24,6 +24,29 @@ def _load(name):
 def _save(name, obj):
     C.RAW.mkdir(parents=True, exist_ok=True)
     _cache_path(name).write_text(json.dumps(obj))
+    log = _fetch_log()
+    log[name] = datetime.now(timezone.utc).isoformat()
+    (C.RAW / "_fetched.json").write_text(json.dumps(log, indent=0, sort_keys=True))
+
+
+def _fetch_log():
+    p = C.RAW / "_fetched.json"
+    try:
+        return json.loads(p.read_text()) if p.exists() else {}
+    except ValueError:
+        return {}
+
+
+def stale(name, days):
+    """True if a cached file is missing, empty, or was last downloaded more than `days` ago.
+    (File times can't be used: a fresh checkout stamps every file with the checkout time.)"""
+    cached = _load(name)
+    if not cached:
+        return True
+    ts = _fetch_log().get(name)
+    if ts is None:
+        return True
+    return datetime.now(timezone.utc) - datetime.fromisoformat(ts) > timedelta(days=days)
 
 
 def cfbd(endpoint, params, name, refresh=False):
@@ -66,8 +89,12 @@ def season_data(year, refresh=False):
             refresh,
         ),
         "lines": cfbd("/lines", {"year": year, "seasonType": "both"}, f"lines_{year}", refresh),
-        "talent": cfbd("/talent", {"year": year}, f"talent_{year}"),
-        "returning": cfbd("/player/returning", {"year": year}, f"returning_{year}"),
+        # The current season's talent and returning production can change (or be empty when
+        # first published in spring), so re-download them weekly during that season.
+        "talent": cfbd("/talent", {"year": year}, f"talent_{year}",
+                       refresh and stale(f"talent_{year}", 7)),
+        "returning": cfbd("/player/returning", {"year": year}, f"returning_{year}",
+                          refresh and stale(f"returning_{year}", 7)),
     }
 
 

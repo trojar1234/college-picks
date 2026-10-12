@@ -90,8 +90,9 @@ def run_chain(SEASONS, lam, backtest=True, players=None, use=()):
     for s in seasons:
         S = SEASONS[s]
         g = S["games"]
-        if g.empty or S["adv"].empty:
+        if g.empty:
             continue
+        no_stats = S["adv"].empty  # preseason: the schedule is out but no games played yet
         tiers = season_tiers(S.get("games_all", g))
         ctx = dict(tiers=tiers, fcs=frozenset(t for t, v in tiers.items() if v == "FCS"), m={})
         feats = None
@@ -107,7 +108,7 @@ def run_chain(SEASONS, lam, backtest=True, players=None, use=()):
             for m in Rt.METRICS:
                 ctx["m"][m] = dict(prior=priors[m], mu0=prev[m]["mu"], hfa0=prev[m]["hfa"],
                                    default=defaults[m], g0=prev[m]["g"])
-        if backtest and s != first:
+        if backtest and s != first and not no_stats:
             done = g[g.completed]
             for wk in sorted(done.wk.unique()):
                 cut = done.loc[done.wk == wk, "start"].min()
@@ -121,7 +122,7 @@ def run_chain(SEASONS, lam, backtest=True, players=None, use=()):
         R = ratings_from(_rows_before(S), ctx, lam)
         finals[s] = dict(R, tiers=tiers, abs={m: Rt.absolute(R[m]) for m in Rt.METRICS})
         info[s] = ctx
-        if feats is not None:
+        if feats is not None and not no_stats:  # prior-only ratings must not train the priors
             pairs.append((feats, finals[s]["abs"]))
     return finals, pd.DataFrame(bt), info
 

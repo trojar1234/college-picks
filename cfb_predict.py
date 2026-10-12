@@ -13,6 +13,8 @@ from cfb_lines import _f
 
 STORE = C.DATA / "predictions.json"
 OVERRIDES = C.DATA / "overrides.csv"
+if not OVERRIDES.exists() and (C.DATA.parent / "overrides.csv").exists():
+    OVERRIDES = C.DATA.parent / "overrides.csv"  # also accept the file at the repo root
 
 
 def load_store():
@@ -45,7 +47,9 @@ def current_slate(games, now):
     if up.empty:
         return games.iloc[0:0], None
     wk = int(up.sort_values("start").iloc[0].wk)
-    return games[games.wk == wk].copy(), wk
+    soon = up.start <= now + pd.Timedelta(days=6)
+    keep = (games.wk == wk) | games.game_id.isin(up[soon].game_id)
+    return games[keep].copy(), wk
 
 
 def venue_map():

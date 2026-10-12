@@ -81,6 +81,13 @@ def _parse_passing(raw):
 QB_PRIOR_ATT, QB_PRIOR_YPA = 150.0, 5.0  # unknown QBs are assumed to be below-average backups
 
 
+def _week_done(week_games):
+    """A week is final when every game is completed or is 2+ days past kickoff (canceled or
+    postponed games never get marked completed and would otherwise block the week forever)."""
+    stale = week_games.start < pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=2)
+    return bool((week_games.completed | stale).all())
+
+
 def qb_table(all_games, budget, first_season, current):
     """Download passing box scores week by week (cached), then compute for every
     game whether each team's expected starter differs from its regular starter."""
@@ -93,7 +100,7 @@ def qb_table(all_games, budget, first_season, current):
         w = wk - 20 if wk > 20 else wk
         name = f"passing_{season}_{st}_{w}"
         week_games = all_games[(all_games.season == season) & (all_games.wk == wk)]
-        if not week_games.completed.all() and F._load(name) is None:
+        if not _week_done(week_games) and F._load(name) is None:
             continue  # wait until the whole week is final
         try:
             raw = budget.get("/games/players", {"year": int(season), "week": int(w), "seasonType": st,
@@ -237,10 +244,8 @@ def pbp_table(all_games, first_season):
             except pd.errors.EmptyDataError:
                 pass
             continue
-        if not grp.completed.all():
-            if grp.completed.any():
-                missing += 0  # current week: picked up once the whole week is final
-            continue
+        if not _week_done(grp):
+            continue  # current week: picked up once the whole week is final
         if budget <= 0 or denied:
             missing += 1
             continue

@@ -165,6 +165,13 @@ def ensure_data(seasons, current, first_qb_season):
             ("/ppa/players/season", {"year": s - 1}, f"playerppa_{s - 1}"),
         ):
             if _load(name) is not None:
+                # this season's roster changes (transfers, spring vs fall), so refresh it weekly
+                if s == current and name == f"roster_{s}" and not C.OFFLINE and F.stale(name, 7) and budget.left > 0:
+                    try:
+                        budget.left -= 1
+                        F.cfbd(endpoint, params, name, refresh=True)
+                    except Exception:
+                        pass
                 continue
             bucket = missing["off"] if name.startswith("playerppa") else missing["core"]
             try:

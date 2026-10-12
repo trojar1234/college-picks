@@ -9,6 +9,7 @@ import os
 import sys
 from datetime import datetime, timezone
 
+import numpy as np
 import pandas as pd
 
 import cfb_config as C
@@ -43,6 +44,12 @@ def main(mode):
         sd = fetch.season_data(y, refresh=(full and y == season))
         SEASONS[y] = Dt.load_season(sd, y)
     games = SEASONS[season]["games"]
+    if games.empty and season - 1 in SEASONS and not SEASONS[season - 1]["games"].empty:
+        # Offseason before the new schedule is published: keep showing last season.
+        print(f"No {season} schedule yet; showing {season - 1}.")
+        SEASONS.pop(season)
+        season -= 1
+        games = SEASONS[season]["games"]
     if games.empty:
         raise SystemExit(f"No {season} games found. Check the CFBD key.")
 
@@ -57,6 +64,8 @@ def main(mode):
     qb_ctx, available, xstatus, pbp = extra.build(SEASONS, season, tune_seasons[0])
     if C.TOTALS_MODEL:
         available["totals"] = True  # see cfb_config.TOTALS_MODEL
+    else:
+        available["_why_totals"] = "switched off: more accurate totals, but its over/under bets did worse against opening lines"
     # Attach play-by-play metrics to each team-game row (NaN where not downloaded yet).
     for y, S in SEASONS.items():
         a = S["adv"]
@@ -114,6 +123,10 @@ def main(mode):
         exp_old = dict(version=MODEL_VERSION, run=now.isoformat(), available=avail_key, status=xstatus,
                        chosen=features, tune_seasons=[tune_seasons[0], tune_seasons[-1]], **results)
         EXPERIMENTS.write_text(json.dumps(exp_old, indent=1, default=str))
+    for t in exp_old.get("tests", []):  # keep "not tested" reasons current between full re-tests
+        why = available.get(f"_why_{t.get('group')}")
+        if t.get("skipped") and why:
+            t["skipped"] = why
     features = features or {}
     groups = [g for g in features.get("groups", []) if g in model.BASE_GROUPS or g in available]
     use = list(features.get("players") or [])
@@ -130,7 +143,11 @@ def main(mode):
     STATE.write_text(json.dumps(state, indent=1))
 
     # Lines
-    snap, unmatched = lines.snapshot_rows(fetch.odds_snapshot(), games, now)
+    odds = fetch.odds_snapshot()
+    # Stamp lines with the time they were actually fetched (the model fit takes minutes), so a quote
+    # taken after kickoff is never treated as pre-game.
+    fetched = now if os.environ.get("CFB_NOW") else max(now, pd.Timestamp(datetime.now(timezone.utc)))
+    snap, unmatched = lines.snapshot_rows(odds, games, fetched)
     hist = lines.append(snap)
     mview = lines.market_view(hist, games)
     cfbd_ln = SEASONS[season]["lines"].set_index("game_id") if len(SEASONS[season]["lines"]) else None
@@ -147,12 +164,15 @@ def main(mode):
     tiers = finals[season]["tiers"]
     ovr = predict.load_overrides()
     wx = predict.game_weather(slate, now) if len(slate) else {}
-    gp = int(games.completed.sum() / max(1, len(set(games.home) | set(games.away))) * 2)
+    # Games played by the typical FBS team (FCS opponents excluded from the count of teams)
+    played = pd.concat([games[games.completed].home, games[games.completed].away]).value_counts()
+    fbs_teams = [t for t, v in tiers.items() if v != "FCS"]
+    gp = int(np.median([played.get(t, 0) for t in fbs_teams])) if fbs_teams else 0
     gidx = qb_ctx.set_index("game_id") if len(qb_ctx) else None
     preds = []
     for r in slate.itertuples():
-        if r.start <= now:
-            continue
+        if r.start <= fetched + pd.Timedelta(minutes=5):
+            continue  # kicked off (or about to): its line may already be live
         m = dict(mview.get(int(r.game_id), {}))
         if m.get("spread") is None and cfbd_ln is not None and r.game_id in cfbd_ln.index:
             m["spread"] = lines._f(cfbd_ln.loc[r.game_id, "cfbd_spread"])
@@ -189,7 +209,8 @@ def main(mode):
         if (done.start < cut).any():
             prev_final = dict(model.ratings_from(model._rows_before(SEASONS[season], cut), info[season], lam),
                               tiers=finals[season]["tiers"])
-    site.build(season, wk, slate, store, rep, finals[season], now, unmatched, state, prev_final)
+    lines_ts = hist.ts.max().isoformat() if len(hist) and "ts" in hist else None
+    site.build(season, wk, slate, store, rep, finals[season], now, unmatched, state, prev_final, lines_ts)
     print(f"Done. Week {wk}: {len(preds)} games projected, {sum(p.get('spread_flag', False) for p in preds)} spread edges.")
     if unmatched:
         print("Unmatched odds games:", unmatched[:10])
