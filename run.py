@@ -156,10 +156,12 @@ def main(mode):
         m = dict(mview.get(int(r.game_id), {}))
         if m.get("spread") is None and cfbd_ln is not None and r.game_id in cfbd_ln.index:
             m["spread"] = lines._f(cfbd_ln.loc[r.game_id, "cfbd_spread"])
-            m["open_spread"] = m.get("open_spread") or lines._f(cfbd_ln.loc[r.game_id, "cfbd_spread_open"])
+            if m.get("open_spread") is None:  # 0 is a real (pick'em) line, so test for missing explicitly
+                m["open_spread"] = lines._f(cfbd_ln.loc[r.game_id, "cfbd_spread_open"])
         if m.get("total") is None and cfbd_ln is not None and r.game_id in cfbd_ln.index:
             m["total"] = lines._f(cfbd_ln.loc[r.game_id, "cfbd_total"])
-            m["open_total"] = m.get("open_total") or lines._f(cfbd_ln.loc[r.game_id, "cfbd_total_open"])
+            if m.get("open_total") is None:
+                m["open_total"] = lines._f(cfbd_ln.loc[r.game_id, "cfbd_total_open"])
         grow = gidx.loc[r.game_id].to_dict() if gidx is not None and r.game_id in gidx.index else {}
         preds.append(predict.predict_game(r, state, R, m, wx.get(r.game_id), ovr, tiers, gp, shrink, grow))
 

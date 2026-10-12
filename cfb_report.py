@@ -146,6 +146,8 @@ def backtest(wf, SEASONS):
             team_mae=round(float(pd.concat([(d.pred_h - d.home_pts).abs(), (d.pred_a - d.away_pts).abs()]).mean()), 2),
             margin_mae=round(float((d.pm - d.am).abs().mean()), 2),
             mkt_margin_mae=round(float((-has.cfbd_spread - has.am).abs().mean()), 2) if len(has) else None,
+            matched_margin_mae=round(float((has.pm - has.am).abs().mean()), 2) if len(has) else None,
+            matched_n=int(len(has)),
             total_mae=round(float((d.pt - d["at"]).abs().mean()), 2),
             mkt_total_mae=round(float((ht.cfbd_total - ht["at"]).abs().mean()), 2) if len(ht) else None,
             ats=_rec(has[has.flag].res), ou=_rec(ht[ht.flag].res),
@@ -192,8 +194,14 @@ def segments(d):
     )
 
 
+def season_of(start):
+    """Season a game belongs to: January bowl games count toward the previous season."""
+    t = pd.Timestamp(start)
+    return t.year if t.month >= 7 else t.year - 1
+
+
 def live(store, season):
-    rows = [p for p in store.values() if p.get("result") and str(p.get("start", ""))[:4] in (str(season), str(season + 1))]
+    rows = [p for p in store.values() if p.get("result") and p.get("start") and season_of(p["start"]) == season]
     if not rows:
         return dict(graded=0)
     r = pd.DataFrame([dict(**p["result"], wk=p["wk"]) for p in rows])

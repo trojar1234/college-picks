@@ -121,7 +121,7 @@ def market_view(hist, games):
         st = starts.get(gid)
         pre = grp[grp.ts < st] if st is not None and st == st else grp
         if pre.empty:
-            pre = grp
+            continue  # only in-game quotes: never treat those as the opening or closing line
         snaps = pre.groupby("ts").agg(spread=("home_spread", "median"), total=("total", "median")).sort_index()
         # Consensus = median of the books, rounded to the half point books actually use.
         snaps = (np.floor(snaps * 2 + 0.5) / 2)
