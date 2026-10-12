@@ -1,8 +1,7 @@
 {
  "version": 5,
- "run": "2026-10-09T22:46:33.760015+00:00",
+ "run": "2026-10-12T20:45:30.703727+00:00",
  "available": [
-  "matchup",
   "pbp",
   "players",
   "players_off"
@@ -71,14 +70,9 @@
    "ok": true
   },
   {
-   "feature": "Totals correction by matchup type (Power 4 vs Power 4, FCS opponent)",
-   "group": "matchup",
-   "margin": 12.943,
-   "total": 13.226,
-   "gain_margin": -0.002,
-   "gain_total": 0.021,
-   "kept": false,
-   "ok": false
+   "feature": "Separate totals model: game-level fit with matchup type (Power 4 vs Power 4, FCS), recalibrated on past out-of-sample totals",
+   "group": "totals",
+   "skipped": "data not available yet"
   },
   {
    "feature": "Play-by-play: non-garbage points per drive, finishing drives, field position",
