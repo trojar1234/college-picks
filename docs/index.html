@@ -33,6 +33,10 @@ h1{color:var(--text)}header h1:before{content:"";display:inline-block;width:10px
 .sitem:hover .t{text-decoration:underline}
 tr.day td{background:var(--soft);font-size:12px;font-weight:600;color:var(--muted);padding:7px 12px;letter-spacing:.02em}
 .pick .t.weak{color:var(--muted)}
+.secnav{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;gap:4px;overflow-x:auto;white-space:nowrap;padding:8px 0;margin:-6px 0 10px;border-bottom:1px solid var(--line)}
+.secnav a{color:var(--muted);text-decoration:none;font-size:13px;padding:4px 10px;border-radius:999px}.secnav a:hover{background:var(--soft);color:var(--text)}
+h2[id]{scroll-margin-top:52px}.summary[id]{scroll-margin-top:52px}
+.ci{display:block;font-size:11px;font-weight:500}.ci.warnc{color:var(--warn)}.ci.up{color:var(--good)}.ci.down{color:var(--bad)}
 .chartgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}.chart{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}.chart h4{margin:0 0 8px;font-size:13px;font-weight:600}.chart svg{width:100%;height:auto;display:block}
 .summary p.gl{margin:6px 0;font-size:14px;line-height:1.5}
 tr.g.flash td{background:var(--accbg)}.card .v .when{display:block;font-size:12px}
@@ -47,7 +51,7 @@ input[type=search]{font:inherit;font-size:14px;padding:6px 10px;border-radius:8p
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 th{font-size:12px;font-weight:500;color:var(--muted);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
 td{padding:10px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:top}
-tr.g{cursor:pointer}tr.g:hover td{background:var(--soft)}
+tr.g{cursor:pointer}tr.g:hover td{background:var(--soft)}tr.g:focus-visible td,.sitem:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
 tr:last-child td{border-bottom:0}
 .home{font-weight:600}.when{font-size:12px;color:var(--faint)}
 .pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;white-space:nowrap;margin:1px 0}
@@ -87,9 +91,10 @@ table.games tr.g td{border:0;padding:10px 12px 2px}table.games td.c-proj{text-al
 
 <p class="note" id="foot"></p>
 </div>
-<script src="data.js?v=20261012211247"></script>
+<script src="data.js?v=20261012222105"></script>
 <script>
 const D=window.DATA;
+if(!D){document.querySelector('.wrap').insertAdjacentHTML('afterbegin','<div class="summary"><b>Data unavailable.</b> The latest update did not publish its data file. It should be back after the next scheduled run.</div>');throw new Error('data.js missing');}
 const fmt=x=>x==null?'—':(Math.round(x*10)/10).toString();
 const sgn=x=>{if(x==null)return '—';const r=Math.round(x*10)/10;return r===0?'0':(r>0?'+':'−')+Math.abs(r);};
 const f2=x=>x==null?'—':x.toFixed(2);
@@ -111,12 +116,15 @@ function projScore(g){const S=g.model_spread,T=g.model_total;if(S==null||T==null
 const resPill=(v,label)=>v?`<span class="pill ${v==='win'?'p-good':v==='loss'?'p-bad':'p-acc'}">${label?label+' ':''}${v==='win'?'W':v==='loss'?'L':'Push'}</span>`:'';
 const when=s=>new Date(s).toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',hour:'numeric',minute:'2-digit'});
 function line(home,away,s){if(s==null)return '—';if(s===0)return 'Pick';return s<0?`${home} −${Math.abs(s)}`:`${away} −${s}`;}
+const wkName=w=>w==null?'—':(w>20?'Bowls':`Week ${w}`);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 document.getElementById('foot').innerHTML=`Updated ${new Date(D.generated).toLocaleString('en-US',{timeZone:'America/Chicago'})} CT · Data from CollegeFootballData.com, The Odds API, Open-Meteo.`+(D.unmatched&&D.unmatched.length?` · Unmatched odds games: ${D.unmatched.length}`:'');
 </script>
 <script>
 const G=D.games;
-document.getElementById('sub').textContent=`${D.season} season · Week ${D.week??'—'} · updated ${new Date(D.generated).toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',hour:'numeric',minute:'2-digit'})} CT`;
+const ctTime=t=>new Date(t).toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',hour:'numeric',minute:'2-digit'});
+const linesAge=D.lines_updated?(new Date(D.generated)-new Date(D.lines_updated))/36e5:null;
+document.getElementById('sub').innerHTML=`${D.season} season · ${wkName(D.week)} · model run ${ctTime(D.generated)} CT`+(D.lines_updated?` · lines ${ctTime(D.lines_updated)} CT`:'')+(linesAge!=null&&linesAge>12?` <span class="pill p-warn">lines may be stale</span>`:'');
 const L=D.report.live||{};
 const isLowTotal=g=>(g.low_conf||[]).length||(g.total_caution||[]).length;
 const isLowSpread=g=>(g.low_conf||[]).length||(g.spread_caution||[]).length;
@@ -148,7 +156,7 @@ const isBet=g=>!!(g.spread_bet||g.total_bet);
 function keep(g){
  if(q&&!(g.home+' '+g.away).toLowerCase().includes(q))return false;
  if(conf&&g.home_conf!==conf&&g.away_conf!==conf)return false;
- if(hideLow&&(g.low_conf||[]).length)return false;
+ if(hideLow&&((g.low_conf||[]).length||(g.spread_caution||[]).length||(g.total_caution||[]).length))return false;
  if(cur==='bets')return g.completed?!!(g.result&&(g.result.ats||g.result.ou)):isBet(g);
  if(cur==='edges')return g.completed?!!(g.result&&(g.result.ats||g.result.ou)):!!(g.spread_flag||g.total_flag||g.spread_bet||g.total_bet);
  if(cur==='P4')return g.home_tier==='P4'||g.away_tier==='P4';
@@ -206,6 +214,11 @@ function icons(g){const w=g.weather||{};let s='';
  if(qn.length)s+=` <span class="pill p-bad" title="${esc(qn.join('; '))}">QB change</span>`;
  if(n.length>qn.length)s+=' <span class="pill p-bad" title="Manual adjustment">manual adj</span>';
  if([...(g.low_conf||[]),...(g.spread_caution||[]),...(g.total_caution||[])].some(x=>x.startsWith('big disagreement')))s+=' <span class="pill p-warn" title="Model and market 10+ points apart: check injury/QB news">check news</span>';return s;}
+// 10th to 90th percentile of the simulated home margin, from the 3-point histogram bins (-45..+45)
+function marginRange(g){const h=g.hist||[];const n=h.reduce((a,b)=>a+b,0);if(!n)return null;
+ const q=t=>{let c=0;for(let i=0;i<h.length;i++){if(c+h[i]>=t*n){const lo=-45+3*i;return lo+3*((t*n-c)/Math.max(1,h[i]));}c+=h[i];}return 45;};
+ const side=m=>Math.abs(m)<0.5?'tie':(m>0?`${esc(g.home)} by ${Math.round(m)}`:`${esc(g.away)} by ${Math.round(-m)}`);
+ return `${side(q(0.1))} to ${side(q(0.9))}`;}
 function detail(g){
  if(g.home_med==null)return '<div class="sub">No projection stored for this game.</div>';
  const h=g.hist||[],mx=Math.max(1,...h);const m=g.market||{};
@@ -224,6 +237,7 @@ function detail(g){
   <h4 style="margin-top:12px">Most likely final scores</h4>${likely}</div>
  <div><h4>Margin distribution (${esc(g.home)} − ${esc(g.away)})</h4><div class="hist">${bars}</div>
   <div class="kv sub"><span>−45</span><span>0</span><span>+45</span></div>
+  ${(()=>{const r=marginRange(g);return r?`<div class="kv"><span>80% of simulations</span><span>${r}</span></div>`:''})()}
   <h4 style="margin-top:12px">Inputs</h4>
   <div class="kv"><span>Expected points (away · home)</span><span>${fmt(g.exp_away)} · ${fmt(g.exp_home)}</span></div>
   <div class="kv"><span>Off EPA/play (away · home)</span><span>${epa(R.away_off)} · ${epa(R.home_off)}</span></div>
@@ -273,7 +287,9 @@ function draw(){
  if(done.length)groups.push(['Final',done]);
  const n=k=>`${k.length} game${k.length===1?'':'s'}`;
  tb.innerHTML=groups.map(([k,gs])=>`<tr class="day"><td colspan="6">${k} · ${n(gs)}</td></tr>`+gs.map(rowHtml).join('')).join('');
- tb.querySelectorAll('tr.g').forEach(tr=>tr.onclick=()=>{const d=document.getElementById('d'+tr.dataset.id);d.hidden=!d.hidden;});}
+ tb.querySelectorAll('tr.g').forEach(tr=>{tr.tabIndex=0;tr.setAttribute('aria-expanded','false');
+  const t=()=>{const d=document.getElementById('d'+tr.dataset.id);d.hidden=!d.hidden;tr.setAttribute('aria-expanded',String(!d.hidden));};
+  tr.onclick=t;tr.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();t();}};});}
 // This week's bets and flags, above the table
 function summary(){
  const open=G.filter(g=>!g.started);const items=[];
@@ -292,6 +308,7 @@ function summary(){
  el.className='summary';
  el.innerHTML=`<div class="grp"><h3>This week's bets</h3>${b.length?b.map(row).join(''):'<div class="sub">No bets right now: no game has a clean 7-point edge.</div>'}</div>`+
   (f.length?`<div class="grp"><h3>Flags: check before betting</h3>${f.map(row).join('')}</div>`:'');
+ el.querySelectorAll('.sitem').forEach(x=>{x.tabIndex=0;x.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();x.click();}};});
  el.querySelectorAll('.sitem').forEach(x=>x.onclick=()=>{cur='all';q='';hideLow=false;document.getElementById('q').value='';document.getElementById('low').classList.remove('on');
   fb.querySelectorAll('[data-k]').forEach(c=>c.classList.toggle('on',c.dataset.k==='all'));draw();
   const tr=document.getElementById('g'+x.dataset.id);document.getElementById('d'+x.dataset.id).hidden=false;tr.scrollIntoView({behavior:'smooth',block:'center'});
