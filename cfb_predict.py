@@ -94,7 +94,7 @@ def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_r
     gx = dict(gctx_row or {})
     bt1 = pd.DataFrame([dict(season=r.season, game_id=r.game_id, home_tier=tiers.get(r.home, "FCS"),
                              away_tier=tiers.get(r.away, "FCS"), **f)])
-    pr = model.predict_bt(bt1, conv, groups)
+    pr = model.predict_bt(bt1, conv, groups, state.get("total_model"))
     eh, ea = float(pr.pred_h.iloc[0]), float(pr.pred_a.iloc[0])
     notes, low = [], []
     # QB change alert (information only: the model can't see who starts).
@@ -118,7 +118,9 @@ def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_r
     drives = (f["p_h"] + f["p_a"]) / 2 / state["plays_per_drive"]
     spread = mkt.get("spread")
     total = mkt.get("total")
-    h, a = sim.simulate(eh, ea, drives, state["sim_sd"], state["rho"], n=C.SIMS)
+    # Fixed seed per game: identical inputs always give identical numbers (no run-to-run flicker)
+    rng = np.random.default_rng([int(r.game_id), 7])
+    h, a = sim.simulate(eh, ea, drives, state["sim_sd"], state["rho"], n=C.SIMS, rng=rng)
     s = sim.summarize(h, a, spread, total)
     if "FCS" in (tiers.get(r.home), tiers.get(r.away)):
         low.append("FCS opponent")
@@ -128,10 +130,16 @@ def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_r
     model_total = round(s["total_mean"], 1)
     # When the model and market differ a lot, the market usually knows something the model
     # doesn't (injury, QB, opt-outs): in the backtest the market was closer 2 times in 3.
-    if (spread is not None and abs(model_spread - spread) >= C.DISAGREE_SPREAD) or \
-            (total is not None and abs(model_total - total) >= C.DISAGREE_TOTAL):
-        low.append("big disagreement: check injury/QB news")
-    total_caution = []
+    # Each caution applies only to its own bet: a big gap on the total doesn't block the spread.
+    spread_caution, total_caution, soft = [], [], {}
+    if spread is not None and abs(model_spread - spread) >= C.DISAGREE_SPREAD:
+        spread_caution.append("big disagreement: check injury/QB news")
+    elif spread is not None and abs(model_spread - spread) >= C.NEWS_NOTE:
+        soft["spread"] = "8+ pts apart: worth a quick injury/QB news check"
+    if total is not None and abs(model_total - total) >= C.DISAGREE_TOTAL:
+        total_caution.append("big disagreement: check injury/QB news")
+    elif total is not None and abs(model_total - total) >= C.NEWS_NOTE:
+        soft["total"] = "8+ pts apart: worth a quick injury/QB news check"
     w = wx or {}
     if not w.get("dome") and ((w.get("wind") or 0) >= C.WEATHER_WIND or (w.get("precip") or 0) >= C.WEATHER_RAIN):
         total_caution.append("wind/rain forecast: the model doesn't use weather, the market does")
@@ -141,7 +149,8 @@ def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_r
         home_tier=tiers.get(r.home, "FCS"), away_tier=tiers.get(r.away, "FCS"),
         exp_home=round(eh, 1), exp_away=round(ea, 1),
         model_spread=model_spread, model_total=model_total,
-        market=mkt, weather=wx or {}, notes=notes, low_conf=sorted(set(low)), total_caution=total_caution,
+        market=mkt, weather=wx or {}, notes=notes, low_conf=sorted(set(low)), spread_caution=spread_caution,
+        total_caution=total_caution, soft_notes=soft,
         ratings=dict(
             home_off=Rt._side(R["ppa"], r.home, 0), home_def=Rt._side(R["ppa"], r.home, 1),
             away_off=Rt._side(R["ppa"], r.away, 0), away_def=Rt._side(R["ppa"], r.away, 1),
@@ -185,7 +194,7 @@ def update_store(store, preds, now, version):
             fk = f"first_{kind}_flag"
             if old.get(fk) and old[fk].get("version") == version:
                 new[fk] = old[fk]  # already bet at an earlier line: keep that line
-            elif p.get(f"{kind}_flag") and not p["low_conf"] and not (kind == "total" and p.get("total_caution")):
+            elif p.get(f"{kind}_flag") and not p["low_conf"] and not p.get(f"{kind}_caution"):
                 new[fk] = dict(ts=now.isoformat(), side=p[f"{kind}_side"], version=version,
                                line=p["market"].get(line_key), model=p[f"model_{kind}"])
         store[key] = new

@@ -31,7 +31,8 @@ LAMBDA_GRID = [2, 3, 4, 6, 8]
 
 # Games where the model and the market differ by this much are marked low confidence:
 # in 2018-2025 the market was closer in about two of three such games.
-DISAGREE_SPREAD = 8.0
+DISAGREE_SPREAD = 10.0  # 8-10 pt spread gaps went 51-33 vs opening lines, so they stay bets
+NEWS_NOTE = 8.0  # gap where a bet gets a "worth a quick news check" reminder (does not block)
 DISAGREE_TOTAL = 10.0
 
 # The model doesn't use weather (it didn't improve backtests), but the market does. Total
@@ -43,3 +44,8 @@ WEATHER_RAIN = 0.10
 SIMS = 10000
 
 POWER_CONFS = {"SEC", "Big Ten", "Big 12", "ACC"}
+
+# Separate game-level totals model (cfb_model.fit_total_model). Off: on 2017-2025 it made totals more
+# accurate (MAE 13.20 -> 13.12; 2025 holdout 12.88 -> 12.63) but flagged O/U bets did worse against
+# opening lines (59-45 vs 92-52), so the betting edge comes from the current totals.
+TOTALS_MODEL = False

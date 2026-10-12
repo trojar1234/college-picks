@@ -55,7 +55,8 @@ def main(mode):
         extra.CFBD_BUDGET, extra.PBP_BUDGET, players.PLAYER_BUDGET = 0, 0, 0
     print("Preparing extra data ...")
     qb_ctx, available, xstatus, pbp = extra.build(SEASONS, season, tune_seasons[0])
-    available["matchup"] = True  # built from the schedule, always available
+    if C.TOTALS_MODEL:
+        available["totals"] = True  # see cfb_config.TOTALS_MODEL
     # Attach play-by-play metrics to each team-game row (NaN where not downloaded yet).
     for y, S in SEASONS.items():
         a = S["adv"]
@@ -177,7 +178,16 @@ def main(mode):
         experiments=exp_old,
         features=features,
     )
-    site.build(season, wk, slate, store, rep, finals[season], now, unmatched, state)
+    # Ratings as of a week ago (before the latest completed week), for the rating-movement column
+    prev_final = None
+    done = games[games.completed]
+    if len(done):
+        last = done.wk.max()
+        cut = done[done.wk == last].start.min()
+        if (done.start < cut).any():
+            prev_final = dict(model.ratings_from(model._rows_before(SEASONS[season], cut), info[season], lam),
+                              tiers=finals[season]["tiers"])
+    site.build(season, wk, slate, store, rep, finals[season], now, unmatched, state, prev_final)
     print(f"Done. Week {wk}: {len(preds)} games projected, {sum(p.get('spread_flag', False) for p in preds)} spread edges.")
     if unmatched:
         print("Unmatched odds games:", unmatched[:10])

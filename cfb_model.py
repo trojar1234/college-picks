@@ -21,7 +21,7 @@ import cfb_sim as sim
 
 BASE_GROUPS = ["score"]  # always in the conversion
 OPTIONAL = {
-    "matchup": "Totals correction by matchup type (Power 4 vs Power 4, FCS opponent)",
+    "totals": "Separate totals model: game-level fit with matchup type (Power 4 vs Power 4, FCS), recalibrated on past out-of-sample totals",
     "pbp": "Play-by-play: non-garbage points per drive, finishing drives, field position",
 }
 
@@ -140,7 +140,6 @@ def ratings_from(rows, ctx, lam):
 GROUP_COLS = {
     "score": ["R"],             # scoring-margin rating
     "pbp": ["DP", "FN", "FP"],  # non-garbage pts/drive x pace, finishing, field position
-    "matchup": ["M4", "MF"],    # same shift to both teams' points: corrects totals, leaves margins alone
 }
 CONV_DECAY = 0.6  # weight per season of age: scoring environments drift (rule changes, pace)
 
@@ -160,13 +159,6 @@ def side_frame(bt):
 
     df = pd.concat([side("h", 1), side("a", -1)], ignore_index=True)
     df["DP"] = df.D * df.P / 10
-    if "home_tier" in bt and "away_tier" in bt:
-        ht, at = bt.home_tier.to_numpy(), bt.away_tier.to_numpy()
-        m4 = ((ht == "P4") & (at == "P4")).astype(float)
-        mf = ((ht == "FCS") | (at == "FCS")).astype(float)
-        df["M4"], df["MF"] = np.concatenate([m4, m4]), np.concatenate([mf, mf])
-    else:
-        df["M4"], df["MF"] = 0.0, 0.0
     for c in ("R", "DP", "FN", "FP"):
         df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0.0)
     return df
@@ -190,32 +182,110 @@ def fit_conv(df, groups=(), decay=None):
     return np.linalg.lstsq(X * w[:, None], y * w, rcond=None)[0]
 
 
-def predict_bt(bt, conv, groups=()):
+def predict_bt(bt, conv, groups=(), tm=None):
+    """Expected points for each side. With a totals model (tm), the margin comes from the
+    team-points conversion and the total from the separate game-level totals model."""
     out = bt.copy()
     pred = conv_X(side_frame(bt), groups) @ np.asarray(conv)
     n = len(bt)
     out["pred_h"] = pred[:n]
     out["pred_a"] = pred[n:]
+    if tm:
+        out = apply_totals(out, tm)
+    return out
+
+
+# ---------- Totals model ----------
+# Backtests showed the team-points conversion's totals were too spread out (actual totals moved
+# only ~0.8 points per point of predicted total). A game-level regression, then a straight-line
+# recalibration fit on earlier seasons' out-of-sample totals, fixes that.
+
+TOT_DECAY = 0.6
+
+
+def total_X(bt):
+    P = bt.p_h + bt.p_a
+    PQ = bt.p_h * bt.q_h + bt.p_a * bt.q_a
+    PS = bt.p_h * bt.s_h + bt.p_a * bt.s_a
+    R = bt.r_h + bt.r_a
+    if "home_tier" in bt and "away_tier" in bt:
+        m4 = ((bt.home_tier == "P4") & (bt.away_tier == "P4")).astype(float)
+        mf = ((bt.home_tier == "FCS") | (bt.away_tier == "FCS")).astype(float)
+    else:
+        m4 = mf = pd.Series(0.0, index=bt.index)
+    return np.column_stack([np.ones(len(bt)), P, PQ, PS, R, m4, mf]).astype(float)
+
+
+def fit_totals(train):
+    X = total_X(train)
+    y = (train.home_pts + train.away_pts).to_numpy(float)
+    w = np.sqrt(TOT_DECAY ** (train.season.max() - train.season.to_numpy()))
+    return np.linalg.lstsq(X * w[:, None], y * w, rcond=None)[0]
+
+
+def fit_recal(pred_total, actual_total):
+    """actual = a + b * predicted, from out-of-sample predictions."""
+    b, a = np.polyfit(np.asarray(pred_total, float), np.asarray(actual_total, float), 1)
+    return [float(a), float(b)]
+
+
+def apply_totals(out, tm):
+    t = total_X(out) @ np.asarray(tm["beta"])
+    if tm.get("recal"):
+        a, b = tm["recal"]
+        t = a + b * t
+    m = (out.pred_h - out.pred_a).to_numpy()
+    out = out.copy()
+    out["pred_h"], out["pred_a"] = (t + m) / 2, (t - m) / 2
     return out
 
 
 def walk_forward(bt, eval_from, groups=()):
     """Score each season with a points conversion fit only on earlier seasons."""
-    parts = []
+    parts, oos = [], []  # oos: earlier seasons' out-of-sample raw totals, for the recalibration
+    use_tot = "totals" in groups
     for s in sorted(bt.season.unique()):
-        if s < eval_from:
-            continue
         train = bt[bt.season < s]
         if len(train) < 300:
             continue
         conv = fit_conv(side_frame(train), groups)
-        tp = predict_bt(train, conv, groups)
+        tm = None
+        if use_tot:
+            tm = dict(beta=fit_totals(train).tolist())
+            cur = bt[bt.season == s]
+            raw = total_X(cur) @ np.asarray(tm["beta"])
+            prev = pd.concat(oos) if oos else None
+            if prev is not None and prev.season.nunique() >= 2:
+                tm["recal"] = fit_recal(prev.raw, prev.actual)
+            oos.append(pd.DataFrame(dict(season=s, raw=raw, actual=(cur.home_pts + cur.away_pts).to_numpy(float))))
+        if s < eval_from:
+            continue
+        tp = predict_bt(train, conv, groups, tm)
         sd_m = float(((tp.home_pts - tp.away_pts) - (tp.pred_h - tp.pred_a)).std())
         sd_t = float(((tp.home_pts + tp.away_pts) - (tp.pred_h + tp.pred_a)).std())
-        p = predict_bt(bt[bt.season == s], conv, groups)
+        p = predict_bt(bt[bt.season == s], conv, groups, tm)
         p["sd_m"], p["sd_t"] = sd_m, sd_t
         parts.append(p)
     return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame()
+
+
+def fit_total_model(bt):
+    """Totals model for live use: fit on all seasons; recalibration from every season's
+    walk-forward (out-of-sample) raw totals."""
+    beta = fit_totals(bt)
+    raws, acts = [], []
+    for s in sorted(bt.season.unique()):
+        train = bt[bt.season < s]
+        if len(train) < 300:
+            continue
+        cur = bt[bt.season == s]
+        cur = cur[cur.home_pts.notna()]
+        raws.append(total_X(cur) @ fit_totals(train))
+        acts.append((cur.home_pts + cur.away_pts).to_numpy(float))
+    tm = dict(beta=beta.tolist())
+    if len(raws) >= 2:
+        tm["recal"] = fit_recal(np.concatenate(raws), np.concatenate(acts))
+    return tm
 
 
 def score(wf, seasons):
@@ -316,7 +386,9 @@ def fit_state(SEASONS, lam, current_season, features=None, players=None):
     seasons = sorted(SEASONS)
     wf = walk_forward(bt, seasons[0] + 2, groups)
     conv = fit_conv(side_frame(bt), groups)
-    allp = predict_bt(bt, conv, groups)
+    done = bt[bt.home_pts.notna()]
+    tm = fit_total_model(done) if "totals" in groups else None
+    allp = predict_bt(bt, conv, groups, tm)
     rh = allp.home_pts - allp.pred_h
     ra = allp.away_pts - allp.pred_a
     team_var = float(np.concatenate([rh, ra]).var())
@@ -330,6 +402,7 @@ def fit_state(SEASONS, lam, current_season, features=None, players=None):
         lam=lam,
         conv=conv.tolist(),
         groups=groups,
+        total_model=tm,
         team_var=team_var,
         rho=rho,
         sim_sd=sd,

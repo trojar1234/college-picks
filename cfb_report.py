@@ -74,6 +74,15 @@ def backtest(wf, SEASONS):
     ta = ta[ta.pt != ta.cfbd_total]
     so = _grade_spread(d, "cfbd_spread_open", C.SPREAD_EDGE)
     to = _grade_total(d, "cfbd_total_open", C.TOTAL_EDGE)
+    # The same bets under the live rules: gaps of 10+ ("check news"), FCS games and the first
+    # three weeks don't become bets. (QB changes and weather can't be replayed historically.)
+    def live_rule(x, gap, cap):
+        ok = (gap.abs() < cap) & (x.wk > 3)
+        if "home_tier" in x and "away_tier" in x:
+            ok &= (x.home_tier != "FCS") & (x.away_tier != "FCS")
+        return x[ok]
+    sol = live_rule(so, so.cfbd_spread_open + so.pm, C.DISAGREE_SPREAD)
+    tol = live_rule(to, to.pt - to.cfbd_total_open, C.DISAGREE_TOTAL)
     # Does the line move toward the model? (opening -> closing, games with a real disagreement)
     mv = d.dropna(subset=["cfbd_spread", "cfbd_spread_open"])
     e = mv.cfbd_spread_open + mv.pm
@@ -141,6 +150,7 @@ def backtest(wf, SEASONS):
             mkt_total_mae=round(float((ht.cfbd_total - ht["at"]).abs().mean()), 2) if len(ht) else None,
             ats=_rec(has[has.flag].res), ou=_rec(ht[ht.flag].res),
             ats_open=_rec(so.res), ou_open=_rec(to.res),
+            ats_open_live=_rec(sol.res), ou_open_live=_rec(tol.res),
             ats_all=_rec(sa.res), ou_all=_rec(ta.res),
         ),
         line_move=move,
