@@ -210,7 +210,7 @@ def main(mode):
             prev_final = dict(model.ratings_from(model._rows_before(SEASONS[season], cut), info[season], lam),
                               tiers=finals[season]["tiers"])
     lines_ts = hist.ts.max().isoformat() if len(hist) and "ts" in hist else None
-    site.build(season, wk, slate, store, rep, finals[season], now, unmatched, state, prev_final, lines_ts)
+    site.build(season, wk, slate, store, rep, finals[season], now, unmatched, state, prev_final, lines_ts, games)
     print(f"Done. Week {wk}: {len(preds)} games projected, {sum(p.get('spread_flag', False) for p in preds)} spread edges.")
     if unmatched:
         print("Unmatched odds games:", unmatched[:10])
