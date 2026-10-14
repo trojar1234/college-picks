@@ -7,16 +7,23 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{color-scheme:dark;--bg:#0e131a;--card:#151c25;--soft:#1c2531;--text:#e7ecf1;--muted:#9aa6b2;--faint:#6c7885;--line:#263240;
+:root{color-scheme:dark;--bg:#0e131a;--card:#151c25;--soft:#1c2531;--text:#e7ecf1;--muted:#9aa6b2;--faint:#8593a1;--line:#263240;
 --acc:#2dd4bf;--accbg:#0f3330;--good:#5eead4;--goodbg:#0f3330;--warn:#fbbf24;--warnbg:#3a2c0b;--bad:#f87171;--badbg:#3b1719;
 --series:#139c8c;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 *{box-sizing:border-box}
+.skip{position:absolute;left:-999px;top:8px;background:var(--acc);color:#04201c;padding:8px 12px;border-radius:8px;z-index:20;font-weight:600}.skip:focus{left:16px}
+.tagline{font-size:12px;color:var(--faint);font-weight:500;margin-left:10px;letter-spacing:0}@media (max-width:720px){.tagline{display:none}}
+.banner{background:var(--warnbg);color:var(--warn);border-radius:10px;padding:10px 14px;margin:0 0 14px;font-size:14px}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+@media (pointer:coarse){.chip,header nav a,input[type=search]{min-height:40px}}
+@media print{:root{--bg:#fff;--card:#fff;--soft:#f2f4f6;--text:#111;--muted:#444;--faint:#555;--line:#ccc;--acc:#0b7d70;--good:#0b7d70;--bad:#b42318;--warn:#8a5a00;--series:#0b7d70}
+ body:before,header nav,.secnav,.bar,#swap,.venue,.skip,.banner,#filters,.legend,a.lnk{display:none!important}.tbl{overflow:visible}details.help{display:none}body{font-size:12px}}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-feature-settings:"tnum" 1,"cv11" 1;-webkit-font-smoothing:antialiased}
 body:before{content:"";position:fixed;inset:0 0 auto 0;height:260px;background:radial-gradient(800px 220px at 20% -40px,rgba(45,212,191,.08),transparent 70%);pointer-events:none;z-index:-1}
 .wrap{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
 header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--line)}
-h1{font-size:21px;margin:0;font-weight:700;letter-spacing:-.02em}
-h2{font-size:17px;margin:32px 0 10px;font-weight:650;letter-spacing:-.01em}
+h1{font-size:22px;margin:0;font-weight:700;letter-spacing:-.02em}
+h2{font-size:19px;margin:36px 0 10px;font-weight:650;letter-spacing:-.01em}
 header nav{display:flex;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px}
 header nav a{color:var(--muted);text-decoration:none;font-size:14px;padding:6px 14px;border-radius:999px;white-space:nowrap}
 header nav a:hover{color:var(--text)}
@@ -27,7 +34,7 @@ header nav a.on{color:var(--text);font-weight:600;background:var(--soft);box-sha
 .card{background:linear-gradient(180deg,var(--soft),var(--card));border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .card .l{font-size:12px;color:var(--muted)}.card{min-width:0}.card .v{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
 .card .v .push{font-size:14px;color:var(--muted);font-weight:500}.card .v .nw{white-space:nowrap}
-.rbar{display:inline-block;position:relative;width:70px;height:6px;background:var(--soft);border-radius:3px;vertical-align:middle;margin-left:6px}.rbar span{position:absolute;top:0;height:6px;border-radius:3px}.rbar .pos{background:var(--series)}.rbar .neg{background:var(--bad);opacity:.7}
+.rbar{display:inline-block;position:relative;width:70px;height:6px;background:var(--soft);border-radius:3px;vertical-align:middle;margin-left:6px}.rbar span{position:absolute;top:0;height:6px;border-radius:3px}.rbar .pos{background:var(--series)}.rbar .neg{background:var(--muted);opacity:.55}
 @media (max-width:720px){.rbar{width:40px}}
 a.lnk{color:var(--acc);text-decoration:none;font-size:13px}a.lnk:hover{text-decoration:underline}
 .ln{line-height:1.5;min-height:21px;white-space:nowrap}.c-pick .ln{white-space:normal}
@@ -51,16 +58,23 @@ tr.day td{background:var(--soft);font-size:12px;font-weight:600;color:var(--mute
 .venue{display:flex;gap:6px;flex-wrap:wrap}
 .mcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:14px}
 .mhead{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:10px}.mteam{font-size:15px;font-weight:600}.mscore{font-size:40px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
-.mvs{text-align:center;color:var(--muted);font-size:13px}.mat{font-size:18px;color:var(--faint)}.mcards{margin:16px 0 0;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.mnote{font-size:13px;color:var(--muted);margin-top:12px;line-height:1.6}.mh{margin:18px 0 6px;font-size:14px}.mtry{margin-top:12px}a.chip{text-decoration:none;color:var(--text)}a.chip:hover{border-color:var(--acc)}.mtbl td:first-child{color:var(--muted)}
+.mvs{text-align:center;color:var(--muted);font-size:13px}.mat{font-size:18px;color:var(--faint)}.mcards{margin:16px 0 0;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.mnote{font-size:13px;color:var(--muted);margin-top:12px;line-height:1.6}.mh{margin:18px 0 6px;font-size:14px}.mtry{margin-top:12px}a.chip{text-decoration:none;color:var(--text)}a.chip:hover{border-color:var(--acc)}.mtbl td:first-child{color:var(--muted)}.vtbl tr.on td{background:var(--soft)}.vtbl tr.on td:first-child{color:var(--text);font-weight:600}
+.scen{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 0;font-size:13px;color:var(--muted)}.scen input[type=range]{accent-color:var(--acc);width:180px}
+.eq{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:4px 0 8px}.eq>span{display:flex;flex-direction:column}.eq .op{font-size:18px;color:var(--faint)}.eq .when{display:block}
 .wbar{display:flex;gap:2px;height:6px;margin:8px 0 4px}.wbar span{display:block;height:100%;border-radius:3px;background:var(--line)}.wbar span.fav{background:var(--series)}
 #swap{align-self:flex-end;font-size:16px;padding:6px 12px}
 @media (max-width:720px){.mpick input{min-width:0;width:100%}.mpick label{flex:1 1 100%}.mscore{font-size:32px}.mcards{grid-template-columns:1fr 1fr}.mcards .card:nth-child(3){grid-column:1/-1}}
-th.srt{cursor:pointer}th.srt:hover,th.srt.on{color:var(--text)}th.srt.on:after{content:' ▾';font-size:10px}
+th .sb{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}th .sb:hover{color:var(--text);text-decoration:underline}th.on{color:var(--text)}th.on .sb:after{content:' ▾';font-size:10px}th[data-s='deff'].on .sb:after{content:' ▴'}
+.def{font-size:13px;color:var(--muted);margin:0 0 10px}.rt th{white-space:normal;vertical-align:bottom}.rt th .when{display:block;font-weight:400}.mtbl th,.mtbl td{white-space:normal}@media (max-width:720px){.mtbl td,.mtbl th{padding:7px 6px}}.movers{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px}.rh{width:100%;max-width:320px;height:auto;display:block}
+.crng{position:relative;display:inline-block;width:120px;height:8px;background:var(--soft);border-radius:4px;vertical-align:middle}.crng span{position:absolute;top:0;height:8px;background:var(--series);opacity:.45;border-radius:4px}.crng i{position:absolute;top:-3px;width:2px;height:14px;background:var(--text)}
 .btt th{white-space:normal;vertical-align:bottom}.btt td{white-space:nowrap}
+.method{font-size:12px;font-weight:500;color:var(--faint);margin-left:8px;letter-spacing:0;white-space:nowrap}
+.score2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}.scard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}.scard h3{margin:0 0 6px;font-size:14px}.scard .big2{margin:2px 0 6px}
+.okbox{font-size:13px;color:var(--muted);margin:10px 0 0}.okbox.bad{color:var(--warn)}
 .secnav{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;gap:4px;overflow-x:auto;white-space:nowrap;padding:8px 0;margin:-6px 0 10px;border-bottom:1px solid var(--line)}
 .secnav a{color:var(--muted);text-decoration:none;font-size:13px;padding:4px 10px;border-radius:999px}.secnav a:hover{background:var(--soft);color:var(--text)}
 h2[id]{scroll-margin-top:52px}.summary[id]{scroll-margin-top:52px}
-.ci{display:block;font-size:11px;font-weight:500}.ci.warnc{color:var(--warn)}.ci.up{color:var(--good)}.ci.down{color:var(--bad)}
+.ci{display:block;font-size:12px;font-weight:500}.ci.warnc{color:var(--warn)}.ci.up{color:var(--good)}.ci.down{color:var(--bad)}
 .chartgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}.chart{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}.chart h4{margin:0 0 8px;font-size:13px;font-weight:600}.chart svg{width:100%;height:auto;display:block}
 .glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}.gblock .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.big2{font-size:26px;font-weight:700;letter-spacing:-.02em;margin:4px 0}.gtxt{font-size:13px;color:var(--muted);line-height:1.5}
 .summary p.gl{margin:6px 0;font-size:14px;line-height:1.5}
@@ -90,6 +104,7 @@ tr:last-child td{border-bottom:0}
 .hist{display:flex;align-items:flex-end;gap:2px;height:60px}
 .hist div{flex:1;background:var(--acc);opacity:.75;border-radius:2px 2px 0 0;min-height:1px}
 .hist div.z{opacity:.35}
+.spark{margin-top:10px}.vsl{font-size:13px;padding:3px 0;line-height:1.45}.spark svg{width:100%;max-width:300px;height:auto;display:block}
 .note{font-size:12px;color:var(--muted);margin-top:10px}
 .flag{color:var(--bad);font-weight:600}
 @media (max-width:720px){.hide-sm{display:none}td,th{padding:8px 6px;font-size:13px}.card .v{font-size:19px}}
@@ -98,25 +113,29 @@ tr:last-child td{border-bottom:0}
 
 @media (max-width:720px){table.games thead{display:none}table.games tr.g{display:grid;grid-template-columns:1fr auto;border-bottom:1px solid var(--line)}
 table.games tr.g td{border:0;padding:10px 12px 2px}table.games td.c-proj{text-align:right}table.games td.c-pick{grid-column:1/-1;padding:4px 12px 12px}.sm-inline{display:inline}
-#cards{grid-template-columns:repeat(3,1fr);gap:8px}#cards .card{padding:8px 10px}#cards .card .v{font-size:17px}#cards .card .l{font-size:11px}table.games tr.g td.hide-sm{display:none}table.games tr.detail td{display:block}table.games tr.day td{display:block}.sitem{grid-template-columns:auto 1fr}.sitem .r{grid-column:1/-1;text-align:left}}
+#cards{grid-template-columns:repeat(3,1fr);gap:8px}#cards .card{padding:8px 10px}#cards .card .v{font-size:17px}#cards .card .l{font-size:12px}table.games tr.g td.hide-sm{display:none}table.games tr.detail td{display:block}table.games tr.day td{display:block}.sitem{grid-template-columns:auto 1fr}.sitem .r{grid-column:1/-1;text-align:left}}
 </style></head><body><div class="wrap">
-<header><div><h1>College football model</h1><div class="sub" id="sub"></div></div>
-<nav><a href="index.html" class="">Projections</a><a href="matchup.html" class="">Matchup</a><a href="ratings.html" class="on"><span class="navl">Team ratings</span><span class="navs">Ratings</span></a><a href="report.html" class=""><span class="navl">Report card</span><span class="navs">Report</span></a></nav></header>
-<script src="model.js?v=20261014134255"></script>
+<a class="skip" href="#content">Skip to content</a><header><div><h1>College football model<span class="tagline">market-blind forecasts</span></h1><div class="sub" id="sub"></div></div>
+<nav><a href="index.html" class="">Projections</a><a href="matchup.html" class="">Matchup</a><a href="ratings.html" class="on"><span class="navl">Team ratings</span><span class="navs">Ratings</span></a><a href="report.html" class=""><span class="navl">Performance</span><span class="navs">Results</span></a></nav></header><div id="content" tabindex="-1"></div>
+<script src="model.js?v=20261014144826"></script>
 <details class="help"><summary>How to read this page</summary>
 <ul>
 <li><b>Rating</b> is how many points better than an average FBS team each team would be on a neutral field, using the same ratings and formula as the game projections. The gap between two teams' ratings is roughly the neutral-field spread; the Matchup page gives the exact number.</li>
 <li><b>Move</b> is the change since last week: places up or down in the ranking, then the rating change in points.</li>
-<li><b>Record</b> is the record so far; <b>Projected</b> adds each remaining scheduled game's win chance to it, so it's the model's expected final record (bowls and title games count once they're scheduled).</li>
+<li><b>Record</b> is the record so far. <b>Expected wins</b> adds each remaining scheduled game's win chance to the wins so far, so 10.4 means the model expects about 10–11 wins (bowls and title games count once they're scheduled). The team panel also shows how hard the remaining schedule is.</li>
+<li><b>Conferences</b> compares conferences by their teams' average rating.</li>
 <li><b>Offense / Defense</b> are opponent-adjusted expected points (EPA) per play with garbage time removed, compared with an average FBS team. The small grey number is the rank. On defense, lower is better.</li>
-<li>Tap a column header to sort, and tap a team for its results, upcoming games with projections, and a link to compare it with any opponent.</li>
+<li>Tap a column header to sort, and tap a team for its results, rating over the season, upcoming games with projections, and a link to compare it with any opponent.</li>
 </ul></details>
+<p class="def"><b>Rating</b> = points better (+) or worse (−) than an average FBS team on a neutral field. Higher is better.</p>
+<div id="movers"></div>
 <div class="bar" id="tfilters"></div>
-<div class="tbl"><table class="rt"><thead><tr><th>#</th><th>Team</th><th class="srt" data-s="power">Rating</th><th>Move</th><th class="hide-sm">Record</th><th class="hide-sm srt" data-s="pw">Projected</th><th class="hide-sm srt" data-s="off">Offense <span class="when">EPA/play</span></th><th class="hide-sm srt" data-s="deff">Defense <span class="when">EPA/play</span></th><th class="hide-sm srt" data-s="pace">Plays/game</th></tr></thead><tbody id="teams"></tbody></table></div>
+<div id="confs" hidden></div>
+<div class="tbl" id="ttbl"><table class="rt"><thead><tr><th>#</th><th>Team</th><th aria-sort="descending" data-s="power"><button class="sb">Rating</button></th><th>Move</th><th class="hide-sm">Record</th><th class="hide-sm" data-s="pw"><button class="sb">Expected wins</button></th><th class="hide-sm" data-s="off"><button class="sb">Offense</button><span class="when">EPA/play, higher is better</span></th><th class="hide-sm" data-s="deff"><button class="sb">Defense</button><span class="when">EPA/play allowed, lower is better</span></th><th class="hide-sm" data-s="pace"><button class="sb">Plays/game</button></th></tr></thead><tbody id="teams"></tbody></table></div>
 
 <p class="note" id="foot"></p>
 </div>
-<script src="data.js?v=20261014134255"></script>
+<script src="data.js?v=20261014144826"></script>
 <script>
 const D=window.DATA;
 if(!D){document.querySelector('.wrap').insertAdjacentHTML('afterbegin','<div class="summary"><b>Data unavailable.</b> The latest update did not publish its data file. It should be back after the next scheduled run.</div>');throw new Error('data.js missing');}
@@ -145,8 +164,11 @@ const wkName=w=>w==null?'—':(w>20?'Bowls':`Week ${w}`);
 const teamRecord=t=>{let w=0,l=0;for(const r of (D.schedule||[])){if(!r[7]||r[5]==null)continue;if(r[2]===t){r[5]>r[6]?w++:l++;}else if(r[3]===t){r[6]>r[5]?w++:l++;}}return `${w}–${l}`;};
 // What the ratings reflect: preseason, or games through the latest completed week
 const ratedThrough=()=>{const w=Math.max(0,...(D.schedule||[]).filter(r=>r[7]).map(r=>r[0]));return w?`ratings through ${wkName(w)} games`:'preseason ratings';};
+const am=x=>x==null?'':(x>0?'+':'−')+Math.abs(Math.round(x));
+const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-document.getElementById('foot').innerHTML=`Model run ${new Date(D.generated).toLocaleString('en-US',{timeZone:'America/Chicago',dateStyle:'medium',timeStyle:'short'})} CT · Data: CollegeFootballData.com (games, stats), The Odds API (lines), Open-Meteo (weather). Sportsbook lines are only used to grade and display picks, never as model inputs. For information only, not betting advice.`+(D.unmatched&&D.unmatched.length?` · Unmatched odds games: ${D.unmatched.length}`:'');
+document.getElementById('foot').innerHTML=`Model run ${new Date(D.generated).toLocaleString('en-US',{timeZone:'America/Chicago',dateStyle:'medium',timeStyle:'short'})} CT · Data: CollegeFootballData.com (games, stats), The Odds API (lines), Open-Meteo (weather). Sportsbook lines are only used to grade and display picks, never as model inputs. For information only, not betting advice.`+(D.unmatched&&D.unmatched.length?` · Unmatched odds games: ${D.unmatched.length}`:'')+((D.health||{}).model_version?` · Model v${D.health.model_version}`:'')+((D.health||{}).build?` · build ${esc(D.health.build)}`:'');
+(()=>{const h=(Date.now()-new Date(D.generated))/36e5;if(h>36)document.querySelector('.wrap').insertAdjacentHTML('afterbegin',`<div class="banner" role="status">This page hasn't updated in ${Math.round(h)} hours. The automatic update may have failed; check the Actions tab on GitHub.</div>`);})();
 </script>
 <script>
 // Same formula as the weekly predictions: expected stat for each side, then the points conversion
@@ -189,40 +211,67 @@ const games=t=>(D.schedule||[]).filter(r=>r[2]===t||r[3]===t);
 const NOW=new Date(D.generated).getTime();
 const pending=r=>!r[7]&&new Date(r[1]).getTime()>NOW-3*864e5;
 // Win chance for team t in a scheduled game, from the same formula as the Matchup page
-function gameP(t,r){const [wk,st,h,a,neu]=r,opp=h===t?a:h;if(!known(opp))return 0.99;
+function gameP(t,r){const [wk,st,h,a,neu]=r,opp=h===t?a:h;if(!known(opp)||!known(t))return null;
  const {ph,pa}=project(h,a,neu),m=h===t?ph-pa:pa-ph;return {p:winP(m),m};}
 const PROJ={};
 if(HAVE_MODEL)T.forEach(t=>{let w=0,l=0,ew=0,n=0;for(const r of games(t.team)){if(r[7]&&r[5]!=null){((r[2]===t.team)?r[5]>r[6]:r[6]>r[5])?w++:l++;}
-  else if(pending(r)){const g=gameP(t.team,r);ew+=typeof g==='number'?g:g.p;n++;}}
+  else if(pending(r)){const g=gameP(t.team,r);if(g){ew+=g.p;n++;}}}
  PROJ[t.team]={w,l,ew,n,W:w+ew,L:l+n-ew};t.pw=w+ew;});
-const projTxt=t=>{const P=PROJ[t];if(!P)return '—';const W=Math.round(P.W);return `${W}–${P.w+P.l+P.n-W}`;};
+const projTxt=t=>{const P=PROJ[t];return P?P.W.toFixed(1):'—';};
+// Remaining-schedule strength: average opponent rating, adjusted for where each game is played
+const HFA=(()=>{const T0=T[0];if(!HAVE_MODEL||!T0)return 0;const a=project(T0.team,T[1].team,false),b=project(T0.team,T[1].team,true);return (a.ph-a.pa)-(b.ph-b.pa);})();
+function sos(t){const P=[];for(const r of games(t.team).filter(pending)){const home=r[2]===t.team,opp=home?r[3]:r[2],o=(D.teams||[]).find(x=>x.team===opp);
+  if(!o||o.power==null)continue;P.push(o.power+(r[4]?0:(home?-HFA:HFA)));}return P.length?P.reduce((x,y)=>x+y,0)/P.length:null;}
+const SOS={};T.forEach(t=>SOS[t.team]=sos(t));
+const sosRank=t=>{const v=SOS[t];if(v==null)return null;return 1+Object.values(SOS).filter(x=>x!=null&&x>v).length;};
+// Rating over the season (end of each completed week)
+function rhist(t){const h=(D.rating_hist||{})[t.team]||[];if(h.length<2)return '';
+ const W=280,H=70,vals=h.map(x=>x[1]),lo=Math.min(...vals)-3,hi=Math.max(...vals)+3,X=i=>10+(W-20)*i/(h.length-1),Y=v=>6+(H-22)*(hi-v)/(hi-lo);
+ const path=h.map((x,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(x[1]).toFixed(1)}`).join('');
+ const dots=h.map((x,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(x[1]).toFixed(1)}" r="2.5" fill="var(--series)"><title>${x[0]?wkName(x[0]):'Preseason'}: ${s1(x[1])}</title></circle>`).join('');
+ return `<h4 style="margin-top:12px">Rating over the season</h4><svg class="rh" viewBox="0 0 ${W} ${H}" role="img" aria-label="Rating by week">${lo<0&&hi>0?`<line x1="10" x2="${W-10}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}" stroke="var(--line)"/><text x="${W-10}" y="${(Y(0)-3).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--faint)">average FBS team</text>`:''}<path d="${path}" fill="none" stroke="var(--series)" stroke-width="2"/>${dots}<text x="10" y="${H-3}" font-size="10" fill="var(--faint)">Preseason ${s1(h[0][1])}</text><text x="${W-10}" y="${H-3}" text-anchor="end" font-size="10" fill="var(--faint)">${wkName(h[h.length-1][0])} ${s1(h[h.length-1][1])}</text></svg>`;}
+// Biggest movers since last week
+(()=>{const mv2=T.filter(t=>t.prev_power!=null).map(t=>({t,d:t.power-t.prev_power})).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d)).slice(0,6);
+ if(!mv2.length)return;document.getElementById('movers').innerHTML=`<div class="movers"><span class="when" style="display:inline">Biggest movers since last week</span> ${mv2.map(x=>`<button class="chip mvr" data-t="${esc(x.t.team)}">${esc(x.t.team)} <span class="${x.d>0?'up':'down'}">${x.d>0?'+':'−'}${Math.abs(x.d).toFixed(1)}</span></button>`).join('')}</div>`;
+ document.querySelectorAll('.mvr').forEach(b=>b.onclick=()=>{open=b.dataset.t;tq='';tc='all';tconf='';document.getElementById('tq').value='';document.getElementById('tconf').value='';drawT(open);
+  const el=[...document.querySelectorAll('#teams tr.g')].find(x=>x.dataset.t===open);if(el)el.scrollIntoView({block:'center',behavior:RM?'auto':'smooth'});});})();
 let tc='all',tq='',tconf='',open=null,sortK='power';const tf=document.getElementById('tfilters');
 const confs=[...new Set(T.map(t=>t.conf).filter(Boolean))].sort();
 tf.innerHTML=[['all','All FBS'],['P4','Power 4'],['G5','Group of 5']].map(([k,l])=>`<button class="chip${k==='all'?' on':''}" data-k="${k}">${l}</button>`).join('')+
- `<select id="tconf" class="chip"><option value="">All conferences</option>${confs.map(c=>`<option>${esc(c)}</option>`).join('')}</select><input type="search" id="tq" placeholder="Find a team">`;
+ `<select id="tconf" class="chip" aria-label="Conference"><option value="">All conferences</option>${confs.map(c=>`<option>${esc(c)}</option>`).join('')}</select><input type="search" id="tq" placeholder="Find a team" aria-label="Find a team"><button class="chip" id="cview" aria-pressed="false">Conferences</button>`;
 tf.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{tc=b.dataset.k;tf.querySelectorAll('[data-k]').forEach(x=>x.classList.toggle('on',x===b));drawT();});
 document.getElementById('tconf').onchange=e=>{tconf=e.target.value;drawT();};
+// Conference comparison: average rating, the best and middle team, and the spread of teams
+document.getElementById('cview').onclick=e=>{const on=e.currentTarget.getAttribute('aria-pressed')!=='true';e.currentTarget.setAttribute('aria-pressed',String(on));e.currentTarget.classList.toggle('on',on);
+ const box=document.getElementById('confs');box.hidden=!on;if(!on)return;
+ const rows=confs.map(c=>{const ts=T.filter(t=>t.conf===c&&t.power!=null).sort((a,b)=>b.power-a.power);if(!ts.length)return null;
+  const avg=ts.reduce((x,t)=>x+t.power,0)/ts.length,med=ts[Math.floor((ts.length-1)/2)];return {c,n:ts.length,avg,top:ts[0],med,lo:ts[ts.length-1]};}).filter(Boolean).sort((a,b)=>b.avg-a.avg);
+ const span=Math.max(1,...rows.map(r=>Math.max(Math.abs(r.top.power),Math.abs(r.lo.power))));
+ const rng=r=>{const X=v=>50+50*v/span;return `<span class="crng"><span style="left:${X(r.lo.power).toFixed(1)}%;width:${(X(r.top.power)-X(r.lo.power)).toFixed(1)}%"></span><i style="left:${X(r.avg).toFixed(1)}%"></i></span>`;};
+ box.innerHTML=`<div class="tbl" style="margin-bottom:12px"><table><thead><tr><th>Conference</th><th>Teams</th><th>Average rating</th><th class="hide-sm">Range <span class="when">worst to best · tick = average</span></th><th>Best team</th><th class="hide-sm">Middle team</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.c)}</td><td>${r.n}</td><td><b>${s1(r.avg)}</b></td><td class="hide-sm">${rng(r)}</td><td>${esc(r.top.team)} <span class="when" style="display:inline">${s1(r.top.power)}</span></td><td class="hide-sm">${esc(r.med.team)} <span class="when" style="display:inline">${s1(r.med.power)}</span></td></tr>`).join('')}</tbody></table></div>`;};
 document.getElementById('tq').oninput=e=>{tq=e.target.value.toLowerCase();drawT();};
-document.querySelectorAll('th.srt').forEach(th=>{th.tabIndex=0;const f=()=>{sortK=th.dataset.s;drawT();};th.onclick=f;th.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();f();}};});
+document.querySelectorAll('th[data-s] .sb').forEach(bn=>bn.onclick=()=>{sortK=bn.closest('th').dataset.s;drawT();});
 const at=(r,t)=>r[4]?'vs':(r[2]===t?'vs':'@');
 function teamCard(t){
  const gs=games(t.team);const done=gs.filter(r=>r[7]&&r[5]!=null),next=gs.filter(pending);
  const res=done.map(r=>{const home=r[2]===t.team,opp=home?r[3]:r[2],us=home?r[5]:r[6],them=home?r[6]:r[5];
   return `<div class="kv"><span>${wkName(r[0])} · ${at(r,t.team)} ${esc(opp)}</span><span class="${us>them?'up':'down'}">${us>them?'W':'L'} ${us}–${them}</span></div>`;}).join('')||'<div class="sub">No games yet.</div>';
  const up=next.slice(0,6).map(r=>{const home=r[2]===t.team,opp=home?r[3]:r[2],v=r[4]?0:(home?1:2),g=HAVE_MODEL?gameP(t.team,r):null;
-  const txt=g&&typeof g==='object'?`${Math.abs(g.m)<0.25?'PK':(g.m>0?'−':'+')+Math.abs(g.m).toFixed(1)} · ${g.p>0.995?'>99':g.p<0.005?'<1':Math.round(g.p*100)}%`:'projection';
+  const txt=g?`${Math.abs(g.m)<0.25?'PK':(g.m>0?'−':'+')+Math.abs(g.m).toFixed(1)} · ${g.p>0.995?'>99':g.p<0.005?'<1':Math.round(g.p*100)}%`:'projection';
   return `<div class="kv"><span>${wkName(r[0])} · ${at(r,t.team)} ${esc(opp)}</span><a class="lnk nw" href="matchup.html#${encodeURIComponent(t.team)}|${encodeURIComponent(opp)}|${v}" title="Spread from ${esc(t.team)}'s side and win chance">${txt} →</a></div>`;}).join('')||'<div class="sub">No games left on the schedule.</div>';
  const P=PROJ[t.team];
  return `<div class="dgrid"><div><h4>Results</h4>${res}</div><div><h4>Next games <span class="when" style="display:inline">spread · win chance</span></h4>${up}
-  ${P&&P.n?`<div class="kv" style="margin-top:8px;border-top:1px solid var(--line);padding-top:6px"><span>Projected record</span><b>${P.W.toFixed(1)}–${P.L.toFixed(1)}</b></div>`:''}</div>
+  ${P&&P.n?`<div class="kv" style="margin-top:8px;border-top:1px solid var(--line);padding-top:6px"><span>Expected final record</span><b>${P.W.toFixed(1)}–${P.L.toFixed(1)}</b></div>`:''}
+  ${SOS[t.team]!=null?`<div class="kv"><span>Remaining schedule</span><span>opponents average ${s1(SOS[t.team])} <span class="when" style="display:inline">#${sosRank(t.team)} hardest of ${Object.values(SOS).filter(x=>x!=null).length}</span></span></div>`:''}</div>
   <div><h4>Profile</h4><div class="kv"><span>Score vs an average team</span><span>${t.pf==null?'—':`${f1(t.pf)}–${f1(t.pa)}`}</span></div>
   <div class="kv"><span>Offense rank</span><span>${t.off_rank} of ${T.length}</span></div><div class="kv"><span>Defense rank</span><span>${t.def_rank} of ${T.length}</span></div>
   <div class="kv"><span>Plays per game</span><span>${f1(t.pace)}</span></div>${t.prev_rank!=null?`<div class="kv"><span>Last week</span><span>#${t.prev_rank} · ${s1(t.prev_power)}</span></div>`:''}
+  ${rhist(t)}
   <div style="margin-top:10px"><a class="lnk" href="matchup.html#${encodeURIComponent(t.team)}||0">Compare ${esc(t.team)} with any team →</a></div></div></div>`;}
 const SORTS={power:(a,b)=>a.rank-b.rank,pw:(a,b)=>(b.pw??-1)-(a.pw??-1),off:(a,b)=>b.off-a.off,deff:(a,b)=>a.deff-b.deff,pace:(a,b)=>b.pace-a.pace};
 function drawT(focus){const rows=T.filter(t=>(tc==='all'||t.tier===tc)&&(!tconf||t.conf===tconf)&&(!tq||t.team.toLowerCase().includes(tq))).sort(SORTS[sortK]||SORTS.power);
- document.querySelectorAll('th.srt').forEach(th=>th.classList.toggle('on',th.dataset.s===sortK));
- document.getElementById('teams').innerHTML=rows.map(t=>`<tr class="g" data-t="${esc(t.team)}" tabindex="0" aria-expanded="${open===t.team}"><td>${t.rank}</td><td><b>${esc(t.team)}</b> <span class="when">${esc(t.conf||t.tier)}</span></td><td class="nw"><b>${s1(t.power)}</b> ${bar(t.power)}</td><td>${mv(t)}</td><td class="hide-sm">${teamRecord(t.team)}</td><td class="hide-sm">${projTxt(t.team)}</td><td class="hide-sm">${epa(t.off)} <span class="when">${t.off_rank}</span></td><td class="hide-sm">${epa(t.deff)} <span class="when">${t.def_rank}</span></td><td class="hide-sm">${f1(t.pace)}</td></tr>
+ document.querySelectorAll('th[data-s]').forEach(th=>{const on=th.dataset.s===sortK;th.classList.toggle('on',on);if(on)th.setAttribute('aria-sort',sortK==='deff'?'ascending':'descending');else th.removeAttribute('aria-sort');});
+ document.getElementById('teams').innerHTML=rows.map(t=>`<tr class="g" data-t="${esc(t.team)}" tabindex="0" aria-expanded="${open===t.team}"><td>${t.rank}</td><td><b>${esc(t.team)}</b> <span class="when">${esc(t.conf||t.tier)}</span><span class="show-sm when">${teamRecord(t.team)}${PROJ[t.team]?` · ${projTxt(t.team)} expected wins`:''}</span></td><td class="nw"><b>${s1(t.power)}</b> ${bar(t.power)}</td><td>${mv(t)}</td><td class="hide-sm">${teamRecord(t.team)}</td><td class="hide-sm">${projTxt(t.team)}</td><td class="hide-sm">${epa(t.off)} <span class="when">${t.off_rank}</span></td><td class="hide-sm">${epa(t.deff)} <span class="when">${t.def_rank}</span></td><td class="hide-sm">${f1(t.pace)}</td></tr>
  <tr class="detail"${open===t.team?'':' hidden'}><td colspan="9">${open===t.team?teamCard(t):''}</td></tr>`).join('')||'<tr><td colspan="9" class="muted">No teams match.</td></tr>';
  document.querySelectorAll('#teams tr.g').forEach(tr=>{const go=()=>{open=open===tr.dataset.t?null:tr.dataset.t;drawT(tr.dataset.t);};tr.onclick=go;tr.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}};});
  if(focus){const el=[...document.querySelectorAll('#teams tr.g')].find(x=>x.dataset.t===focus);if(el)el.focus({preventScroll:true});}}
