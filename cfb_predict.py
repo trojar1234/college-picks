@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 import cfb_config as C
+import cfb_lines as lines
 import cfb_fetch as fetch
 import cfb_model as model
 import cfb_ratings as Rt
@@ -194,13 +195,18 @@ def update_store(store, preds, now, version):
         if pd.Timestamp(p["start"]) <= now and old:
             continue  # frozen
         new = {**p, "updated": now.isoformat(), "version": version}
+        # The first projection made for this game (by this model version), to show how much it has moved
+        fm = old.get("first_model") if old.get("version") == version else None
+        new["first_model"] = fm or dict(ts=now.isoformat(), spread=p["model_spread"], total=p["model_total"])
         for kind, line_key in (("spread", "spread"), ("total", "total")):
             fk = f"first_{kind}_flag"
             if old.get(fk) and old[fk].get("version") == version:
                 new[fk] = old[fk]  # already bet at an earlier line: keep that line
             elif p.get(f"{kind}_flag") and not p["low_conf"] and not p.get(f"{kind}_caution"):
+                # Graded at the consensus line (conservative); the best single book is kept for reference
                 new[fk] = dict(ts=now.isoformat(), side=p[f"{kind}_side"], version=version,
-                               line=p["market"].get(line_key), model=p[f"model_{kind}"])
+                               line=p["market"].get(line_key), model=p[f"model_{kind}"],
+                               best=lines.best_line(p["market"].get("books") or [], kind, p[f"{kind}_side"]))
         store[key] = new
     return store
 
@@ -240,7 +246,7 @@ def grade(store, games, mview, cfbd_lines):
             err_away=(p["model_total"] + p["model_spread"]) / 2 - ap,
             err_margin=-p["model_spread"] - (hp - ap),
             err_total=p["model_total"] - (hp + ap),
-            close_spread=close_s, close_total=close_t,
+            close_spread=close_s, close_total=close_t, close_ts=mv.get("last_ts"),
         )
         if close_s is not None:
             res["mkt_err_margin"] = -close_s - (hp - ap)
@@ -264,5 +270,12 @@ def grade(store, games, mview, cfbd_lines):
             res["ou"] = _ou(hp + ap, ft["side"], ft["line"])
             if close_t is not None:
                 res["clv_total"] = (close_t - ft["line"]) if ft["side"] == "over" else (ft["line"] - close_t)
+        # Shadow record: flags that a caution kept from being bets, scored at the line the final
+        # pre-kickoff prediction saw. Shown separately; never counted as bets.
+        m = p.get("market") or {}
+        if p.get("spread_flag") and not same(fs) and m.get("spread") is not None and p.get("spread_side"):
+            res["ats_flagonly"] = _ats(hp - ap, p["spread_side"], m["spread"])
+        if p.get("total_flag") and not same(ft) and m.get("total") is not None and p.get("total_side"):
+            res["ou_flagonly"] = _ou(hp + ap, p["total_side"], m["total"])
         p["result"] = res
     return store

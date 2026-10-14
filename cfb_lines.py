@@ -10,7 +10,8 @@ import pandas as pd
 import cfb_config as C
 
 HIST = C.DATA / "line_history.csv"
-COLS = ["ts", "game_id", "book", "home_spread", "total"]
+# Prices are American odds for each side (e.g. -110), kept so results can later be graded at real prices.
+COLS = ["ts", "game_id", "book", "home_spread", "total", "home_price", "away_price", "over_price", "under_price"]
 
 # Odds API full names that don't start with the CFBD school name.
 ALIASES = {
@@ -73,12 +74,15 @@ def snapshot_rows(odds, games, ts):
         g = cand.iloc[0]
         flip = g.home != h  # Odds API's "home" can differ at neutral sites
         for bk in ev.get("bookmakers", []):
-            sp = tot = np.nan
+            sp = tot = hp = ap = op = up_ = np.nan
             for mk in bk.get("markets", []):
                 if mk.get("key") == "spreads":
                     for o in mk.get("outcomes", []):
                         if find(o.get("name")) == g.home:
                             sp = o.get("point", np.nan)
+                            hp = o.get("price", np.nan)
+                        elif find(o.get("name")) == g.away:
+                            ap = o.get("price", np.nan)
                     if sp != sp:
                         for o in mk.get("outcomes", []):
                             if find(o.get("name")) == g.away and o.get("point") is not None:
@@ -87,9 +91,12 @@ def snapshot_rows(odds, games, ts):
                     for o in mk.get("outcomes", []):
                         if o.get("name") == "Over":
                             tot = o.get("point", np.nan)
+                            op = o.get("price", np.nan)
+                        elif o.get("name") == "Under":
+                            up_ = o.get("price", np.nan)
             if sp == sp or tot == tot:
                 rows.append(dict(ts=ts, game_id=int(g.game_id), book=bk.get("title", bk.get("key")),
-                                 home_spread=sp, total=tot))
+                                 home_spread=sp, total=tot, home_price=hp, away_price=ap, over_price=op, under_price=up_))
     return pd.DataFrame(rows, columns=COLS), unmatched
 
 
@@ -97,6 +104,9 @@ def load_history():
     if HIST.exists():
         h = pd.read_csv(HIST)
         h["ts"] = pd.to_datetime(h.ts, utc=True, format="ISO8601")
+        for c in COLS:  # files written before prices were tracked
+            if c not in h:
+                h[c] = np.nan
         return h
     return pd.DataFrame(columns=COLS)
 
@@ -131,10 +141,44 @@ def market_view(hist, games):
             open_total=_f(snaps.total.dropna().iloc[0]) if snaps.total.notna().any() else None,
             spread=_f(snaps.spread.dropna().iloc[-1]) if snaps.spread.notna().any() else None,
             total=_f(snaps.total.dropna().iloc[-1]) if snaps.total.notna().any() else None,
-            books=[dict(book=r.book, spread=_f(r.home_spread), total=_f(r.total)) for r in latest.itertuples()],
+            books=[dict(book=r.book, spread=_f(r.home_spread), total=_f(r.total),
+                        home_price=_f(getattr(r, "home_price", None)), away_price=_f(getattr(r, "away_price", None)),
+                        over_price=_f(getattr(r, "over_price", None)), under_price=_f(getattr(r, "under_price", None)))
+                   for r in latest.itertuples()],
+            first_ts=snaps.index[0].isoformat(), last_ts=snaps.index[-1].isoformat(),
             history=[dict(ts=t.isoformat(), spread=_f(r.spread), total=_f(r.total)) for t, r in snaps.iterrows()],
         )
     return out
+
+
+def _payout(price):
+    """Profit per 1 unit risked at American odds (missing price: assume -110)."""
+    p = price if price is not None and price == price else -110
+    return p / 100 if p > 0 else 100 / -p
+
+
+def best_line(books, kind, side):
+    """The single book offering the most for one side: most points on a spread, the lowest total
+    for an over, the highest for an under; ties go to the better price."""
+    best = None
+    for b in books or []:
+        if kind == "spread":
+            hs = b.get("spread")
+            if hs is None:
+                continue
+            line = hs if side == "home" else -hs
+            price = b.get("home_price" if side == "home" else "away_price")
+            val = line
+        else:
+            line = b.get("total")
+            if line is None:
+                continue
+            price = b.get("over_price" if side == "over" else "under_price")
+            val = -line if side == "over" else line
+        key = (val, _payout(price))
+        if best is None or key > best[0]:
+            best = (key, dict(book=b.get("book"), line=line, price=None if price is None or price != price else int(price)))
+    return best[1] if best else None
 
 
 def _f(x):

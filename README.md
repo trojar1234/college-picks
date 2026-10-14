@@ -1,123 +1,111 @@
-# College football model — setup guide
+# College football model
 
-This project predicts every FBS game, tracks betting lines automatically, grades
-itself, and publishes a website that updates on its own. Setup takes about 30
-minutes, once. After that there's nothing you have to do.
+A market-blind college football model. It projects every FBS game, compares its numbers with the
+sportsbooks, records bets before kickoff, grades itself, and publishes a website that updates on
+its own through GitHub Actions and GitHub Pages.
 
-## What you'll need
+Sportsbook lines are never model inputs. They're only used to find disagreements, grade results
+and display prices.
 
-- A free **CollegeFootballData** API key: go to collegefootballdata.com, choose
-  "Get API Key", and enter your email. The key arrives by email.
-- A free **The Odds API** key: go to the-odds-api.com, pick the free "Starter"
-  plan, and enter your email. The key arrives by email.
-- A free **GitHub** account: github.com → Sign up.
+## The website (four pages)
 
-## Step 1 — Create the repository
-
-1. On GitHub, click **+** (top right) → **New repository**.
-2. Name it something nondescript, like `weekend-numbers`.
-3. Choose **Public** (required for free GitHub Pages; see "Privacy" below).
-4. Click **Create repository**.
-
-## Step 2 — Upload the files
-
-1. On the new repository's page, click **uploading an existing file**.
-2. Unzip `cfb-model.zip` on your computer, open the `cfb-model` folder, select
-   everything inside it, and drag it into the browser window.
-3. Click **Commit changes**.
-
-Your computer may hide the `.github` folder, so add the schedule file by hand:
-
-4. Click **Add file → Create new file**.
-5. In the name box, type exactly: `.github/workflows/update.yml`
-6. Paste the contents of `workflow-update.yml` (included in the zip) into the
-   big text box, then click **Commit changes**.
-
-## Step 3 — Add your API keys
-
-1. In the repository, go to **Settings → Secrets and variables → Actions**.
-2. Click **New repository secret**. Name: `CFBD_API_KEY`, value: your
-   CollegeFootballData key. Save.
-3. Click **New repository secret** again. Name: `ODDS_API_KEY`, value: your
-   Odds API key. Save.
-
-## Step 4 — Turn on the website
-
-1. Go to **Settings → Pages**.
-2. Under "Build and deployment", set **Source** to *Deploy from a branch*.
-3. Set **Branch** to `main` and the folder to `/docs`. Save.
-4. After a minute the page shows your site's address, something like
-   `https://yourname.github.io/weekend-numbers/`. Bookmark it.
-
-## Step 5 — Run it the first time
-
-1. Go to the **Actions** tab. If GitHub asks, click to enable workflows.
-2. Click **Update model** on the left, then **Run workflow → Run workflow**.
-3. The first run downloads about ten past seasons and tunes the model, which
-   takes 5–10 minutes. When it shows a green check, refresh your site.
-
-That's it. From then on it runs itself:
-
-| When (Central time) | What happens |
+| Page | What it answers |
 |---|---|
-| Every day, ~8am | Pulls results, updates ratings, grades predictions, re-projects the week |
-| Weekdays, ~6pm | New line snapshot, re-projects |
-| Saturdays, every 2 hours 10am–10pm | Line snapshots, so closing lines are captured |
+| **Projections** | This week's games: projected score, win chance, the line vs the model, the model's pick in every game, and the week's **bets** and **flags**. Tap a game for probabilities, the score distribution, every book's line and price (best first), line history, and when a bet was flagged. |
+| **Matchup** | Any two teams at any venue (home, away, neutral), with spread, total, win chance, fair odds, an 80% range, a what-if slider and a breakdown of why. |
+| **Team ratings** | Every FBS team's power rating (points better than an average FBS team on a neutral field), movement, expected wins, offense/defense, rating history, remaining schedule strength, and a conference comparison. |
+| **Performance** | Live results this season (spread and total scorecards: record, units, ROI, drawdown, closing-line value), the historical backtest, results by edge size, how the cautions perform, an out-of-sample test of the 7-point rule, probability calibration, model tests, every graded game (with CSV download) and data health. |
 
-These stay inside both free tiers (about 150 of CollegeFootballData's 1,000
-monthly calls and about 170 of The Odds API's 500 monthly credits).
+## Bet rules
 
-## Optional — manual adjustments
+- A **bet** is a 7+ point gap between the model and the middle of the sportsbooks' lines, on the
+  spread or the total, with no blocking caution.
+- **Cautions** (shown as FLAG, not bets): QB change, manual adjustment, FCS team, early season,
+  wind/rain, or a 10+ point gap (usually missing news). An 8–10 point bet gets a "check the news" note.
+- A bet keeps the line it was first flagged at and is graded there (1 unit at −110). If the line
+  later moves so the gap is under 7, it shows as **LINE MOVED**: still graded, but not a bet at
+  today's number.
+- Each bet also shows the **best single book** for that side. Grading stays at the middle of the
+  books, which is the conservative choice.
 
-If a starting QB is ruled out and you want the model to know, edit
-`data/overrides.csv` on GitHub (open the file, click the pencil icon) and add a
-line like:
+## How it works
+
+1. **Data**: game results and team stats from CollegeFootballData, lines and prices from The Odds
+   API, weather from Open-Meteo.
+2. **Ratings**: opponent-adjusted team ratings (points, efficiency per play, pace) re-solved after
+   every game, starting from preseason priors built from returning production, QB quality and
+   transfers.
+3. **Points**: ratings are converted to expected points for each team, then a score simulation
+   (10,000 games) gives win and cover probabilities.
+4. **Self-checks**: every option is tested on past seasons and kept only if it lowers error on seasons
+   the model hasn't seen. The backtest is walk-forward: each week predicted only from data before it.
+5. **Records**: every prediction is frozen at kickoff and graded when the game is final.
+
+## When it runs
+
+GitHub schedules run in UTC, so Central times move an hour earlier from early November to mid-March.
+
+| When (Central, daylight time / standard time) | What happens |
+|---|---|
+| Daily ~8am / ~7am | Full update: results, ratings, grading, projections |
+| Weekdays ~6pm / ~5pm | New line snapshot, re-projects |
+| Saturdays every 2 hours 10am–6pm / 9am–5pm, plus 8pm and 10pm / 7pm and 9pm | Line snapshots close to kickoff |
+
+This stays inside both free API tiers.
+
+## Checks before anything is published
+
+- `run.py` stops if any projection isn't a real number in a sensible range, or if team ratings are missing.
+- `cfb_selftest.py` then checks the grading rules, best-line logic, odds matching and record keeping on
+  known cases; that every data file loads; that every page's JavaScript is valid; that the bet list adds
+  up to the season totals; and that the Matchup page's formula still reproduces the weekly projections.
+
+If any check fails, the run stops, the last good site stays up, and GitHub emails you.
+
+## Files
+
+Production code is everything starting with `cfb_`, plus `run.py`, `overrides.csv` and
+`requirements.txt`. The schedule is `.github/workflows/update.yml`. Generated data lives in `data/`
+(predictions, line history, model state) and the website in `docs/`.
+
+Older files from the first version are no longer used and can be deleted: `config.py`, `data.py`,
+`fetch.py`, `lines.py`, `model.py`, `predict.py`, `ratings.py`, `report.py`, `sim.py`, `site.py`,
+`fake_data.py`, `index.html`, `update.yml` (the root copy), `workflow-update.yml`, `download` and
+`download (1)`.
+
+## Manual adjustments
+
+If a starting QB is ruled out and you want the model to know, edit `overrides.csv` and add a line like:
 
 ```
 Colorado,-5,starting QB out
 ```
 
-The number is added to that team's expected points. The game will be marked
-low confidence. Delete the line when it no longer applies.
+The number is added to that team's expected points, and the game is marked low confidence (no bet).
+Delete the line when it no longer applies.
 
-## Reading the site
+## Running it by hand
 
-- **Projections**: every FBS game this week, the model's score and line next to
-  the market's, line movement, and flagged edges. Click any game for score
-  probabilities, the margin distribution, inputs, and lines by book.
-- **Report card**: this season's live results (graded at kickoff, including
-  closing line value), the walk-forward backtest by season, calibration, error
-  diagnostics by segment, and team ratings.
-
-Trust the model only where the report card shows it earns it. The most reliable
-sign of a real edge is consistently beating the closing line (positive average
-CLV), not the win-loss record over a few weeks.
-
-## How it learns
-
-- **Every run**: team ratings are re-solved with all completed games, so each
-  result moves the ratings, weighted against the preseason prior.
-- **Every run**: the conversion from ratings to points, the simulator's
-  variance, and the calibration of cover probabilities are refit on every graded
-  game, historical and current.
-- **Monthly**: the prior strength (how long preseason expectations matter) is
-  re-tuned on the full backtest. Run the workflow with mode `retune` to force it.
-- **Error diagnostics** flag systematic biases (by week, matchup type, favorite
-  size) so you can see whether something needs a structural fix.
-
-Betting lines are stored and displayed but never used as model inputs.
+Actions tab → **Update model** → **Run workflow**, with mode `update` (full), `odds` (lines only) or
+`retune` (re-tune the prior strength).
 
 ## Privacy
 
-The site isn't linked or searchable anywhere, and it tells search engines not to
-index it. But because the repository is public, anyone who finds it on GitHub
-can see the code and data. If you later want it fully private, GitHub Pro
-($4/month) lets you make the repository private.
+The site tells search engines not to index it, but it isn't private: anyone with the link can open
+it, and anyone can read a public repository. A private repository (GitHub Pro) hides the code and
+data, but the published Pages site is still public to anyone with the address.
 
 ## If something breaks
 
-Open the **Actions** tab, click the run with a red X, and copy the error text.
-Paste it to Claude and it can be fixed. The most common causes are an expired or
-mistyped API key, or a change in one of the data providers.
+Open the **Actions** tab, click the run with a red X, and copy the error text. The most common causes
+are an expired or mistyped API key, or a change at one of the data providers. The Performance page's
+**Data health** section shows what the latest run had to work with.
 
-Data provided by CollegeFootballData.com, The Odds API, and Open-Meteo.
+## Changelog
+
+- **Oct 2026**: Matchup page; Performance page (spread/total scorecards, ROI, drawdown, edge-size and
+  caution analysis, out-of-sample threshold test, win-probability calibration, data health);
+  best available book on every bet; sportsbook prices recorded; complete season history; rating
+  history; publish checks and self-test. No change to the model or the bet rules.
+
+Data: CollegeFootballData.com, The Odds API, Open-Meteo. For information only, not betting advice.

@@ -185,6 +185,20 @@ def main(mode):
         grow = gidx.loc[r.game_id].to_dict() if gidx is not None and r.game_id in gidx.index else {}
         preds.append(predict.predict_game(r, state, R, m, wx.get(r.game_id), ovr, tiers, gp, shrink, grow))
 
+    # Publish gate: never overwrite the last good site with broken numbers. A failure here stops
+    # the run before anything is saved, so the workflow publishes nothing and GitHub emails you.
+    def _ok(p):
+        try:
+            sp, tot = float(p["model_spread"]), float(p["model_total"])
+        except (KeyError, TypeError, ValueError):
+            return False
+        return np.isfinite(sp) and np.isfinite(tot) and 10 <= tot <= 130 and abs(sp) <= 90
+    bad = [f"{p['away']} @ {p['home']}" for p in preds if not _ok(p)]
+    if bad:
+        raise SystemExit(f"Refusing to publish: impossible projections for {', '.join(bad[:5])}")
+    if not tiers or not any(v != "FCS" for v in tiers.values()):
+        raise SystemExit("Refusing to publish: no team ratings")
+
     store = predict.load_store()
     version = f"{MODEL_VERSION}|spread {C.SPREAD_EDGE}|total {C.TOTAL_EDGE}"
     store = predict.update_store(store, preds, now, version)
@@ -194,7 +208,7 @@ def main(mode):
     # Report card
     rep = dict(
         backtest=bt_rep,
-        live=report.live(store, season),
+        live=report.live(store, season, state.get("margin_sd")),
         state={k: state[k] for k in ("lam", "rho", "sim_sd", "margin_sd", "total_sd", "updated", "tuned_at")},
         tune=state["tune_results"],
         experiments=exp_old,
@@ -210,7 +224,42 @@ def main(mode):
             prev_final = dict(model.ratings_from(model._rows_before(SEASONS[season], cut), info[season], lam),
                               tiers=finals[season]["tiers"])
     lines_ts = hist.ts.max().isoformat() if len(hist) and "ts" in hist else None
-    site.build(season, wk, slate, store, rep, finals[season], now, unmatched, state, prev_final, lines_ts, games)
+
+    # Each team's power rating after every completed week (for the rating-history chart)
+    rating_hist = {}
+    try:
+        if len(done):
+            cuts = [(0, games.start.min())]
+            for w in sorted(done.wk.unique()):
+                nxt = games[games.wk > w].start.min()
+                cuts.append((int(w), nxt if nxt == nxt else done.start.max() + pd.Timedelta(days=1)))
+            for w, cut in cuts:
+                Rw = dict(model.ratings_from(model._rows_before(SEASONS[season], cut), info[season], lam),
+                          tiers=finals[season]["tiers"])
+                for row in site.team_table(Rw, state):
+                    rating_hist.setdefault(row["team"], []).append([w, round(float(row["power"]), 1)])
+    except Exception as e:  # a chart is never worth failing the run over
+        print("Rating history skipped:", e)
+        rating_hist = {}
+
+    # Data health: what this run had to work with, shown on the Performance page
+    graded_season = [p for p in store.values() if p.get("result") and p.get("start")
+                     and report.season_of(p["start"]) == season]
+    health = dict(
+        run=now.isoformat(), mode=mode, build=(os.environ.get("GITHUB_SHA") or "")[:7],
+        model_version=MODEL_VERSION, slate_games=int(len(slate)), projected=len(preds),
+        skipped_started=int(len(slate)) - len(preds),
+        with_spread=sum(1 for p in preds if (p.get("market") or {}).get("spread") is not None),
+        with_total=sum(1 for p in preds if (p.get("market") or {}).get("total") is not None),
+        odds_events=len(odds or []), odds_rows=int(len(snap)), unmatched_odds=len(unmatched),
+        lines_fetched=lines_ts, rated_teams=sum(1 for v in tiers.values() if v != "FCS"),
+        schedule_games=int(len(games)), completed_games=int(games.completed.sum()),
+        graded=len(graded_season),
+        bets_graded=sum(1 for p in graded_season for k in ("ats", "ou") if (p["result"] or {}).get(k)),
+    )
+    print("Health:", health)
+    site.build(season, wk, slate, store, rep, finals[season], now, unmatched, state, prev_final, lines_ts, games,
+               rating_hist=rating_hist, health=health)
     print(f"Done. Week {wk}: {len(preds)} games projected, {sum(p.get('spread_flag', False) for p in preds)} spread edges.")
     if unmatched:
         print("Unmatched odds games:", unmatched[:10])
