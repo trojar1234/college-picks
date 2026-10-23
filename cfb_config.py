@@ -49,3 +49,25 @@ POWER_CONFS = {"SEC", "Big Ten", "Big 12", "ACC"}
 # accurate (MAE 13.20 -> 13.12; 2025 holdout 12.88 -> 12.63) but flagged O/U bets did worse against
 # opening lines (59-45 vs 92-52), so the betting edge comes from the current totals.
 TOTALS_MODEL = False
+
+# Service academies (triple-option offenses). The ratings systematically underrate them: in the
+# 2017-2025 walk-forward they beat the projected margin in every season (3 to 9 points, about 5 on
+# average), and their games went about 2 points under the projected total. A correction estimated
+# only from earlier seasons' out-of-sample errors (shrunk toward zero by ACADEMY_SHRINK games) cut
+# the error on academy games from 14.2 to 13.5 points. Set ACADEMIES = [] to switch it off.
+ACADEMIES = ["Army", "Navy", "Air Force"]
+ACADEMY_SHRINK = 50
+
+# A bet needs a live sportsbook quote: lines that only come from the CollegeFootballData backup,
+# or a snapshot older than this many hours, can be shown but never become a recorded bet.
+BET_MAX_QUOTE_AGE_H = 36
+
+# Optional caution changes (both off = today's rules). In the 2023-2025 backtest against opening lines,
+# 7+ point spread gaps in weeks 1-3 went 88-52 (63%) and in FCS games 61-36 (63%), vs 42-33 (56%) for
+# the spread bets the rules allow (better in 2023 and 2024, worse in 2025). Against closing lines
+# (2017-2025) the early-season gaps went 52-53% in total and beat 50% in 6 of 9 seasons, while the
+# allowed spread bets went about 45% and were under 50% in 8 of 9. Set either to False to let those SPREAD gaps become bets
+# (totals stay blocked: FCS totals went 7-13 against opening lines). Only three seasons of opening lines
+# exist and they also shaped the rules, so the live shadow record is the place to confirm it.
+EARLY_SEASON_BLOCKS_SPREADS = True
+FCS_BLOCKS_SPREADS = True

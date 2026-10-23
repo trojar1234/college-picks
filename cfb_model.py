@@ -13,6 +13,8 @@ Optional (kept only if it improves the tuning seasons by at least MIN_GAIN):
   pbp - play-by-play: non-garbage points per drive, finishing drives, field position
 """
 import numpy as np
+
+import cfb_config as C
 import pandas as pd
 
 import cfb_data as Dt
@@ -244,6 +246,7 @@ def apply_totals(out, tm):
 def walk_forward(bt, eval_from, groups=()):
     """Score each season with a points conversion fit only on earlier seasons."""
     parts, oos = [], []  # oos: earlier seasons' out-of-sample raw totals, for the recalibration
+    errs = []  # earlier seasons' out-of-sample (margin, total) errors, for honest error sizes
     use_tot = "totals" in groups
     for s in sorted(bt.season.unique()):
         train = bt[bt.season < s]
@@ -261,12 +264,19 @@ def walk_forward(bt, eval_from, groups=()):
             oos.append(pd.DataFrame(dict(season=s, raw=raw, actual=(cur.home_pts + cur.away_pts).to_numpy(float))))
         if s < eval_from:
             continue
-        tp = predict_bt(train, conv, groups, tm)
-        sd_m = float(((tp.home_pts - tp.away_pts) - (tp.pred_h - tp.pred_a)).std())
-        sd_t = float(((tp.home_pts + tp.away_pts) - (tp.pred_h + tp.pred_a)).std())
         p = predict_bt(bt[bt.season == s], conv, groups, tm)
+        if errs:  # error size measured on earlier seasons' genuinely out-of-sample predictions
+            e = pd.concat(errs[-3:])
+            sd_m, sd_t = float(e.m.std()), float(e.t.std())
+        else:  # first season scored: nothing out of sample yet, so use the training fit
+            tp = predict_bt(train, conv, groups, tm)
+            sd_m = float(((tp.home_pts - tp.away_pts) - (tp.pred_h - tp.pred_a)).std())
+            sd_t = float(((tp.home_pts + tp.away_pts) - (tp.pred_h + tp.pred_a)).std())
         p["sd_m"], p["sd_t"] = sd_m, sd_t
         parts.append(p)
+        done = p[p.home_pts.notna()]
+        errs.append(pd.DataFrame(dict(m=(done.home_pts - done.away_pts) - (done.pred_h - done.pred_a),
+                                      t=(done.home_pts + done.away_pts) - (done.pred_h + done.pred_a))))
     return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame()
 
 
@@ -392,6 +402,13 @@ def fit_state(SEASONS, lam, current_season, features=None, players=None):
     allp = predict_bt(bt, conv, groups, tm)
     rh = allp.home_pts - allp.pred_h
     ra = allp.away_pts - allp.pred_a
+    # Error sizes for probabilities: from genuinely out-of-sample predictions (the last three seasons
+    # of the walk-forward) rather than the fit's errors on its own training games.
+    o = wf[wf.home_pts.notna() & (wf.season >= current_season - 3)] if len(wf) else wf
+    if len(o) >= 500:
+        rh = o.home_pts - o.pred_h
+        ra = o.away_pts - o.pred_a
+    rh, ra = rh.dropna(), ra.dropna()
     team_var = float(np.concatenate([rh, ra]).var())
     rho = float(np.clip(np.corrcoef(rh, ra)[0, 1], 0.0, 0.6))
     adv = pd.concat([SEASONS[s]["adv"] for s in seasons if len(SEASONS[s]["adv"])])
@@ -411,4 +428,40 @@ def fit_state(SEASONS, lam, current_season, features=None, players=None):
         margin_sd=float((rh - ra).std()),
         total_sd=float((rh + ra).std()),
     )
+    state["academy"] = academy_adjust(wf)
+    state["rating_tau2"] = rating_uncertainty(wf, lam)
     return state, finals, bt, wf, info
+
+
+def rating_uncertainty(wf, lam):
+    """How uncertain a team's rating is, from how much bigger the out-of-sample misses are early in the
+    season: miss variance = base + tau2 * (1/(n_home+lam) + 1/(n_away+lam)) with n = games played.
+    Returns tau2 (one team's rating variance is about tau2 / (games + lam))."""
+    d = wf[wf.home_pts.notna()] if len(wf) else wf
+    if len(d) < 1000:
+        return None
+    em = (d.home_pts - d.away_pts) - (d.pred_h - d.pred_a)
+    v = em.groupby(d.wk).var()
+    n = (v.index.to_numpy(float) - 1).clip(0)
+    keep = v.index <= 15
+    X = np.column_stack([np.ones(keep.sum()), 2 / (n[keep] + lam)])
+    b = np.linalg.lstsq(X, v[keep].to_numpy(), rcond=None)[0]
+    return round(float(max(b[1], 0.0)), 1)
+
+
+def academy_adjust(wf):
+    """How much the service academies beat their projections, from out-of-sample walk-forward
+    errors, shrunk toward zero. Returns {} when switched off or with too few games."""
+    teams = list(getattr(C, "ACADEMIES", []) or [])
+    if not teams or wf is None or not len(wf):
+        return {}
+    d = wf[wf.home_pts.notna()]
+    side = d.home.isin(teams).astype(int) - d.away.isin(teams).astype(int)
+    g = d[side != 0]
+    if len(g) < 30:
+        return {}
+    k = float(getattr(C, "ACADEMY_SHRINK", 50))
+    em = ((g.home_pts - g.away_pts) - (g.pred_h - g.pred_a)) * side[side != 0]
+    et = (g.home_pts + g.away_pts) - (g.pred_h + g.pred_a)
+    return dict(teams=teams, margin=round(float(em.sum() / (len(g) + k)), 2),
+                total=round(float(et.sum() / (len(g) + k)), 2), n=int(len(g)))

@@ -25,8 +25,12 @@ and display prices.
 - A bet keeps the line it was first flagged at and is graded there (1 unit at −110). If the line
   later moves so the gap is under 7, it shows as **LINE MOVED**: still graded, but not a bet at
   today's number.
-- Each bet also shows the **best single book** for that side. Grading stays at the middle of the
-  books, which is the conservative choice.
+- A bet needs a **live sportsbook quote less than 36 hours old**. A game that only has the backup line
+  from CollegeFootballData can be flagged but never becomes a bet.
+- Each bet also shows the **best single book** for that side, chosen by expected value (line and price
+  together). Grading stays at the middle of the books, which is the conservative choice.
+- Every bet and blocked flag is written once, never edited, to `data/decisions.csv` (also downloadable
+  from the Performance page) with the time, line, best book, price, probability, reasons and model fit.
 
 ## How it works
 
@@ -35,29 +39,33 @@ and display prices.
 2. **Ratings**: opponent-adjusted team ratings (points, efficiency per play, pace) re-solved after
    every game, starting from preseason priors built from returning production, QB quality and
    transfers.
-3. **Points**: ratings are converted to expected points for each team, then a score simulation
-   (10,000 games) gives win and cover probabilities.
-4. **Self-checks**: every option is tested on past seasons and kept only if it lowers error on seasons
+3. **Points**: ratings are converted to expected points for each team. Those expected points are the
+   projected spread and total (the numbers the backtest scores). A score simulation (10,000 games)
+   gives the shape of the outcomes: win, cover and push chances, likely scores.
+4. **Service-academy correction**: Army, Navy and Air Force beat their projections in every backtest
+   season, so their margins get a correction learned only from past out-of-sample misses.
+5. **Self-checks**: every option is tested on past seasons and kept only if it lowers error on seasons
    the model hasn't seen. The backtest is walk-forward: each week predicted only from data before it.
-5. **Records**: every prediction is frozen at kickoff and graded when the game is final.
+6. **Records**: every prediction is frozen at kickoff and graded when the game is final.
 
-## When it runs
+## When it runs (Central time, all year)
 
-GitHub schedules run in UTC, so Central times move an hour earlier from early November to mid-March.
-
-| When (Central, daylight time / standard time) | What happens |
+| When | What happens |
 |---|---|
-| Daily ~8am / ~7am | Full update: results, ratings, grading, projections |
-| Weekdays ~6pm / ~5pm | New line snapshot, re-projects |
-| Saturdays every 2 hours 10am–6pm / 9am–5pm, plus 8pm and 10pm / 7pm and 9pm | Line snapshots close to kickoff |
+| Daily 8am | Full update: results, ratings, grading, projections |
+| Weekdays 6pm | New line snapshot, re-projects |
+| Saturdays every 2 hours, 10am–10pm | Line snapshots close to kickoff |
+
+GitHub schedules run in UTC, so each run is listed twice (daylight and standard time) and the first
+step skips the one that doesn't match the current clock.
 
 This stays inside both free API tiers.
 
 ## Checks before anything is published
 
 - `run.py` stops if any projection isn't a real number in a sensible range, or if team ratings are missing.
-- `cfb_selftest.py` then checks the grading rules, best-line logic, odds matching and record keeping on
-  known cases; that every data file loads; that every page's JavaScript is valid; that the bet list adds
+- `cfb_selftest.py` then checks the grading rules, prices and expected value, which lines can become
+  bets, best-line logic, odds matching and record keeping on known cases; that every data file loads; that every page's JavaScript is valid; that the bet list adds
   up to the season totals; and that the Matchup page's formula still reproduces the weekly projections.
 
 If any check fails, the run stops, the last good site stays up, and GitHub emails you.
@@ -65,7 +73,9 @@ If any check fails, the run stops, the last good site stays up, and GitHub email
 ## Files
 
 Production code is everything starting with `cfb_`, plus `run.py`, `overrides.csv` and
-`requirements.txt`. The schedule is `.github/workflows/update.yml`. Generated data lives in `data/`
+`requirements.txt` (exact package versions, so a library update can't quietly change results). Each
+run saves a fingerprint of the fitted model with every prediction, and a copy of the fit to
+`data/states/` once a day. The schedule is `.github/workflows/update.yml`. Generated data lives in `data/`
 (predictions, line history, model state) and the website in `docs/`.
 
 Older files from the first version are no longer used and can be deleted: `config.py`, `data.py`,
@@ -103,6 +113,13 @@ are an expired or mistyped API key, or a change at one of the data providers. Th
 
 ## Changelog
 
+- **Oct 23, 2026**: service-academy correction; projected spreads and totals now equal the expected
+  points the backtest validated (the simulation had been adding about half a point to totals);
+  probabilities use out-of-sample error sizes; bets need a live sportsbook quote under 36 hours old;
+  bets stamped at the time the odds were fetched; best book chosen by expected value; decision log;
+  model fingerprints; rating ranges; accuracy, calibration and profit ranges on the Performance page;
+  shadow records for other gap sizes; schedule fixed to Central time all year; pinned packages.
+  Bet rules unchanged (7 points, same cautions).
 - **Oct 2026**: Matchup page; Performance page (spread/total scorecards, ROI, drawdown, edge-size and
   caution analysis, out-of-sample threshold test, win-probability calibration, data health);
   best available book on every bet; sportsbook prices recorded; complete season history; rating

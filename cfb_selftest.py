@@ -56,6 +56,30 @@ def test_best_line():
     check(lines.best_line([], "spread", "home") is None, "no books -> no best line")
 
 
+def test_prices_and_eligibility():
+    # unusual prices: even money, plus money, missing price (treated as -110)
+    check(abs(lines.ev(0.5, 0, 100) - 0.0) < 1e-9, "a coin flip at even money is worth nothing")
+    check(abs(lines.ev(0.5, 0, None) - (0.5 * 100 / 110 - 0.5)) < 1e-9, "a missing price is treated as -110")
+    check(lines.ev(0.55, 0, -110) > 0 > lines.ev(0.5, 0, -110), "55% at -110 is positive, 50% is negative")
+    books = [dict(book="A", total=39.5, over_price=-110, under_price=-110),
+             dict(book="B", total=40.5, over_price=-105, under_price=-115)]
+    check(lines.best_line(books, "total", "over", model=47.7, sd=16.6, shrink=0.18)["book"] == "A",
+          "a full point on the total is worth more than five cents of price")
+    books = [dict(book="A", spread=4.5, home_price=-125, away_price=105), dict(book="B", spread=4.5, home_price=-110, away_price=-110)]
+    check(lines.best_line(books, "spread", "home", model=-3, sd=16, shrink=0.25)["book"] == "B", "same line: the better price wins")
+    # a bet needs a fresh sportsbook quote
+    now = pd.Timestamp("2026-10-20 12:00", tz="UTC")
+    fresh = dict(market=dict(spread=-3.0, spread_src="odds", books=[dict(book="A")], last_ts="2026-10-20T08:00:00+00:00"))
+    backup = dict(market=dict(spread=-3.0, spread_src="cfbd", books=[], last_ts=None))
+    stale = dict(market=dict(spread=-3.0, spread_src="odds", books=[dict(book="A")], last_ts="2026-10-17T08:00:00+00:00"))
+    check(predict.bet_eligible(fresh, "spread", now), "a fresh sportsbook quote can become a bet")
+    check(not predict.bet_eligible(backup, "spread", now), "a backup CollegeFootballData line can't become a bet")
+    check(not predict.bet_eligible(stale, "spread", now), "a quote more than 36 hours old can't become a bet")
+    # the 7-point edge is inclusive and exact on half-point lines
+    check(abs(-6.5 - (-13.5)) >= C.SPREAD_EDGE and abs(44.5 - 51.5) >= C.TOTAL_EDGE, "an exact 7.0 gap qualifies")
+    check(not (abs(44.5 - 51.4) >= C.TOTAL_EDGE), "a 6.9 gap doesn't")
+
+
 def test_odds_matching():
     games = pd.DataFrame([dict(game_id=1, home="Texas", away="Florida", start=pd.Timestamp("2026-10-17 16:00", tz="UTC"),
                                completed=False, neutral=False),
@@ -114,6 +138,19 @@ def test_published():
         n = sum(1 for p in H if (p.get("result") or {}).get("ats")) + sum(1 for p in H if (p.get("result") or {}).get("ou"))
         s = sum((live.get(k) or {}).get(x, 0) for k in ("spread", "total") for x in ("w", "l", "p"))
         check(n == s, f"every graded bet in the game list adds up to the season totals ({n} vs {s})")
+    ids = [g["game_id"] for g in D["games"]]
+    check(len(ids) == len(set(ids)), "every game appears once on the projections page")
+    if H is not None:
+        hid = [p["game_id"] for p in H]
+        check(len(hid) == len(set(hid)), "every graded game appears once in the history")
+    dec = site / "decisions.csv"
+    if dec.exists():
+        try:
+            d = pd.read_csv(dec)
+            check({"ts", "game_id", "market", "status"} <= set(d.columns), "decision log has its columns")
+            check(not d.duplicated(["game_id", "market", "status"]).any(), "decision log has no repeated entries")
+        except Exception as e:
+            check(False, f"decision log readable ({e})")
     for g in D["games"]:
         if g.get("model_spread") is not None:
             ok = np.isfinite(g["model_spread"]) and 10 <= g["model_total"] <= 130
@@ -160,6 +197,7 @@ def test_published():
 if __name__ == "__main__":
     test_grading()
     test_best_line()
+    test_prices_and_eligibility()
     test_odds_matching()
     test_record_keeping()
     test_published()

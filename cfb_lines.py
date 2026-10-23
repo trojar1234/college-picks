@@ -1,6 +1,7 @@
 """Line tracking. Odds API snapshots are matched to CFBD games and appended to
 data/line_history.csv. Lines are only ever used for display and grading,
 never as model inputs."""
+import math
 import re
 import unicodedata
 
@@ -62,7 +63,7 @@ def snapshot_rows(odds, games, ts):
         return pd.DataFrame(columns=COLS), []
     find = matcher(set(games.home) | set(games.away))
     up = games[~games.completed]
-    rows, unmatched = [], []
+    rows, unmatched, odd = [], [], []
     for ev in odds:
         h, a = find(ev.get("home_team")), find(ev.get("away_team"))
         t0 = pd.to_datetime(ev.get("commence_time"), utc=True)
@@ -71,8 +72,15 @@ def snapshot_rows(odds, games, ts):
         if cand.empty:
             unmatched.append(f"{ev.get('away_team')} @ {ev.get('home_team')}")
             continue
+        if len(cand) > 1:  # same teams twice within two days: take the closest kickoff, and say so
+            cand = cand.iloc[(cand.start - t0).abs().argsort()]
+            odd.append(f"{ev.get('away_team')} @ {ev.get('home_team')}: two possible games, used the closest kickoff")
         g = cand.iloc[0]
         flip = g.home != h  # Odds API's "home" can differ at neutral sites
+        if abs((g.start - t0).total_seconds()) > 3 * 3600:
+            odd.append(f"{g.away} @ {g.home}: kickoff differs by {abs((g.start - t0).total_seconds()) / 3600:.0f} h between sources")
+        if flip and not g.neutral:
+            odd.append(f"{g.away} @ {g.home}: odds feed lists the teams the other way round at a home game")
         for bk in ev.get("bookmakers", []):
             sp = tot = hp = ap = op = up_ = np.nan
             for mk in bk.get("markets", []):
@@ -97,7 +105,9 @@ def snapshot_rows(odds, games, ts):
             if sp == sp or tot == tot:
                 rows.append(dict(ts=ts, game_id=int(g.game_id), book=bk.get("title", bk.get("key")),
                                  home_spread=sp, total=tot, home_price=hp, away_price=ap, over_price=op, under_price=up_))
-    return pd.DataFrame(rows, columns=COLS), unmatched
+    out = pd.DataFrame(rows, columns=COLS)
+    out.attrs["oddities"] = odd  # shown under Data health; the lines are still used
+    return out, unmatched
 
 
 def load_history():
@@ -157,10 +167,44 @@ def _payout(price):
     return p / 100 if p > 0 else 100 / -p
 
 
-def best_line(books, kind, side):
-    """The single book offering the most for one side: most points on a spread, the lowest total
-    for an over, the highest for an under; ties go to the better price."""
+def ev(p_win, p_push=0.0, price=None):
+    """Expected profit per 1 unit risked: win pays at the American price (missing: -110), push refunds."""
+    p_push = p_push or 0.0
+    return p_win * _payout(price) - (1 - p_win - p_push)
+
+
+def _phi(x):
+    return 0.5 * (1 + math.erf(x / math.sqrt(2)))
+
+
+def _edge(kind, side, line, model):
+    """Points the side gets beyond the model's number. Spread lines are from the side's view;
+    model is the home spread (negative = home favored)."""
+    if kind == "spread":
+        return (line - model) if side == "home" else (line + model)
+    return (model - line) if side == "over" else (line - model)
+
+
+def _cover_prob(kind, side, line, model, sd, shrink, ref=None):
+    """Chance the side wins at this line, and the chance of a push on a whole number.
+    The level is calibrated (shrunk toward 50%, as the model's edges are) at the reference line;
+    moving between lines uses the full outcome distribution, because the value of an extra half
+    point depends on how often games land there, not on the model's edge."""
+    ref = line if ref is None else ref
+    zr, z = _edge(kind, side, ref, model) / sd, _edge(kind, side, line, model) / sd
+    push = (math.exp(-0.5 * z * z) / (math.sqrt(2 * math.pi) * sd)) if float(line).is_integer() else 0.0
+    p = 0.5 + shrink * (_phi(zr) - 0.5) + (_phi(z) - _phi(zr)) - push / 2
+    return min(max(p, 0.0), 1.0 - push), push
+
+
+def best_line(books, kind, side, model=None, sd=16.0, shrink=1.0):
+    """The single book that pays best for one side. With the model's number, books are ranked by
+    expected value (line and price together, so half a point at -125 doesn't beat -110 automatically);
+    without it, by the most points with price as the tiebreak."""
     best = None
+    vals = [((b.get("spread") if side == "home" else -b.get("spread")) if kind == "spread" else b.get("total"))
+            for b in books or [] if b.get("spread" if kind == "spread" else "total") is not None]
+    ref = float(np.median(vals)) if vals else None
     for b in books or []:
         if kind == "spread":
             hs = b.get("spread")
@@ -175,9 +219,16 @@ def best_line(books, kind, side):
                 continue
             price = b.get("over_price" if side == "over" else "under_price")
             val = -line if side == "over" else line
-        key = (val, _payout(price))
+        price = None if price is None or price != price else int(price)
+        if model is not None:
+            pw, pp = _cover_prob(kind, side, line, model, sd, shrink, ref)
+            key = (ev(pw, pp, price), val)
+        else:
+            pw = pp = None
+            key = (val, _payout(price))
         if best is None or key > best[0]:
-            best = (key, dict(book=b.get("book"), line=line, price=None if price is None or price != price else int(price)))
+            best = (key, dict(book=b.get("book"), line=line, price=price,
+                              **({} if pw is None else dict(p=round(pw, 3), ev=round(key[0], 3)))))
     return best[1] if best else None
 
 

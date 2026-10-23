@@ -4,6 +4,8 @@
     python run.py odds     # lines-only run: new line snapshot, re-predict, rebuild site (no CFBD calls)
     python run.py retune   # full run that also re-tunes the prior strength
 """
+import csv
+import hashlib
 import json
 import os
 import sys
@@ -26,6 +28,50 @@ import cfb_site as site
 STATE = C.DATA / "model_state.json"
 EXPERIMENTS = C.DATA / "experiments.json"
 MODEL_VERSION = 5  # bump when the model's structure changes, to force re-tuning and re-testing
+
+
+DECISIONS = C.DATA / "decisions.csv"
+DEC_COLS = ["ts", "game_id", "game", "kickoff", "market", "status", "side", "line", "model", "edge",
+            "p", "ev", "best_book", "best_line", "best_price", "line_source", "quote_ts", "reasons", "fit_id"]
+
+
+def log_decisions(preds, store, old_flags, ts, fit_id):
+    """Append-only record of every candidate (bets and flags a caution blocked), written the first time
+    each game/market reaches that status. Never edited afterward."""
+    seen = set()
+    if DECISIONS.exists():
+        with DECISIONS.open() as f:
+            seen = {(r["game_id"], r["market"], r["status"]) for r in csv.DictReader(f)}
+    rows = []
+    for p in preds:
+        gid = str(p["game_id"])
+        rec = store.get(gid, {})
+        for i, kind in enumerate(("spread", "total")):
+            if not p.get(f"{kind}_flag"):
+                continue
+            is_bet = bool(rec.get(f"first_{kind}_flag")) and not old_flags.get(gid, (False, False))[i]
+            reasons = [*p.get("low_conf", []), *p.get(f"{kind}_caution", [])]
+            m = p.get("market") or {}
+            if not reasons and not predict.bet_eligible(p, kind, ts):
+                reasons = ["no fresh sportsbook quote"]
+            status = "bet" if is_bet else ("flag" if reasons else None)
+            if status is None or (gid, kind, status) in seen:
+                continue
+            b = p.get(f"best_{kind}") or {}
+            rows.append(dict(ts=ts.isoformat(), game_id=gid, game=f"{p['away']} @ {p['home']}", kickoff=p["start"],
+                             market=kind, status=status, side=p.get(f"{kind}_side"), line=m.get(kind),
+                             model=p.get(f"model_{kind}"), edge=p.get(f"{kind}_edge"),
+                             p=p.get("p_side_cover" if kind == "spread" else "p_side_total"), ev=p.get(f"ev_{kind}"),
+                             best_book=b.get("book"), best_line=b.get("line"), best_price=b.get("price"),
+                             line_source=m.get(f"{kind}_src"), quote_ts=m.get("last_ts"), reasons="; ".join(reasons),
+                             fit_id=fit_id))
+    if rows:
+        new = not DECISIONS.exists()
+        with DECISIONS.open("a", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=DEC_COLS)
+            if new:
+                w.writeheader()
+            w.writerows(rows)
 
 
 def current_season(now):
@@ -141,6 +187,16 @@ def main(mode):
     state.update(lam=lam, tuned_at=tuned_at.isoformat(), tune_results={str(k): v for k, v in tune_res.items()},
                  updated=now.isoformat(), features=features)
     STATE.write_text(json.dumps(state, indent=1))
+    # Fingerprint of the fitted model (coefficients, error sizes, corrections) and the code version,
+    # saved with every prediction so any number can be traced to the exact fit that made it.
+    fit_id = hashlib.sha1(json.dumps({k: state.get(k) for k in ("conv", "groups", "lam", "sim_sd", "rho", "margin_sd",
+                                                                   "total_sd", "academy", "features")},
+                                     sort_keys=True, default=str).encode()).hexdigest()[:10]
+    (C.DATA / "states").mkdir(exist_ok=True)
+    (C.DATA / "states" / f"{season}-{now.strftime('%m-%d')}.json").write_text(
+        json.dumps(dict(fit_id=fit_id, saved=now.isoformat(), **{k: state.get(k) for k in (
+            "conv", "groups", "lam", "sim_sd", "rho", "margin_sd", "total_sd", "academy", "features", "plays_per_drive")}),
+            default=str))
 
     # Lines
     odds = fetch.odds_snapshot()
@@ -174,16 +230,24 @@ def main(mode):
         if r.start <= fetched + pd.Timedelta(minutes=5):
             continue  # kicked off (or about to): its line may already be live
         m = dict(mview.get(int(r.game_id), {}))
+        # Where each line came from: "odds" = a sportsbook snapshot; "cfbd" = the backup line from
+        # CollegeFootballData, shown for reference but never allowed to become a bet.
+        m["spread_src"] = "odds" if m.get("spread") is not None else None
+        m["total_src"] = "odds" if m.get("total") is not None else None
         if m.get("spread") is None and cfbd_ln is not None and r.game_id in cfbd_ln.index:
             m["spread"] = lines._f(cfbd_ln.loc[r.game_id, "cfbd_spread"])
+            m["spread_src"] = "cfbd" if m["spread"] is not None else None
             if m.get("open_spread") is None:  # 0 is a real (pick'em) line, so test for missing explicitly
                 m["open_spread"] = lines._f(cfbd_ln.loc[r.game_id, "cfbd_spread_open"])
         if m.get("total") is None and cfbd_ln is not None and r.game_id in cfbd_ln.index:
             m["total"] = lines._f(cfbd_ln.loc[r.game_id, "cfbd_total"])
+            m["total_src"] = "cfbd" if m["total"] is not None else None
             if m.get("open_total") is None:
                 m["open_total"] = lines._f(cfbd_ln.loc[r.game_id, "cfbd_total_open"])
         grow = gidx.loc[r.game_id].to_dict() if gidx is not None and r.game_id in gidx.index else {}
-        preds.append(predict.predict_game(r, state, R, m, wx.get(r.game_id), ovr, tiers, gp, shrink, grow))
+        pg = predict.predict_game(r, state, R, m, wx.get(r.game_id), ovr, tiers, gp, shrink, grow)
+        pg["fit_id"] = fit_id
+        preds.append(pg)
 
     # Publish gate: never overwrite the last good site with broken numbers. A failure here stops
     # the run before anything is saved, so the workflow publishes nothing and GitHub emails you.
@@ -201,14 +265,18 @@ def main(mode):
 
     store = predict.load_store()
     version = f"{MODEL_VERSION}|spread {C.SPREAD_EDGE}|total {C.TOTAL_EDGE}"
-    store = predict.update_store(store, preds, now, version)
+    # Decisions are stamped when the odds they used were fetched (the model fit takes minutes)
+    old_flags = {k: (bool(v.get("first_spread_flag")), bool(v.get("first_total_flag"))) for k, v in store.items()}
+    store = predict.update_store(store, preds, fetched, version)
+    log_decisions(preds, store, old_flags, fetched, fit_id)
     store = predict.grade(store, games, mview, SEASONS[season]["lines"])
     predict.save_store(store)
 
     # Report card
     rep = dict(
         backtest=bt_rep,
-        live=report.live(store, season, state.get("margin_sd")),
+        live=dict(report.live(store, season, state.get("margin_sd"), state.get("total_sd")), value_decay=report.value_decay(store, hist, season),
+                  flag_clv=report.flag_clv(store, pd.read_csv(DECISIONS) if DECISIONS.exists() else None, season)),
         state={k: state[k] for k in ("lam", "rho", "sim_sd", "margin_sd", "total_sd", "updated", "tuned_at")},
         tune=state["tune_results"],
         experiments=exp_old,
@@ -255,6 +323,11 @@ def main(mode):
         lines_fetched=lines_ts, rated_teams=sum(1 for v in tiers.values() if v != "FCS"),
         schedule_games=int(len(games)), completed_games=int(games.completed.sum()),
         graded=len(graded_season),
+        backup_lines=sum(1 for p in preds if "cfbd" in ((p.get("market") or {}).get("spread_src"), (p.get("market") or {}).get("total_src"))),
+        stale_quotes=sum(1 for p in preds if (p.get("market") or {}).get("last_ts") and fetched - pd.Timestamp(p["market"]["last_ts"]) > pd.Timedelta(hours=C.BET_MAX_QUOTE_AGE_H)),
+        oddities=(snap.attrs.get("oddities") or [])[:10], academy=state.get("academy") or {}, fit_id=fit_id,
+        cautions=dict(early_season_blocks_spreads=getattr(C, "EARLY_SEASON_BLOCKS_SPREADS", True),
+                      fcs_blocks_spreads=getattr(C, "FCS_BLOCKS_SPREADS", True)),
         bets_graded=sum(1 for p in graded_season for k in ("ats", "ou") if (p["result"] or {}).get(k)),
     )
     print("Health:", health)
