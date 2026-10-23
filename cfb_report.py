@@ -155,11 +155,19 @@ def _grade_total(d, col, thr):
     return x[e.abs() >= thr]
 
 
-def backtest(wf, SEASONS):
+def backtest(wf, SEASONS, qb=None):
+    """qb: optional QB-change table (game_id, qbd_h, qbd_a) so the QB-change caution can be replayed."""
     if wf.empty:
         return {}
     ln = pd.concat([SEASONS[s]["lines"] for s in SEASONS if len(SEASONS[s]["lines"])], ignore_index=True)
     d = wf.merge(ln, on="game_id", how="left")
+    has_qb = qb is not None and len(qb) > 0
+    if has_qb:
+        q = qb[["game_id", "qbd_h", "qbd_a"]].drop_duplicates("game_id")
+        d = d.merge(q, on="game_id", how="left")
+        d["qbc"] = np.maximum(d.qbd_h.abs().fillna(0), d.qbd_a.abs().fillna(0)) > 0.05  # same test as the live alert
+    else:
+        d["qbc"] = False
     d["pm"] = d.pred_h - d.pred_a
     d["am"] = d.home_pts - d.away_pts
     d["pt"] = d.pred_h + d.pred_a
@@ -188,10 +196,10 @@ def backtest(wf, SEASONS):
     ta = ta[ta.pt != ta.cfbd_total]
     so = _grade_spread(d, "cfbd_spread_open", C.SPREAD_EDGE)
     to = _grade_total(d, "cfbd_total_open", C.TOTAL_EDGE)
-    # The same bets under the live rules: gaps of 10+ ("check news"), FCS games and the first
-    # three weeks don't become bets. (QB changes and weather can't be replayed historically.)
+    # The same bets under the live rules: gaps of 10+ ("check news"), FCS games, the first three
+    # weeks and QB changes don't become bets. (Weather can't be replayed historically.)
     def live_rule(x, gap, cap):
-        ok = (gap.abs() < cap) & (x.wk > 3)
+        ok = (gap.abs() < cap) & (x.wk > 3) & ~x.qbc
         if "home_tier" in x and "away_tier" in x:
             ok &= (x.home_tier != "FCS") & (x.away_tier != "FCS")
         return x[ok]
@@ -275,14 +283,15 @@ def backtest(wf, SEASONS):
             ("Gap 10+ points (blocked)", fs_.edge >= C.DISAGREE_SPREAD, ft_.edge >= C.DISAGREE_TOTAL),
             ("Weeks 1–3 (blocked)", fs_.wk <= 3, ft_.wk <= 3),
             ("FCS opponent (blocked)", fcs(fs_), fcs(ft_)),
+            *((("QB change (blocked)", fs_.qbc, ft_.qbc),) if has_qb else ()),
             ("None of these: a bet under today's rules",
-             (fs_.edge < C.DISAGREE_SPREAD) & (fs_.wk > 3) & ~fcs(fs_),
-             (ft_.edge < C.DISAGREE_TOTAL) & (ft_.wk > 3) & ~fcs(ft_))):
+             (fs_.edge < C.DISAGREE_SPREAD) & (fs_.wk > 3) & ~fcs(fs_) & ~fs_.qbc,
+             (ft_.edge < C.DISAGREE_TOTAL) & (ft_.wk > 3) & ~fcs(ft_) & ~ft_.qbc)):
         cautions.append(dict(label=lab, spread=_rec(fs_[fs_m].res), total=_rec(ft_[ft_m].res)))
 
     # Honest threshold test (no season helps pick its own rule), with and without the cautions
     def live_ok(x, cap):
-        return x[(x.edge < cap) & (x.wk > 3) & ~fcs(x)]
+        return x[(x.edge < cap) & (x.wk > 3) & ~fcs(x) & ~x.qbc]
     nested = dict(
         spread=_nested(gso, (5, 6, 7, 8, 9, 10)), total=_nested(gto, (5, 6, 7, 8, 9, 10)),
         spread_live=_nested(live_ok(gso, C.DISAGREE_SPREAD), (5, 6, 7, 8, 9)),

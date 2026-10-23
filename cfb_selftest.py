@@ -115,6 +115,33 @@ def test_record_keeping():
     check(w[0] < 0.55 < w[1], "95% range contains the observed rate")
 
 
+def test_keep_rule():
+    """The feature keep rule: a real improvement passes, noise doesn't, and bets are graded the right way."""
+    import cfb_model as model
+    rng = np.random.default_rng(1)
+    n = 4 * 15 * 50  # 4 seasons, 15 weeks, 50 games
+    act = rng.normal(0, 16, n)
+    base = pd.DataFrame(dict(season=np.repeat([2021, 2022, 2023, 2024], n // 4), wk=np.tile(np.repeat(np.arange(1, 16), 50), 4),
+                             game_id=np.arange(n), home_pts=30 + act / 2, away_pts=30 - act / 2,
+                             home_tier="P4", away_tier="P4"))
+    ref = base.assign(pred_h=30 + (act + rng.normal(0, 14, n)) / 2, pred_a=30 - (act + rng.normal(0, 14, n)) / 2)
+    ref["pred_a"] = 60 - ref.pred_h  # totals identical in every version, so only the margin differs
+    better = base.assign(pred_h=ref.pred_h + (act - (ref.pred_h - ref.pred_a)) * 0.1 / 2)
+    better["pred_a"] = 60 - better.pred_h
+    noise = base.assign(pred_h=ref.pred_h + rng.normal(0, 0.3, n))
+    noise["pred_a"] = 60 - noise.pred_h
+    seasons = [2021, 2022, 2023, 2024]
+    check(model._better(better, ref, seasons)[0], "keep rule: a real accuracy gain is kept")
+    check(not model._better(noise, ref, seasons)[0], "keep rule: random noise is not kept")
+    g = pd.DataFrame(dict(season=[2024, 2024], wk=[5, 5], game_id=[1, 2], home_pts=[30, 20], away_pts=[20, 30],
+                          pred_h=[35, 35], pred_a=[20, 20], home_tier="P4", away_tier="G5"))
+    ln = pd.DataFrame(dict(game_id=[1, 2], cfbd_spread_open=[-5.0, -5.0], cfbd_total_open=[45.0, 45.0]))
+    u = model.open_units(g, ln, [2024])
+    # game 1: model home by 15 vs line home -5 -> home bet, wins by 10 -> covers; total 55 vs 45 -> over, 50 -> wins
+    # game 2: same bets, home loses by 10 -> spread loss; total 50 -> over wins
+    check(u["w"] == 3 and u["l"] == 1, "bet check grades spreads and totals against opening lines correctly")
+
+
 def test_published():
     site = C.SITE
     def load(name, var):
@@ -189,7 +216,7 @@ def test_published():
             return
         out = json.loads(r.stdout)
         if out["n"]:
-            # Weekly projections add QB/manual adjustments and a simulation, so allow a small average gap.
+            # Weekly projections can add manual adjustments, so allow a small average gap.
             check(out["dm"] < 1.0 and out["dt"] < 1.5,
                   f"matchup formula matches weekly projections (avg gap {out['dm']:.2f} pts margin, {out['dt']:.2f} total, {out['n']} games)")
 
@@ -200,6 +227,7 @@ if __name__ == "__main__":
     test_prices_and_eligibility()
     test_odds_matching()
     test_record_keeping()
+    test_keep_rule()
     test_published()
     if FAIL:
         print(f"\n{len(FAIL)} check(s) failed. Nothing should be published until they pass.")

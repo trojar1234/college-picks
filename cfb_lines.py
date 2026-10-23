@@ -78,7 +78,8 @@ def snapshot_rows(odds, games, ts):
         g = cand.iloc[0]
         flip = g.home != h  # Odds API's "home" can differ at neutral sites
         if abs((g.start - t0).total_seconds()) > 3 * 3600:
-            odd.append(f"{g.away} @ {g.home}: kickoff differs by {abs((g.start - t0).total_seconds()) / 3600:.0f} h between sources")
+            odd.append(f"{g.away} @ {g.home}: kickoff differs by {abs((g.start - t0).total_seconds()) / 3600:.0f} h between sources"
+                       " (usually a kickoff time not announced yet; same teams within 2 days, so the match is safe)")
         if flip and not g.neutral:
             odd.append(f"{g.away} @ {g.home}: odds feed lists the teams the other way round at a home game")
         for bk in ev.get("bookmakers", []):

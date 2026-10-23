@@ -163,10 +163,11 @@ def main(mode):
 
     # Learning step 2: test optional features; keep only those that clearly improve the tuning seasons.
     features = None if new_version else state_old.get("features")
-    if full and (features is None or retuned or exp_old.get("available") != avail_key):
+    if full and (features is None or retuned or exp_old.get("available") != avail_key
+                 or exp_old.get("keep_rule") != model.KEEP_RULE):  # re-test when the keep rule changes
         print("Testing optional features ...")
         features, results = model.select_features(SEASONS, lam, tune_seasons, holdout, available, pfeat)
-        exp_old = dict(version=MODEL_VERSION, run=now.isoformat(), available=avail_key, status=xstatus,
+        exp_old = dict(version=MODEL_VERSION, keep_rule=model.KEEP_RULE, run=now.isoformat(), available=avail_key, status=xstatus,
                        chosen=features, tune_seasons=[tune_seasons[0], tune_seasons[-1]], **results)
         EXPERIMENTS.write_text(json.dumps(exp_old, indent=1, default=str))
     for t in exp_old.get("tests", []):  # keep "not tested" reasons current between full re-tests
@@ -209,7 +210,15 @@ def main(mode):
     cfbd_ln = SEASONS[season]["lines"].set_index("game_id") if len(SEASONS[season]["lines"]) else None
 
     # Backtest report first: its calibration tells us how far to trust cover probabilities.
-    bt_rep = report.backtest(wf[wf.season < season] if len(wf) else wf, SEASONS)
+    # QB changes for every past season (cached box scores only), so the backtest can replay that caution
+    try:
+        ag = pd.concat([S["games"] for S in SEASONS.values() if len(S["games"])], ignore_index=True)
+        qtab, _ = extra.qb_table(ag, extra.Budget(0), C.FIRST_SEASON, season)
+        qb_hist = extra.qb_deltas(ag, qtab) if qtab is not None else None
+    except Exception as e:  # the backtest still runs without it
+        print("QB history for the backtest skipped:", e)
+        qb_hist = None
+    bt_rep = report.backtest(wf[wf.season < season] if len(wf) else wf, SEASONS, qb_hist)
     for srow in bt_rep.get("seasons", []):
         srow["holdout"] = srow["season"] == holdout
     shrink = (bt_rep.get("shrink_spread", 1.0), bt_rep.get("shrink_total", 1.0))

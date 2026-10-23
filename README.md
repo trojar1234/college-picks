@@ -44,8 +44,13 @@ and display prices.
    gives the shape of the outcomes: win, cover and push chances, likely scores.
 4. **Service-academy correction**: Army, Navy and Air Force beat their projections in every backtest
    season, so their margins get a correction learned only from past out-of-sample misses.
-5. **Self-checks**: every option is tested on past seasons and kept only if it lowers error on seasons
-   the model hasn't seen. The backtest is walk-forward: each week predicted only from data before it.
+5. **Self-checks**: every optional input is tested on past seasons (walk-forward: each week predicted
+   only from data before it). It's kept only if (1) the accuracy gain is real, meaning at least 0.01
+   points with a 95% range above zero (resampling whole weeks), (2) it doesn't cost bets: units on
+   7+ point gaps against opening lines can't drop by more than chance explains, and (3) it doesn't make
+   the newest complete season, which played no part in (1) and (2), clearly worse. Rule (2) exists
+   because some inputs make the model more accurate on every game while agreeing more with the
+   market, which wins fewer bets.
 6. **Records**: every prediction is frozen at kickoff and graded when the game is final.
 
 ## When it runs (Central time, all year)
@@ -55,6 +60,7 @@ and display prices.
 | Daily 8am | Full update: results, ratings, grading, projections |
 | Weekdays 6pm | New line snapshot, re-projects |
 | Saturdays every 2 hours, 10am–10pm | Line snapshots close to kickoff |
+| Sundays noon, 4pm, 8pm | Catch next week's opening lines (most open on Sunday; the edge is against early lines) |
 
 GitHub schedules run in UTC, so each run is listed twice (daylight and standard time) and the first
 step skips the one that doesn't match the current clock.
@@ -65,7 +71,7 @@ This stays inside both free API tiers.
 
 - `run.py` stops if any projection isn't a real number in a sensible range, or if team ratings are missing.
 - `cfb_selftest.py` then checks the grading rules, prices and expected value, which lines can become
-  bets, best-line logic, odds matching and record keeping on known cases; that every data file loads; that every page's JavaScript is valid; that the bet list adds
+  bets, best-line logic, odds matching, record keeping and the feature keep rule on known cases; that every data file loads; that every page's JavaScript is valid; that the bet list adds
   up to the season totals; and that the Matchup page's formula still reproduces the weekly projections.
 
 If any check fails, the run stops, the last good site stays up, and GitHub emails you.
@@ -113,6 +119,11 @@ are an expired or mistyped API key, or a change at one of the data providers. Th
 
 ## Changelog
 
+- **Oct 23, 2026 (later)**: feature keep rule replaced (a fixed 0.05-point bar became a test of whether
+  the gain is real, plus a bet check and a confirmation season; the current inputs pass all three, so
+  projections didn't change); QB changes replayed in the backtest's caution analysis (QB-change flags won
+  53% of spreads vs 58% for clean bets, so the block stays); Sunday line snapshots; site fixes (edge
+  column for moved bets, book order, moved-line direction, wording). Bet rules unchanged.
 - **Oct 23, 2026**: service-academy correction; projected spreads and totals now equal the expected
   points the backtest validated (the simulation had been adding about half a point to totals);
   probabilities use out-of-sample error sizes; bets need a live sportsbook quote under 36 hours old;

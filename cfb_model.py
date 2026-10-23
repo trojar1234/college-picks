@@ -9,7 +9,7 @@ Core model (always on):
     field position and turnovers that per-play efficiency misses)
   - FCS teams rated individually from all their games, shrunk toward the FCS average
 
-Optional (kept only if it improves the tuning seasons by at least MIN_GAIN):
+Optional (kept only if the improvement on the tuning seasons is real and it does not cost bets: see _better):
   pbp - play-by-play: non-garbage points per drive, finishing drives, field position
 """
 import numpy as np
@@ -328,19 +328,113 @@ def tune(SEASONS, grid, tune_seasons, groups=None, players=None, use=()):
 
 # ---------- Feature selection: keep only what clearly improves the tuning seasons ----------
 
-MIN_GAIN = 0.05  # points of MAE a feature must save to be kept (smaller gains were noise)
+# Keep rule. A fixed 0.05-point bar was replaced by a test of whether the gain is real: on the tuning
+# seasons, the 95% range of the paired improvement (resampling whole weeks, since games in a week share
+# conditions) must sit above zero, the gain must be at least MIN_GAIN (smaller is too small to matter),
+# and the other measure must not get worse by more than 0.01. In the walk-forward, 24 pure-noise
+# inputs never improved accuracy at all, so a gain whose range clears zero is not chance.
+MIN_GAIN = 0.01
+KEEP_RULE = 2   # 1 = fixed 0.05-point bar (before Oct 23, 2026); 2 = real-gain test, bet check, confirmation season
+CONFIRM_TOL = 0.02  # points of extra error allowed on the confirmation season (it's one season, so noisier)
+BET_TOL = 1.0   # minimum slack (units) on the bet check; the actual slack is the larger of this and the chance wobble
 
 
-def _better(sc, base):
-    dm = base["margin"] - sc["margin"]
-    dt = base["total"] - sc["total"]
-    return (dm >= MIN_GAIN or dt >= MIN_GAIN) and dm > -0.01 and dt > -0.01, round(dm, 3), round(dt, 3)
+def _paired(wf_new, wf_ref, seasons, col, reps=2000, seed=5):
+    """Gain in mean absolute error (positive = new is better) and its 95% range, same games."""
+    a = wf_ref[wf_ref.season.isin(seasons) & wf_ref.home_pts.notna()]
+    b = wf_new[wf_new.season.isin(seasons) & wf_new.home_pts.notna()]
+    m = a[["game_id", "season", "wk", "home_pts", "away_pts", "pred_h", "pred_a"]].merge(
+        b[["game_id", "pred_h", "pred_a"]], on="game_id", suffixes=("", "_n"))
+    if m.empty:
+        return 0.0, (0.0, 0.0)
+    if col == "margin":
+        act, p0, p1 = m.home_pts - m.away_pts, m.pred_h - m.pred_a, m.pred_h_n - m.pred_a_n
+    else:
+        act, p0, p1 = m.home_pts + m.away_pts, m.pred_h + m.pred_a, m.pred_h_n + m.pred_a_n
+    d = (act - p0).abs() - (act - p1).abs()
+    g = d.groupby([m.season, m.wk]).agg(["sum", "count"]).to_numpy()
+    idx = np.random.default_rng(seed).integers(0, len(g), size=(reps, len(g)))
+    bs = g[idx, 0].sum(1) / g[idx, 1].sum(1)
+    return float(d.mean()), (float(np.quantile(bs, 0.025)), float(np.quantile(bs, 0.975)))
+
+
+def _open_bets(wf, lines, seasons):
+    """Every 7+ point disagreement with the opening line (spreads and totals, FCS games left out) on
+    the given seasons, with its result in units (1 unit at -110). Grading only: lines never enter the model."""
+    if lines is None or len(lines) == 0 or "cfbd_spread_open" not in lines:
+        return None
+    d = wf[wf.season.isin(seasons) & wf.home_pts.notna() & wf.home_tier.isin(["P4", "G5"])
+           & wf.away_tier.isin(["P4", "G5"])].merge(
+        lines[["game_id", "cfbd_spread_open", "cfbd_total_open"]], on="game_id")
+    pm, am = d.pred_h - d.pred_a, d.home_pts - d.away_pts
+    pt, at = d.pred_h + d.pred_a, d.home_pts + d.away_pts
+    out = []
+    for kind, e, v, thr in (("spread", d.cfbd_spread_open + pm, am + d.cfbd_spread_open, C.SPREAD_EDGE),
+                            ("total", pt - d.cfbd_total_open, at - d.cfbd_total_open, C.TOTAL_EDGE)):
+        r = np.sign(e) * v
+        k = e.notna() & (e.abs() >= thr)
+        out.append(pd.DataFrame(dict(game_id=d.game_id[k], season=d.season[k], wk=d.wk[k], kind=kind,
+                                     u=np.where(r[k] > 0, 100 / 110, np.where(r[k] < 0, -1.0, 0.0)))))
+    return pd.concat(out, ignore_index=True)
+
+
+def open_units(wf, lines, seasons):
+    b = _open_bets(wf, lines, seasons)
+    if b is None:
+        return None
+    return dict(units=round(float(b.u.sum()), 1), w=int((b.u > 0).sum()), l=int((b.u < 0).sum()))
+
+
+def _bet_change(wf_new, wf_ref, lines, seasons, reps=2000, seed=7):
+    """Change in units (new minus reference) on 7+ point bets against opening lines, and how much that
+    change would wobble by chance (spread of a week-resampled bootstrap). Most bets are the same in
+    both versions, so only the bets that differ count."""
+    a, b = _open_bets(wf_new, lines, seasons), _open_bets(wf_ref, lines, seasons)
+    if a is None or b is None:
+        return None, None
+    k = ["game_id", "season", "wk", "kind"]
+    m = a.merge(b, on=k, how="outer", suffixes=("_n", "_r")).fillna({"u_n": 0.0, "u_r": 0.0})
+    if m.empty:
+        return 0.0, 0.0
+    g = (m.u_n - m.u_r).groupby([m.season, m.wk]).sum().to_numpy()
+    tot = g[np.random.default_rng(seed).integers(0, len(g), size=(reps, len(g)))].sum(1)
+    return float(g.sum()), float(tot.std())
+
+
+def _better(wf_new, wf_ref, seasons, lines=None):
+    """Keep a feature only if (1) the accuracy gain is real and (2) it doesn't cost bets. (2) exists
+    because extra totals terms tested in Oct 2026 (squared terms) cut totals error for real, yet on the
+    unseen 2025 season won fewer units on 7+ point bets against opening lines (+13 to +21 vs +27):
+    being closer on every game is not the same as beating the line."""
+    dm, rm = _paired(wf_new, wf_ref, seasons, "margin")
+    dt, rt = _paired(wf_new, wf_ref, seasons, "total")
+    real = (dm >= MIN_GAIN and rm[0] > 0) or (dt >= MIN_GAIN and rt[0] > 0)
+    bn, br = open_units(wf_new, lines, seasons), open_units(wf_ref, lines, seasons)
+    du, sd = _bet_change(wf_new, wf_ref, lines, seasons)
+    bets_ok = du is None or du >= -max(BET_TOL, sd)   # rejected only if bets drop by more than chance alone would explain
+    if bn is not None and du is not None:
+        bn = dict(bn, change=round(du, 1), noise=round(sd, 1))
+    return (real and dm > -0.01 and dt > -0.01 and bets_ok, round(dm, 3), round(dt, 3),
+            [round(x, 3) for x in rm], [round(x, 3) for x in rt], bn, br)
 
 
 PLAYER_OPTIONS = {
     "players": (("qb", "def"), "Player-level preseason data: QB quality (transfers included) and defensive returning production counting transfers"),
     "players_off": (("qb", "def", "off"), "Same, plus offensive returning production counting transfers (player EPA)"),
 }
+
+
+def _confirm(wf_new, wf_ref, season, lines):
+    """Second check on the newest complete season, which played no part in the first test: a feature
+    that passed must not make that season clearly worse (error up by more than CONFIRM_TOL, or bet
+    units down by more than chance). A CFBD Elo input tested in Oct 2026 passed on 2017-2024, then
+    cut 2025's units on 7+ point bets against opening lines from +26 to +12."""
+    dm, _ = _paired(wf_new, wf_ref, [season], "margin")
+    dt, _ = _paired(wf_new, wf_ref, [season], "total")
+    du, sd = _bet_change(wf_new, wf_ref, lines, [season])
+    bad = dm < -CONFIRM_TOL or dt < -CONFIRM_TOL or (du is not None and du < -max(BET_TOL, sd))
+    return not bad, dict(season=season, gain_margin=round(dm, 3), gain_total=round(dt, 3),
+                         bets_change=None if du is None else round(du, 1), noise=None if sd is None else round(sd, 1))
 
 
 def select_features(SEASONS, lam, tune_seasons, holdout, available, players=None):
@@ -351,7 +445,9 @@ def select_features(SEASONS, lam, tune_seasons, holdout, available, players=None
     wf0 = walk_forward(bt0, start, BASE_GROUPS)
     base = score(wf0, tune_seasons)
     print(f"  core model: margin {base['margin']}  total {base['total']}")
-    log, use, bt, ref = [], (), bt0, base
+    log, use, bt, ref, ref_wf = [], (), bt0, base, wf0
+    lines = pd.concat([S["lines"] for S in SEASONS.values() if len(S.get("lines", []))], ignore_index=True) \
+        if any(len(S.get("lines", [])) for S in SEASONS.values()) else None
 
     # 1) player-level preseason data (changes the ratings, so each option re-runs the chain)
     best = None
@@ -360,14 +456,18 @@ def select_features(SEASONS, lam, tune_seasons, holdout, available, players=None
             log.append(dict(feature=name, group=key, skipped=available.get(f"_why_{key}", "data not available yet")))
             continue
         _, b, _ = run_chain(SEASONS, lam, players=players, use=u)
-        sc = score(walk_forward(b, start, BASE_GROUPS), tune_seasons)
-        ok, dm, dt = _better(sc, base)
+        wfb = walk_forward(b, start, BASE_GROUPS)
+        sc = score(wfb, tune_seasons)
+        ok, dm, dt, rm, rt, bn, br = _better(wfb, wf0, tune_seasons, lines)
+        conf_ok, conf = _confirm(wfb, wf0, holdout, lines)
         log.append(dict(feature=name, group=key, margin=sc["margin"], total=sc["total"],
-                        gain_margin=dm, gain_total=dt, kept=False, ok=ok))
+                        gain_margin=dm, gain_total=dt, range_margin=rm, range_total=rt,
+                        bets=bn, bets_ref=br, confirm=conf, confirm_ok=conf_ok, kept=False, ok=ok and conf_ok))
+        ok = ok and conf_ok
         if ok and (best is None or sc["margin"] < best[1]["margin"]):
-            best = (u, sc, b, len(log) - 1)
+            best = (u, sc, b, len(log) - 1, wfb)
     if best:
-        use, ref, bt = best[0], best[1], best[2]
+        use, ref, bt, ref_wf = best[0], best[1], best[2], best[4]
         log[best[3]]["kept"] = True
 
     # 2) optional conversion inputs, tested on top of whatever was kept above
@@ -376,15 +476,19 @@ def select_features(SEASONS, lam, tune_seasons, holdout, available, players=None
         if grp not in available:
             log.append(dict(feature=name, group=grp, skipped=available.get(f"_why_{grp}", "data not available yet")))
             continue
-        sc = score(walk_forward(bt, start, BASE_GROUPS + [grp]), tune_seasons)
-        ok, dm, dt = _better(sc, ref)
+        wfg = walk_forward(bt, start, BASE_GROUPS + [grp])
+        sc = score(wfg, tune_seasons)
+        ok, dm, dt, rm, rt, bn, br = _better(wfg, ref_wf, tune_seasons, lines)
+        conf_ok, conf = _confirm(wfg, ref_wf, holdout, lines)
+        ok = ok and conf_ok
         log.append(dict(feature=name, group=grp, margin=sc["margin"], total=sc["total"],
-                        gain_margin=dm, gain_total=dt, kept=ok, ok=ok))
+                        gain_margin=dm, gain_total=dt, range_margin=rm, range_total=rt,
+                        bets=bn, bets_ref=br, confirm=conf, confirm_ok=conf_ok, kept=ok, ok=ok))
         if ok:
             chosen.append(grp)
     wfc = walk_forward(bt, start, chosen)
     return dict(groups=chosen, players=list(use)), dict(
-        baseline=base, combined=score(wfc, tune_seasons),
+        baseline=base, combined=score(wfc, tune_seasons), bets_baseline=open_units(wf0, lines, tune_seasons),
         holdout=dict(season=holdout, baseline=score(wf0, [holdout]), selected=score(wfc, [holdout])),
         tests=log)
 
