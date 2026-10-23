@@ -38,7 +38,7 @@ header nav a.on{color:var(--text);font-weight:600;background:var(--soft);box-sha
 @media (max-width:720px){.rbar{width:40px}}
 a.lnk{color:var(--acc);text-decoration:none;font-size:13px}a.lnk:hover{text-decoration:underline}
 .ln{line-height:1.5;min-height:21px;white-space:nowrap}.c-pick .ln{white-space:normal}
-.hot{color:var(--acc);font-weight:600}b.weak{color:var(--muted);font-weight:500}
+.hot{color:var(--acc);font-weight:600}.mid{font-weight:600}b.weak{color:var(--muted);font-weight:500}
 .score{font-size:13px;margin-top:3px;color:var(--text)}.big{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}.sm-inline{display:none}
 h1{color:var(--text)}header h1:before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;background:linear-gradient(135deg,var(--acc),#0ea5e9);margin-right:10px;vertical-align:0}
 .games th:nth-child(1){width:25%}.games th:nth-child(2){width:15%}.games th:nth-child(3),.games th:nth-child(4){width:16%}.games th:nth-child(5){width:6%}
@@ -59,7 +59,7 @@ tr.day td{background:var(--soft);font-size:12px;font-weight:600;color:var(--mute
 .mcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:14px}
 .mhead{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:10px}.mteam{font-size:15px;font-weight:600}.mscore{font-size:40px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
 .mvs{text-align:center;color:var(--muted);font-size:13px}.mat{font-size:18px;color:var(--faint)}.mcards{margin:16px 0 0;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.mnote{font-size:13px;color:var(--muted);margin-top:12px;line-height:1.6}.mh{margin:18px 0 6px;font-size:14px}.mtry{margin-top:12px}a.chip{text-decoration:none;color:var(--text)}a.chip:hover{border-color:var(--acc)}.mtbl td:first-child{color:var(--muted)}.vtbl tr.on td{background:var(--soft)}.vtbl tr.on td:first-child{color:var(--text);font-weight:600}
-.scen{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 0;font-size:13px;color:var(--muted)}.scen input[type=range]{accent-color:var(--acc);width:180px}
+.presets{display:flex;flex-wrap:wrap;gap:6px}.scen{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 0;font-size:13px;color:var(--muted)}.scen input[type=range]{accent-color:var(--acc);width:180px}
 .eq{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:4px 0 8px}.eq>span{display:flex;flex-direction:column}.eq .op{font-size:18px;color:var(--faint)}.eq .when{display:block}
 .wbar{display:flex;gap:2px;height:6px;margin:8px 0 4px}.wbar span{display:block;height:100%;border-radius:3px;background:var(--line)}.wbar span.fav{background:var(--series)}
 #swap{align-self:flex-end;font-size:16px;padding:6px 12px}
@@ -76,7 +76,7 @@ th .sb{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 h2[id]{scroll-margin-top:52px}.summary[id]{scroll-margin-top:52px}
 .ci{display:block;font-size:12px;font-weight:500}.ci.warnc{color:var(--warn)}.ci.up{color:var(--good)}.ci.down{color:var(--bad)}
 .chartgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}.chart{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}.chart h4{margin:0 0 8px;font-size:13px;font-weight:600}.chart svg{width:100%;height:auto;display:block}
-.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}.gblock .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.big2{font-size:26px;font-weight:700;letter-spacing:-.02em;margin:4px 0}.gtxt{font-size:13px;color:var(--muted);line-height:1.5}
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.gblock .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.big2{font-size:26px;font-weight:700;letter-spacing:-.02em;margin:4px 0}.gtxt{font-size:13px;color:var(--muted);line-height:1.5}
 .summary p.gl{margin:6px 0;font-size:14px;line-height:1.5}
 tr.g.flash td{background:var(--accbg)}.card .v .when{display:block;font-size:12px}
 .pick{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:2px 0}.pick .t{font-size:13px}.pick .e{font-size:12px;color:var(--faint)}
@@ -124,20 +124,22 @@ table.games tr.g td{border:0;padding:10px 12px 2px}table.games td.c-proj{text-al
 <li><b>Line</b> is the middle of the sportsbooks' lines; <b>Model</b> is the model's own number. The top number is the spread, the bottom the total. <b>Edge</b> is the gap between the two, in points.</li>
 <li><b>Pick</b> is the model's side in every game. Most are close calls: picks with an edge under 2 points are shown in grey, 2+ in bold.</li>
 <li><span class="pill p-good">BET</span> = the model and line are 7+ points apart and nothing makes the projection shaky. In past seasons these went <span id="h-rates">about 60% against the spread and 64% on totals</span> against opening lines. A bet keeps the line it was first flagged at.</li>
-<li><span class="pill p-warn">FLAG</span> = 7+ points apart, but with a reason for caution: a QB change, wind or rain (the model doesn't use weather), or a gap of 10+ points, where the market was usually right. 8–10 point bets get a reminder to check the news.</li>
-<li><span class="pill p-mv">LINE MOVED</span> = a recorded bet whose current line no longer clears 7 points. It's still graded at the original line, but it isn't a bet at today's number.</li>
+<li><span class="pill p-warn">FLAG</span> = 7+ points apart, but with a reason for caution: a QB change, a manual adjustment, wind or rain (the model doesn't use weather), an FCS team, early season (before the typical FBS team has played 3 games, about weeks 1–3), or a gap of 10+ points. In 10+ gaps the line was closer to the final margin in about 2 of 3 games, often because of injury or QB news the model can't see. 8–10 point bets, and lines quoted by fewer than 3 books, get a reminder to check.</li>
+<li><span class="pill p-mv">LINE MOVED</span> / <span class="pill p-mv">MODEL MOVED</span> = a recorded bet whose edge today is under 7 points, because the line moved or the model's number changed (QB news, a correction). It's still graded at the original line, but it isn't a bet at today's number.</li>
+<li>A bet needs a live sportsbook quote from the last 36 hours. When a game only has the backup line from CollegeFootballData, a 7-point gap shows as a FLAG instead.</li>
+<li><b>EV</b> is the expected profit per unit at −110 for the model's side, using probabilities calibrated on every past game. It's deliberately conservative, so small positive numbers are normal; the best-book suggestion is chosen by the same measure (line and price together).</li>
 <li>The model's edge is against early-week lines (about 50% against closing lines), so bets are worth acting on early. Each bet shows the <b>best available book</b> for that side; results are still graded at the middle of the books, which is the conservative choice. Sportsbook lines are never model inputs.</li>
 </ul></details>
 <div id="summary"></div>
 <div class="bar" id="filters"></div>
-<div class="legend"><span><span class="pill p-good">BET</span> clean 7+ pt edge</span><span><span class="pill p-warn">FLAG</span> edge with a caution</span><span><span class="pill p-mv">LINE MOVED</span> line no longer qualifies</span><span><b>Bold</b> pick = 2+ pt edge · away @ home · tap a game for details</span></div>
+<div class="legend"><button class="chip" id="wcsv" style="order:9">Download this week (CSV)</button><span><span class="pill p-good">BET</span> clean 7+ pt edge</span><span><span class="pill p-warn">FLAG</span> edge with a caution</span><span><span class="pill p-mv">LINE / MODEL MOVED</span> edge now under 7</span><span><b>Bold</b> pick = 2+ pt edge · away @ home · tap a game for details</span></div>
 <div class="tbl"><table class="games"><thead><tr>
-<th>Game</th><th>Prediction <span class="when">score · win chance</span></th><th class="hide-sm">Line <span class="when">spread · total</span></th><th class="hide-sm">Model <span class="when">spread · total</span></th><th class="hide-sm">Edge</th><th>Pick</th>
+<th title="Away team @ home team, kickoff in Central time">Game</th><th title="Projected score (away–home) and the favorite's chance to win">Prediction <span class="when">score · win chance</span></th><th class="hide-sm" title="Middle of the sportsbooks' current lines">Line <span class="when">spread · total</span></th><th class="hide-sm" title="The model's own spread and total, from expected points">Model <span class="when">spread · total</span></th><th class="hide-sm" title="Points between the model and the line; 7+ can be a bet">Edge</th><th title="The model's side in every game; BET = qualifies, FLAG = 7+ with a caution">Pick</th>
 </tr></thead><tbody id="rows"></tbody></table></div>
 
 <p class="note" id="foot"></p>
 </div>
-<script src="data.js?v=20261022233437"></script>
+<script src="data.js?v=20261023134050"></script>
 <script>
 const D=window.DATA;
 if(!D){document.querySelector('.wrap').insertAdjacentHTML('afterbegin','<div class="summary"><b>Data unavailable.</b> The latest update did not publish its data file. It should be back after the next scheduled run.</div>');throw new Error('data.js missing');}
@@ -163,10 +165,15 @@ const resPill=(v,label)=>v?`<span class="pill ${v==='win'?'p-good':v==='loss'?'p
 const when=s=>new Date(s).toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',hour:'numeric',minute:'2-digit'});
 function line(home,away,s){if(s==null)return '—';if(s===0)return 'Pick';return s<0?`${home} −${Math.abs(s)}`:`${away} −${s}`;}
 const wkName=w=>w==null?'—':(w>20?'Bowls':`Week ${w}`);
+const gamesPlayed=t=>(D.schedule||[]).filter(r=>r[7]&&r[5]!=null&&(r[2]===t||r[3]===t)).length;
+// 80% range of a team's rating: tau2 learned from how much bigger early-season misses are (see cfb_model.rating_uncertainty)
+const ratingPM=t=>{const M=window.MODEL||{};if(!M.rating_tau2)return null;return 1.2816*Math.sqrt(M.rating_tau2/(gamesPlayed(t)+(M.lam||3)));};
 const teamRecord=t=>{let w=0,l=0;for(const r of (D.schedule||[])){if(!r[7]||r[5]==null)continue;if(r[2]===t){r[5]>r[6]?w++:l++;}else if(r[3]===t){r[6]>r[5]?w++:l++;}}return `${w}–${l}`;};
 // What the ratings reflect: preseason, or games through the latest completed week
 const ratedThrough=()=>{const w=Math.max(0,...(D.schedule||[]).filter(r=>r[7]).map(r=>r[0]));return w?`ratings through ${wkName(w)} games`:'preseason ratings';};
 const am=x=>x==null?'':(x>0?'+':'−')+Math.abs(Math.round(x));
+// Freshness, shown on every page: when the model last ran and when the newest lines were fetched
+const freshTxt=()=>{const f=t=>new Date(t).toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',hour:'numeric',minute:'2-digit'});return `model ${f(D.generated)} CT`+(D.lines_updated?` · lines ${f(D.lines_updated)} CT`:'');};
 const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 document.getElementById('foot').innerHTML=`Model run ${new Date(D.generated).toLocaleString('en-US',{timeZone:'America/Chicago',dateStyle:'medium',timeStyle:'short'})} CT · Data: CollegeFootballData.com (games, stats), The Odds API (lines), Open-Meteo (weather). Sportsbook lines are only used to grade and display picks, never as model inputs. For information only, not betting advice.`+(D.unmatched&&D.unmatched.length?` · Unmatched odds games: ${D.unmatched.length}`:'')+((D.health||{}).model_version?` · Model v${D.health.model_version}`:'')+((D.health||{}).build?` · build ${esc(D.health.build)}`:'');
@@ -178,8 +185,14 @@ const ctTime=t=>new Date(t).toLocaleString('en-US',{timeZone:'America/Chicago',w
 const linesAge=D.lines_updated?(new Date(D.generated)-new Date(D.lines_updated))/36e5:null;
 document.getElementById('sub').innerHTML=`${D.season} season · ${D.week==null?'offseason':wkName(D.week)} · model run ${ctTime(D.generated)} CT`+(D.lines_updated?` · lines ${ctTime(D.lines_updated)} CT`:'')+(linesAge!=null&&linesAge>12?` <span class="pill p-warn">lines may be stale</span>`:'');
 const L=D.report.live||{};
-const isLowTotal=g=>(g.low_conf||[]).length||(g.total_caution||[]).length;
-const isLowSpread=g=>(g.low_conf||[]).length||(g.spread_caution||[]).length;
+// A flag can only become a bet from a fresh sportsbook quote (not the backup line, not a stale snapshot)
+const noQuote=(g,k)=>{const m=g.market||{};if(m[k+'_src']==='cfbd'||!(m.books||[]).length||!m.last_ts)return true;
+ return (new Date(D.generated)-new Date(m.last_ts))/36e5>36;};
+const quoteWhy=(g,k)=>noQuote(g,k)?[(g.market||{})[k+'_src']==='cfbd'?'backup line only: no live sportsbook quote':'no fresh sportsbook quote']:[];
+const isLowTotal=g=>(g.low_conf||[]).length||(g.total_caution||[]).length||noQuote(g,'total');
+const isLowSpread=g=>(g.low_conf||[]).length||(g.spread_caution||[]).length||noQuote(g,'spread');
+// Edges are shown cut (not rounded) to one decimal, so a 6.96 never shows as a qualifying 7.0
+const e1=x=>(Math.floor(x*10+1e-9)/10).toFixed(1);
 const SOFT=(g,k)=>(g.soft_notes||{})[k];
 // A recorded bet whose current line no longer clears the bar: still graded at the flagged line,
 // but not something to act on now.
@@ -189,19 +202,22 @@ const movedS=g=>{const b=g.spread_bet,m=g.market||{};if(!b||g.started||m.spread=
 const movedT=g=>{const b=g.total_bet,m=g.market||{};if(!b||g.started||m.total==null||g.model_total==null)return false;
  const e=g.model_total-m.total;return b.side==='over'?e<TH.total:-e<TH.total;};
 const bets=G.filter(g=>!g.started&&(g.spread_bet||g.total_bet));
+// Which changed since a bet was flagged: the line, or the model's number (QB news, corrections)?
+const mvWhat=(g,k)=>{const b=g[k+'_bet'],m=g.market||{};if(!b)return 'LINE MOVED';return m[k]!=null&&m[k]!==b.line?'LINE MOVED':'MODEL MOVED';};
 const nW=G.filter(g=>!g.started).reduce((n,g)=>n+(g.spread_bet?1:0)+(g.total_bet?1:0),0);
 const nMv=G.filter(g=>!g.started).reduce((n,g)=>n+(movedS(g)?1:0)+(movedT(g)?1:0),0);
 const nF=G.filter(g=>!g.started).reduce((n,g)=>n+(!g.spread_bet&&g.spread_flag&&isLowSpread(g)?1:0)+(!g.total_bet&&g.total_flag&&isLowTotal(g)?1:0),0);
-const withPct=r=>!r||(r.w+r.l+r.p)===0?'—':`${rec(r)}<span class="when">${pct(r.pct)}</span>`;
+const withPct=r=>!r||(r.w+r.l+r.p)===0?'—':`${rec(r)}<span class="when">${pct(r.pct)}${(r.w+r.l)<50?` · only ${r.w+r.l} bets`:''}</span>`;
 document.getElementById('cards').innerHTML=[
 ['Bets this week',`${nW-nMv}${nMv?`<span class="when">+ ${nMv} line moved</span>`:'<span class="when">active</span>'}`],['Flags',`${nF}<span class="when">check the news</span>`],['Season bets ATS',withPct(L.ats)],['Season bets O/U',withPct(L.ou)],
 ['All picks ATS',withPct(L.ats_all)],['All picks O/U',withPct(L.ou_all)]].map(([l,v])=>`<div class="card"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
+const day=s=>new Date(s).toLocaleDateString('en-US',{timeZone:'America/Chicago',weekday:'long',month:'short',day:'numeric'});
 const F=[['all','All games'],['soon','Next 24 hours'],['bets','Bets'],['edges','All flags'],['P4','Power 4'],['G5','Group of 5']];
 let cur='all',hideLow=false,q='';
 const fb=document.getElementById('filters');
 fb.innerHTML=F.map(([k,l])=>`<button class="chip${k==='all'?' on':''}" data-k="${k}">${l}</button>`).join('')+
-`<button class="chip" id="low">Hide low confidence</button><select id="conf" class="chip"><option value="">All conferences</option>${[...new Set(G.flatMap(g=>[g.home_conf,g.away_conf]).filter(Boolean))].sort().map(c=>`<option>${esc(c)}</option>`).join('')}</select><select id="mkt" class="chip" aria-label="Market"><option value="">Spreads and totals</option><option value="s">Spreads only</option><option value="t">Totals only</option></select><select id="sort" class="chip" aria-label="Sort"><option value="time">Sort: kickoff</option><option value="edge">Sort: biggest edge now</option><option value="flag">Sort: biggest edge when flagged</option><option value="move">Sort: model moved most</option></select><input type="search" id="q" placeholder="Find a team">`;
-let sortBy='time',conf='',mkt='';document.getElementById('sort').onchange=e=>{sortBy=e.target.value;draw();};document.getElementById('mkt').onchange=e=>{mkt=e.target.value;draw();};document.getElementById('conf').onchange=e=>{conf=e.target.value;draw();};
+`<button class="chip" id="low">Hide low confidence</button><select id="conf" class="chip"><option value="">All conferences</option>${[...new Set(G.flatMap(g=>[g.home_conf,g.away_conf]).filter(Boolean))].sort().map(c=>`<option>${esc(c)}</option>`).join('')}</select><select id="mkt" class="chip" aria-label="Market"><option value="">Spreads and totals</option><option value="s">Spreads only</option><option value="t">Totals only</option></select><select id="sort" class="chip" aria-label="Sort"><option value="time">Sort: kickoff</option><option value="edge">Sort: biggest edge now</option><option value="flag">Sort: biggest edge when flagged</option><option value="move">Sort: model moved most</option><option value="ev">Sort: expected value</option></select><select id="day" class="chip" aria-label="Day"><option value="">Every day</option>${[...new Set(G.filter(g=>!g.completed).map(g=>day(g.start)))].map(d=>`<option>${esc(d)}</option>`).join('')}</select><input type="search" id="q" placeholder="Find a team">`;
+let sortBy='time',conf='',mkt='',dayF='';document.getElementById('day').onchange=e=>{dayF=e.target.value;draw();};document.getElementById('sort').onchange=e=>{sortBy=e.target.value;draw();};document.getElementById('mkt').onchange=e=>{mkt=e.target.value;draw();};document.getElementById('conf').onchange=e=>{conf=e.target.value;draw();};
 fb.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{cur=b.dataset.k;fb.querySelectorAll('[data-k]').forEach(x=>x.classList.toggle('on',x===b));draw();});
 document.getElementById('low').onclick=e=>{hideLow=!hideLow;e.target.classList.toggle('on',hideLow);draw();};
 document.getElementById('q').oninput=e=>{q=e.target.value.toLowerCase();draw();};
@@ -211,6 +227,7 @@ function keep(g){
  if(conf&&g.home_conf!==conf&&g.away_conf!==conf)return false;
  if(hideLow&&((g.low_conf||[]).length||(g.spread_caution||[]).length||(g.total_caution||[]).length))return false;
  const r=g.result||{},S=mkt!=='t',T=mkt!=='s';
+ if(dayF&&day(g.start)!==dayF)return false;
  if(cur==='soon'){const t=new Date(g.start)-Date.now();return !g.completed&&t<24*36e5;}
  if(cur==='bets')return g.completed?!!((S&&r.ats)||(T&&r.ou)):!!((S&&g.spread_bet)||(T&&g.total_bet));
  if(cur==='edges')return g.completed?!!((S&&r.ats)||(T&&r.ou)):!!((S&&(g.spread_flag||g.spread_bet))||(T&&(g.total_flag||g.total_bet)));
@@ -242,16 +259,16 @@ function pickData(g){
   if(m.spread!=null&&m.spread!==sb.line)sp.now=sl(home?m.spread:-m.spread);sSt=movedS(g)?'moved':'bet';}
  if(tb){tp={side:tb.side==='over'?'Over':'Under',line:tb.line,edge:Math.abs(g.model_total-tb.line)};
   if(m.total!=null&&m.total!==tb.line)tp.now=m.total;tSt=movedT(g)?'moved':'bet';}
- const why=[...((sSt||tSt)?(g.low_conf||[]):[]),...(sSt?(g.spread_caution||[]):[]),...(tSt?(g.total_caution||[]):[]),...(sSt&&SOFT(g,'spread')?[SOFT(g,'spread')]:[]),...(tSt&&SOFT(g,'total')?[SOFT(g,'total')]:[])];
+ const why=[...((sSt||tSt)?(g.low_conf||[]):[]),...(sSt?(g.spread_caution||[]):[]),...(tSt?(g.total_caution||[]):[]),...(sSt==='caution'?quoteWhy(g,'spread'):[]),...(tSt==='caution'?quoteWhy(g,'total'):[]),...(sSt&&SOFT(g,'spread')?[SOFT(g,'spread')]:[]),...(tSt&&SOFT(g,'total')?[SOFT(g,'total')]:[])];
  return {sp,tp,sSt,tSt,sRes:'',tRes:'',why,lineS:m.spread,lineT:m.total,closing:false};}
-function pickLine(kind,p,status,result){
+function pickLine(kind,p,status,result,g){
  if(!p)return `<div class="ln muted">${kind==='Spread'?'No spread line':'No total line'}</div>`;
  if(p.none)return `<div class="ln muted">${kind==='Spread'?'Spread':'Total'}: no pick</div>`;
  const txt=kind==='Spread'?`${esc(p.team)} ${sl(p.line)}`:`${p.side} ${p.line}`;
- const tag=status==='bet'?'<span class="pill p-good">BET</span> ':status==='moved'?'<span class="pill p-mv" title="Recorded at this line; the current line no longer clears the bar">LINE MOVED</span> ':status==='caution'?'<span class="pill p-warn">FLAG</span> ':'';
+ const tag=status==='bet'?'<span class="pill p-good">BET</span> ':status==='moved'?`<span class="pill p-mv" title="Recorded at this line; today's edge is under 7 points">${g?mvWhat(g,kind==='Spread'?'spread':'total'):'LINE MOVED'}</span> `:status==='caution'?'<span class="pill p-warn">FLAG</span> ':'';
  const weak=!status&&!result&&p.edge<2;
- return `<div class="ln">${tag}<b class="${weak?'weak':''}">${txt}</b> ${result||''}<span class="sm-inline e"> edge ${p.edge.toFixed(1)}</span>${p.now?`<span class="e"> · now ${p.now}</span>`:''}</div>`;}
-const edgeCell=p=>!p||p.none?'<div class="ln muted">—</div>':`<div class="ln ${p.edge>=7?'hot':p.edge<2?'muted':''}">${p.edge.toFixed(1)}</div>`;
+ return `<div class="ln">${tag}<b class="${weak?'weak':''}">${txt}</b> ${result||''}<span class="sm-inline e"> edge ${e1(p.edge)}</span>${p.now?`<span class="e"> · now ${p.now}</span>`:''}</div>`;}
+const edgeCell=p=>!p||p.none?'<div class="ln muted">—</div>':`<div class="ln ${p.edge>=7?'hot':p.edge>=4?'mid':p.edge<2?'muted':''}">${e1(p.edge)}</div>`;
 function moveCell(g){const m=g.market||{};if(m.open_spread==null||m.spread==null)return '<span class="muted">—</span>';
  const d=m.spread-m.open_spread;if(Math.abs(d)<0.25)return `<span class="muted nw">No move</span>`;
  let toward='';if(g.model_spread!=null){toward=Math.abs(g.model_spread-m.spread)<Math.abs(g.model_spread-m.open_spread)?'up':'down';}
@@ -267,7 +284,9 @@ function icons(g){const w=g.weather||{};let s='';
  if(n.length>qn.length)s+=' <span class="pill p-bad" title="Manual adjustment">manual adj</span>';
  if([...(g.low_conf||[]),...(g.spread_caution||[]),...(g.total_caution||[])].some(x=>x.startsWith('big disagreement')))s+=' <span class="pill p-warn" title="Model and market 10+ points apart: check injury/QB news">check news</span>';return s;}
 // 10th to 90th percentile of the simulated home margin, from the 3-point histogram bins (-45..+45)
-function marginRange(g){const h=g.hist||[];const n=h.reduce((a,b)=>a+b,0);if(!n)return null;
+function marginRange(g){const side0=m=>Math.abs(m)<0.5?'tie':(m>0?`${esc(g.home)} by ${Math.round(m)}`:`${esc(g.away)} by ${Math.round(-m)}`);
+ if(g.range80)return `${side0(g.range80[0])} to ${side0(g.range80[1])}`;
+ const h=g.hist||[];const n=h.reduce((a,b)=>a+b,0);if(!n)return null;
  const q=t=>{let c=0;for(let i=0;i<h.length;i++){if(c+h[i]>=t*n){const lo=-45+3*i;return lo+3*((t*n-c)/Math.max(1,h[i]));}c+=h[i];}return 45;};
  const side=m=>Math.abs(m)<0.5?'tie':(m>0?`${esc(g.home)} by ${Math.round(m)}`:`${esc(g.away)} by ${Math.round(-m)}`);
  return `${side(q(0.1))} to ${side(q(0.9))}`;}
@@ -279,7 +298,7 @@ function bestFor(g,kind,side){const bs=((g.market||{}).books||[]);let best=null;
   else{if(b.total==null)continue;line=b.total;price=side==='over'?b.over_price:b.under_price;val=side==='over'?-line:line;}
   if(!best||val>best.val||(val===best.val&&pay(price)>pay(best.price)))best={book:b.book,line,price,val};}
  return best;}
-const bestTxt=(g,kind,side)=>{const b=bestFor(g,kind,side);if(!b)return '';
+const bestTxt=(g,kind,side)=>{const sv=g['best_'+kind];const b=sv&&g[kind+'_side']===side?sv:bestFor(g,kind,side);if(!b)return '';
  return kind==='spread'?`best ${esc(side==='home'?g.home:g.away)} ${sl(b.line)}${b.price!=null?` (${am(b.price)})`:''} at ${esc(b.book)}`:`best ${side==='over'?'Over':'Under'} ${b.line}${b.price!=null?` (${am(b.price)})`:''} at ${esc(b.book)}`;};
 // Tiny line-history chart: the consensus line at each snapshot, with the model's number dashed
 function spark(vals,model,label,fmtv){const v=vals.filter(x=>x.v!=null);if(v.length<2)return '';
@@ -298,7 +317,7 @@ function detail(g){
  const sSide=g.spread_side||(m.spread!=null&&g.model_spread!=null?(m.spread-g.model_spread>0?'home':'away'):'home');
  const sval=b=>b.spread==null?-1e9:(sSide==='home'?b.spread:-b.spread);
  const bk=(m.books||[]).slice().sort((x,y)=>sval(y)-sval(x));
- const bS=bestFor(g,'spread',sSide);
+ const bS=g.best_spread&&g.spread_side===sSide?g.best_spread:bestFor(g,'spread',sSide);
  const sTeam=esc(sSide==='home'?g.home:g.away);
  const books=bk.map(b=>{const pr=sSide==='home'?b.home_price:b.away_price;return `<div class="kv"><span>${esc(b.book)}${bS&&b.book===bS.book?' <span class="pill p-acc">best</span>':''}</span><span>${b.spread==null?'—':`${sTeam} ${sl(sSide==='home'?b.spread:-b.spread)}`}${pr!=null?` <span class="when" style="display:inline">${am(pr)}</span>`:''} · ${fmt(b.total)}</span></div>`;}).join('')||'<div class="sub">No sportsbook snapshot yet (line from CollegeFootballData).</div>';
  const R=g.ratings||{};const wx=g.weather||{};
@@ -307,14 +326,15 @@ function detail(g){
  // The model vs the line, in words
  const fav=x=>x<0?`${esc(g.home)} by ${Math.abs(x).toFixed(1)}`:x>0?`${esc(g.away)} by ${x.toFixed(1)}`:'even';
  const sp=spreadPick(g,m.spread,g.model_spread),tp=totalPick(m.total,g.model_total);
- const vs=[sp&&!sp.none?`<div class="vsl"><span class="when" style="display:inline">Spread</span> Model ${fav(g.model_spread)}, line ${line(g.home,g.away,m.spread)}: <b>${sp.edge.toFixed(1)} pts toward ${esc(sp.team)}</b></div>`:'',
-  tp&&!tp.none?`<div class="vsl"><span class="when" style="display:inline">Total</span> Model ${fmt(g.model_total)}, line ${m.total}: <b>${tp.edge.toFixed(1)} pts to the ${tp.side==='Over'?'over':'under'}</b></div>`:''].join('');
+ const evT=x=>x==null?'':` · EV ${x>=0?'+':'−'}${Math.abs(x*100).toFixed(1)}%`;
+ const vs=[sp&&!sp.none?`<div class="vsl"><span class="when" style="display:inline">Spread</span> Model ${fav(g.model_spread)}, line ${line(g.home,g.away,m.spread)}: <b>${e1(sp.edge)} pts toward ${esc(sp.team)}</b><span class="when" style="display:inline">${evT(g.ev_spread)}</span></div>`:'',
+  tp&&!tp.none?`<div class="vsl"><span class="when" style="display:inline">Total</span> Model ${fmt(g.model_total)}, line ${m.total}: <b>${e1(tp.edge)} pts to the ${tp.side==='Over'?'over':'under'}</b><span class="when" style="display:inline">${evT(g.ev_total)}</span></div>`:''].join('');
  const fm=g.first_model;const moved=fm&&(Math.abs(fm.spread-g.model_spread)>=0.1||Math.abs(fm.total-g.model_total)>=0.1)?
   `<div class="kv"><span>Model since ${ctTime(fm.ts)}</span><span>${line(g.home,g.away,fm.spread)} → ${line(g.home,g.away,g.model_spread)} · ${fmt(fm.total)} → ${fmt(g.model_total)}</span></div>`:'';
  const hs=(m.history||[]);
  const sparks=spark(hs.map(x=>({t:x.ts,v:x.spread})),g.model_spread,`${esc(g.home)} spread`,v=>v===0?'PK':(v>0?'+':'−')+Math.abs(v))+
   spark(hs.map(x=>({t:x.ts,v:x.total})),g.model_total,'Total',v=>String(Math.round(v*10)/10));
- const notes=[m.last_ts?`Odds as of ${ctTime(m.last_ts)} CT`:(m.spread!=null?'Line from CollegeFootballData (no sportsbook snapshot)':'No line yet'),
+ const notes=[m.last_ts?`Odds as of ${ctTime(m.last_ts)} CT (${Math.max(0,Math.round((new Date(D.generated)-new Date(m.last_ts))/36e5))} h before this update)`:(m.spread!=null?'Backup line from CollegeFootballData (no sportsbook snapshot): shown, never bet':'No line yet'),
   wtxt?null:'No weather forecast yet'].filter(Boolean);
  const flagRow=(f,kind)=>{if(!f)return '';const home=f.side==='home';const txt=kind==='spread'?`${esc(home?g.home:g.away)} ${sl(home?f.line:-f.line)}`:`${f.side==='over'?'Over':'Under'} ${fmt(f.line)}`;
   const b=f.best?` · best then ${kind==='spread'?sl(f.best.line):f.best.line}${f.best.price!=null?` (${am(f.best.price)})`:''} at ${esc(f.best.book)}`:'';
@@ -329,9 +349,9 @@ function detail(g){
   ${g.p_side_cover!=null?`<div class="kv"><span>${esc(g.spread_side==='home'?g.home:g.away)} covers</span><span>${pct(g.p_side_cover)}</span></div>`:''}${pushS}
   ${g.p_side_total!=null?`<div class="kv"><span>${g.total_side==='over'?'Over':'Under'} hits</span><span>${pct(g.p_side_total)}</span></div>`:''}${pushT}
   <h4 style="margin-top:12px">Most likely final scores</h4>${likely}</div>
- <div><h4>Margin distribution (${esc(g.home)} − ${esc(g.away)})</h4><div class="hist">${bars}</div>
+ <div><h4>Simulated margins (${esc(g.home)} − ${esc(g.away)})</h4><div class="hist">${bars}</div>
   <div class="kv sub"><span>−45</span><span>0</span><span>+45</span></div>
-  ${(()=>{const r=marginRange(g);return r?`<div class="kv"><span>Middle 80% of simulated outcomes</span><span>${r}</span></div>`:''})()}
+  ${(()=>{const r=marginRange(g);return r?`<div class="kv"><span>80% range of outcomes</span><span>${r}</span></div>`:''})()}
   <h4 style="margin-top:12px">Inputs</h4>
   <div class="kv"><span>Expected points (away · home)</span><span>${fmt(g.exp_away)} · ${fmt(g.exp_home)}</span></div>
   <div class="kv"><span>Off EPA/play (away · home)</span><span>${epa(R.away_off)} · ${epa(R.home_off)}</span></div>
@@ -339,6 +359,7 @@ function detail(g){
   <div class="kv"><span>Expected plays (away · home)</span><span>${fmt(R.away_pace)} · ${fmt(R.home_pace)}</span></div>
   ${wtxt?`<div class="kv"><span>Weather</span><span>${wtxt}</span></div>`:''}
   ${(g.notes||[]).length?`<div class="notes"><b>Notes:</b> ${esc(g.notes.join('; '))}</div>`:''}
+  ${(g.auto_adj||[]).length?`<div class="notes"><b>Automatic correction:</b> ${esc(g.auto_adj.join('; '))}. The model underrates the service academies' option offenses; this is learned from past out-of-sample misses and doesn't block bets.</div>`:''}
   ${notes.length?`<div class="notes">${notes.map(esc).join(' · ')}</div>`:''}</div>
  <div><h4>Lines by book <span class="when" style="display:inline">${sTeam}'s line and price, best first · total</span></h4>${books}
   <div class="kv" style="margin-top:8px"><span>First tracked</span><span>${line(g.home,g.away,m.open_spread)} · ${fmt(m.open_total)}</span></div>
@@ -347,7 +368,6 @@ function detail(g){
   ${flagRow(fs,'spread')}${flagRow(ft,'total')}${sparks}</div>
  </div>
  <div style="margin-top:12px"><a class="lnk" href="matchup.html#${encodeURIComponent(g.away)}|${encodeURIComponent(g.home)}|${g.neutral?0:2}">Compare these teams on the Matchup page →</a></div>`;}
-const day=s=>new Date(s).toLocaleDateString('en-US',{timeZone:'America/Chicago',weekday:'long',month:'short',day:'numeric'});
 const winPct=p=>p>0.995?'>99%':p<0.005?'<1%':pct(p);
 function rowHtml(g){
   const at=g.neutral?'vs':'@';
@@ -361,10 +381,10 @@ function rowHtml(g){
   <tr class="detail" id="d${g.game_id}" hidden><td colspan="6">${detail(g)}</td></tr>`;
   const lt=d.lineT==null?'—':`O/U ${d.lineT}`;
   return `<tr class="g" id="g${g.game_id}" data-id="${g.game_id}">${first}
-  <td class="hide-sm"><div class="ln">${line(g.home,g.away,d.lineS)}</div><div class="ln">${lt}</div>${d.closing?'<div class="when">last line before kickoff</div>':''}</td>
+  <td class="hide-sm"><div class="ln">${line(g.home,g.away,d.lineS)}${!d.closing&&(g.market||{}).spread_src==='cfbd'?' <span class="when" style="display:inline" title="Backup line from CollegeFootballData: shown, never bet">backup</span>':''}</div><div class="ln">${lt}</div>${d.closing?'<div class="when">last line before kickoff</div>':''}</td>
   <td class="hide-sm"><div class="ln">${line(g.home,g.away,g.model_spread)}</div><div class="ln">${fmt(g.model_total)}</div></td>
   <td class="hide-sm">${edgeCell(d.sp)}${edgeCell(d.tp)}</td>
-  <td class="c-pick">${pickLine('Spread',d.sp,d.sSt,d.sRes)}${pickLine('Total',d.tp,d.tSt,d.tRes)}<div class="show-sm when">Line ${line(g.home,g.away,d.lineS)} · ${lt} · Model ${line(g.home,g.away,g.model_spread)} · ${fmt(g.model_total)}</div>${d.why.length?`<div class="when">${esc([...new Set(d.why.map(x=>RS(g,x)))].join(' · '))}</div>`:''}</td></tr>
+  <td class="c-pick">${pickLine('Spread',d.sp,d.sSt,d.sRes,g)}${pickLine('Total',d.tp,d.tSt,d.tRes,g)}<div class="show-sm when">Line ${line(g.home,g.away,d.lineS)} · ${lt} · Model ${line(g.home,g.away,g.model_spread)} · ${fmt(g.model_total)}</div>${d.why.length?`<div class="when">${esc([...new Set(d.why.map(x=>RS(g,x)))].join(' · '))}</div>`:''}</td></tr>
   <tr class="detail" id="d${g.game_id}" hidden><td colspan="6">${detail(g)}</td></tr>`;}
 // Largest gap between the model and TODAY's line (spread or total, per the market filter)
 function maxEdge(g){const m=g.market||{};const e=[];
@@ -375,6 +395,8 @@ function maxEdge(g){const m=g.market||{};const e=[];
 function flagEdge(g){const e=[];const s=g.spread_bet,t=g.total_bet;
  if(mkt!=='t'&&s)e.push(Math.abs(s.line-s.model));if(mkt!=='s'&&t)e.push(Math.abs(t.model-t.line));return e.length?Math.max(...e):-1;}
 // How far the projection has moved since it was first made
+// Expected value of the model's side today (spread or total, per the market filter)
+function evOf(g){const e=[];if(mkt!=='t'&&g.ev_spread!=null)e.push(g.ev_spread);if(mkt!=='s'&&g.ev_total!=null)e.push(g.ev_total);return e.length?Math.max(...e):-9;}
 function modelMove(g){const f=g.first_model;if(!f)return -1;return Math.max(mkt==='t'?0:Math.abs(g.model_spread-f.spread),mkt==='s'?0:Math.abs(g.model_total-f.total));}
 function draw(){
  const rows=G.filter(keep);const tb=document.getElementById('rows');
@@ -384,6 +406,7 @@ function draw(){
  const groups=[];
  if(sortBy==='edge')groups.push([`Biggest edge against today's line${mkt==='s'?' (spreads)':mkt==='t'?' (totals)':''}`,[...up].sort((a,b)=>maxEdge(b)-maxEdge(a))]);
  else if(sortBy==='flag')groups.push(['Biggest edge when the bet was flagged',[...up].sort((a,b)=>flagEdge(b)-flagEdge(a))]);
+ else if(sortBy==='ev')groups.push(['Highest expected value today (conservative, calibrated probabilities)',[...up].sort((a,b)=>evOf(b)-evOf(a))]);
  else if(sortBy==='move')groups.push(['Projection moved most since it was first made',[...up].sort((a,b)=>modelMove(b)-modelMove(a))]);
  else up.forEach(g=>{const k=day(g.start);if(!groups.length||groups[groups.length-1][0]!==k)groups.push([k,[]]);groups[groups.length-1][1].push(g);});
  if(done.length)groups.push(['Final',done]);
@@ -398,18 +421,18 @@ function summary(){
  const open=G.filter(g=>!g.started);const items=[];
  open.forEach(g=>{const m=g.market||{};const gm=`${esc(g.away)} ${g.neutral?'vs':'@'} ${esc(g.home)} · ${when(g.start)}`;
   const low=(g.low_conf||[]);
-  if(g.spread_bet){const b=g.spread_bet,home=b.side==='home';items.push({k:movedS(g)?'moved':'bet',g,txt:`${esc(home?g.home:g.away)} ${sl(home?b.line:-b.line)}`,gm,ts:b.ts,best:movedS(g)?'':bestTxt(g,'spread',b.side),
-   edge:Math.abs(b.line-g.model_spread),note:[m.spread!=null&&m.spread!==b.line?`line now ${sl(home?m.spread:-m.spread)}${movedS(g)?`, edge now ${Math.abs(m.spread-g.model_spread).toFixed(1)}`:''}`:'',...[...low,...(g.spread_caution||[]),SOFT(g,'spread')].filter(Boolean).map(x=>RS(g,x))].filter(Boolean).join(' · ')});}
-  else if(g.spread_flag&&isLowSpread(g)){const p=spreadPick(g,m.spread,g.model_spread);if(p&&!p.none)items.push({k:'flag',g,txt:`${esc(p.team)} ${sl(p.line)}`,gm,edge:p.edge,best:bestTxt(g,'spread',p.side),note:[...new Set([...low,...(g.spread_caution||[])].map(x=>RS(g,x)))].join(' · ')});}
-  if(g.total_bet){const b=g.total_bet;items.push({k:movedT(g)?'moved':'bet',g,txt:`${b.side==='over'?'Over':'Under'} ${b.line}`,gm,edge:Math.abs(g.model_total-b.line),ts:b.ts,best:movedT(g)?'':bestTxt(g,'total',b.side),
+  if(g.spread_bet){const b=g.spread_bet,home=b.side==='home';items.push({k:movedS(g)?'moved':'bet',kind:'spread',ev:g.ev_spread,g,txt:`${esc(home?g.home:g.away)} ${sl(home?b.line:-b.line)}`,gm,ts:b.ts,best:movedS(g)?'':bestTxt(g,'spread',b.side),
+   edge:movedS(g)&&b.model!=null?Math.abs(b.line-b.model):Math.abs(b.line-g.model_spread),note:[m.spread!=null&&m.spread!==b.line?`line now ${sl(home?m.spread:-m.spread)}${movedS(g)?`, edge now ${Math.abs(m.spread-g.model_spread).toFixed(1)}`:''}`:'',...[...low,...(g.spread_caution||[]),SOFT(g,'spread')].filter(Boolean).map(x=>RS(g,x))].filter(Boolean).join(' · ')});}
+  else if(g.spread_flag&&isLowSpread(g)){const p=spreadPick(g,m.spread,g.model_spread);if(p&&!p.none)items.push({k:'flag',g,txt:`${esc(p.team)} ${sl(p.line)}`,gm,edge:p.edge,best:bestTxt(g,'spread',p.side),note:[...new Set([...low,...(g.spread_caution||[]),...quoteWhy(g,'spread')].map(x=>RS(g,x)))].join(' · ')});}
+  if(g.total_bet){const b=g.total_bet;items.push({k:movedT(g)?'moved':'bet',kind:'total',ev:g.ev_total,g,txt:`${b.side==='over'?'Over':'Under'} ${b.line}`,gm,edge:movedT(g)&&b.model!=null?Math.abs(b.model-b.line):Math.abs(g.model_total-b.line),ts:b.ts,best:movedT(g)?'':bestTxt(g,'total',b.side),
    note:[m.total!=null&&m.total!==b.line?`line now ${m.total}${movedT(g)?`, edge now ${Math.abs(g.model_total-m.total).toFixed(1)}`:''}`:'',...[...low,...(g.total_caution||[]),SOFT(g,'total')].filter(Boolean).map(x=>RS(g,x))].filter(Boolean).join(' · ')});}
-  else if(g.total_flag&&isLowTotal(g)){const p=totalPick(m.total,g.model_total);if(p&&!p.none)items.push({k:'flag',g,txt:`${p.side} ${p.line}`,gm,edge:p.edge,best:bestTxt(g,'total',p.side.toLowerCase()),note:[...new Set([...low,...(g.total_caution||[])].map(x=>RS(g,x)))].join(' · ')});}
+  else if(g.total_flag&&isLowTotal(g)){const p=totalPick(m.total,g.model_total);if(p&&!p.none)items.push({k:'flag',g,txt:`${p.side} ${p.line}`,gm,edge:p.edge,best:bestTxt(g,'total',p.side.toLowerCase()),note:[...new Set([...low,...(g.total_caution||[]),...quoteWhy(g,'total')].map(x=>RS(g,x)))].join(' · ')});}
  });
  const el=document.getElementById('summary');
- const row=i=>`<div class="sitem" data-id="${i.g.game_id}"><span class="pill ${i.k==='bet'?'p-good':i.k==='moved'?'p-mv':'p-warn'}">${i.k==='bet'?'BET':i.k==='moved'?'LINE MOVED':'FLAG'}</span><span><span class="t ${i.k==='bet'?'bet':''}">${i.txt}</span> <span class="g2">${i.gm}</span></span><span class="r">edge ${i.edge.toFixed(1)}${i.k==='moved'?' when flagged':''}${i.ts?` · flagged ${ctTime(i.ts)}`:''}${i.note?` · ${esc(i.note)}`:''}${i.best?`<br>${i.best}`:''}</span></div>`;
+ const row=i=>`<div class="sitem" data-id="${i.g.game_id}"><span class="pill ${i.k==='bet'?'p-good':i.k==='moved'?'p-mv':'p-warn'}">${i.k==='bet'?'BET':i.k==='moved'?mvWhat(i.g,i.kind):'FLAG'}</span><span><span class="t ${i.k==='bet'?'bet':''}">${i.txt}</span> <span class="g2">${i.gm}</span></span><span class="r">edge ${e1(i.edge)}${i.k==='moved'?' when flagged':''}${i.ts?` · flagged ${ctTime(i.ts)}`:''}${i.k==='bet'&&i.ev!=null?` · <span title="Expected profit per unit at −110, from conservative calibrated probabilities">EV ${i.ev>=0?'+':'−'}${Math.abs(i.ev*100).toFixed(1)}%</span>`:''}${i.note?` · ${esc(i.note)}`:''}${i.best?`<br>${i.best}`:''}</span></div>`;
  const b=items.filter(i=>i.k==='bet'||i.k==='moved').sort((x,y)=>(x.k==='moved')-(y.k==='moved')),f=items.filter(i=>i.k==='flag');
  el.className='summary';
- el.innerHTML=`<div class="grp"><h3>This week's bets</h3>${b.length?b.map(row).join(''):`<div class="sub">${open.length?'No bets right now: no game has a clean 7-point edge.':'No upcoming games on the slate.'}</div>`}</div>`+
+ el.innerHTML=`<div class="grp"><h3>This week's bets <span class="when" style="display:inline;font-weight:400">${(()=>{const o=G.filter(g=>!g.started),wl=o.filter(g=>(g.market||{}).spread!=null||(g.market||{}).total!=null).length;return `${o.length} games to play · ${wl} with lines · ${b.filter(i=>i.k==='bet').length} active bets · ${f.length} flags`;})()}</span></h3>${b.length?b.map(row).join(''):`<div class="sub">${open.length?'No bets right now: no game has a clean 7-point edge.':'No upcoming games on the slate.'}</div>`}</div>`+
   (f.length?`<div class="grp"><h3>Flags: check before betting</h3>${f.map(row).join('')}</div>`:'');
  el.querySelectorAll('.sitem').forEach(x=>{x.tabIndex=0;x.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();x.click();}};});
  el.querySelectorAll('.sitem').forEach(x=>x.onclick=()=>{cur='all';q='';hideLow=false;conf='';document.getElementById('q').value='';document.getElementById('conf').value='';document.getElementById('low').classList.remove('on');
@@ -418,10 +441,19 @@ function summary(){
   tr.classList.add('flash');setTimeout(()=>tr.classList.remove('flash'),1500);});}
 summary();
 draw();
+document.getElementById('wcsv').onclick=()=>{const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+ const head=['game_id','kickoff_utc','away','home','neutral','away_conf','home_conf','proj_away','proj_home','home_win_prob','line_spread_home','line_total','line_source','odds_time','model_spread_home','model_total','spread_side','spread_edge','p_spread_side','ev_spread','spread_status','total_side','total_edge','p_total_side','ev_total','total_status','best_spread','best_total','cautions','notes'];
+ const st=(g,k)=>g[k+'_bet']?((k==='spread'?movedS(g):movedT(g))?'moved':'bet'):(g[k+'_flag']?'flag':'');
+ const bb=b=>b?`${b.book} ${b.line}${b.price!=null?' ('+b.price+')':''}`:'';
+ const rows=[head.join(',')].concat(G.map(g=>{const m=g.market||{},ps=projScore(g)||'',sc=ps.split('–');
+  return [g.game_id,g.start,g.away,g.home,g.neutral?'yes':'',g.away_conf,g.home_conf,sc[0]||'',sc[1]||'',g.p_home_win!=null?g.p_home_win.toFixed(3):'',m.spread,m.total,m.spread_src||'',m.last_ts||'',g.model_spread,g.model_total,
+   g.spread_side||'',g.spread_edge??'',g.p_side_cover??'',g.ev_spread??'',st(g,'spread'),g.total_side||'',g.total_edge??'',g.p_side_total??'',g.ev_total??'',st(g,'total'),bb(g.best_spread),bb(g.best_total),
+   [...(g.low_conf||[]),...(g.spread_caution||[]),...(g.total_caution||[])].join('; '),[...(g.notes||[]),...(g.auto_adj||[])].join('; ')].map(q).join(',');}));
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download=`cfb-${D.season}-${wkName(D.week).replace(' ','-').toLowerCase()}.csv`;document.body.appendChild(a);a.click();a.remove();};
 // Open a game from a link (index.html#g<id>), e.g. from the Matchup page
 function openFromHash(){const m=location.hash.match(/^#g(\d+)$/);if(!m)return;const tr=document.getElementById('g'+m[1]),d=document.getElementById('d'+m[1]);if(!tr||!d)return;
  d.hidden=false;tr.setAttribute('aria-expanded','true');tr.scrollIntoView({block:'center'});tr.classList.add('flash');setTimeout(()=>tr.classList.remove('flash'),1500);}
 openFromHash();window.addEventListener('hashchange',openFromHash);
-(()=>{const o=(D.report.backtest||{}).overall||{},e=document.getElementById('h-rates');if(e&&o.ats_open&&o.ou_open&&o.ats_open.pct!=null&&o.ou_open.pct!=null)e.textContent=`${pct(o.ats_open.pct)} against the spread (${o.ats_open.w}–${o.ats_open.l}) and ${pct(o.ou_open.pct)} on totals (${o.ou_open.w}–${o.ou_open.l})`;})();
+(()=>{const o=(D.report.backtest||{}).overall||{},e=document.getElementById('h-rates');if(e&&o.ats_open&&o.ou_open&&o.ats_open.pct!=null&&o.ou_open.pct!=null){const N=(D.report.backtest||{}).nested||{},a=N.spread&&N.spread.total,c=N.total&&N.total.total;e.textContent=`${pct(o.ats_open.pct)} against the spread (${o.ats_open.w}–${o.ats_open.l}) and ${pct(o.ou_open.pct)} on totals (${o.ou_open.w}–${o.ou_open.l})`+(a&&c&&a.pct!=null&&c.pct!=null?`. Those seasons also helped choose the 7-point rule; tested honestly (each season's rule picked only from earlier seasons) it's closer to ${pct(a.pct)} and ${pct(c.pct)}, a more realistic expectation`:'');}})();
 </script>
 </body></html>

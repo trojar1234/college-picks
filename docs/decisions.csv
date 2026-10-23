@@ -1,0 +1,5 @@
+ts,game_id,game,kickoff,market,status,side,line,model,edge,p,ev,best_book,best_line,best_price,line_source,quote_ts,reasons,fit_id
+2026-10-23T13:41:59.562158+00:00,401858274,Pittsburgh @ Miami,2026-10-24T16:00:00+00:00,total,flag,over,48.5,57.3,8.8,0.537,0.025,LowVig.ag,48.5,-104,odds,2026-10-23T13:41:59.562158+00:00,QB change,1d956dc2e2
+2026-10-23T13:41:59.562158+00:00,401866476,Miami (OH) @ Central Michigan,2026-10-24T17:00:00+00:00,total,flag,over,39.5,47.7,8.2,0.534,0.019,LowVig.ag,39.5,-108,odds,2026-10-23T13:41:59.562158+00:00,QB change,1d956dc2e2
+2026-10-23T13:41:59.562158+00:00,401858495,Oregon @ Illinois,2026-10-24T19:00:00+00:00,total,flag,over,50.0,57.7,7.7,0.53,0.033,FanDuel,49.5,-110,odds,2026-10-23T13:41:59.562158+00:00,QB change,1d956dc2e2
+2026-10-23T13:41:59.562158+00:00,401871071,Delaware @ Western Kentucky,2026-10-27T23:00:00+00:00,spread,flag,home,2.5,-4.6,7.1,0.542,0.035,FanDuel,2.5,-110,odds,2026-10-23T13:41:59.562158+00:00,QB change,1d956dc2e2

@@ -38,7 +38,7 @@ header nav a.on{color:var(--text);font-weight:600;background:var(--soft);box-sha
 @media (max-width:720px){.rbar{width:40px}}
 a.lnk{color:var(--acc);text-decoration:none;font-size:13px}a.lnk:hover{text-decoration:underline}
 .ln{line-height:1.5;min-height:21px;white-space:nowrap}.c-pick .ln{white-space:normal}
-.hot{color:var(--acc);font-weight:600}b.weak{color:var(--muted);font-weight:500}
+.hot{color:var(--acc);font-weight:600}.mid{font-weight:600}b.weak{color:var(--muted);font-weight:500}
 .score{font-size:13px;margin-top:3px;color:var(--text)}.big{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}.sm-inline{display:none}
 h1{color:var(--text)}header h1:before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;background:linear-gradient(135deg,var(--acc),#0ea5e9);margin-right:10px;vertical-align:0}
 .games th:nth-child(1){width:25%}.games th:nth-child(2){width:15%}.games th:nth-child(3),.games th:nth-child(4){width:16%}.games th:nth-child(5){width:6%}
@@ -59,7 +59,7 @@ tr.day td{background:var(--soft);font-size:12px;font-weight:600;color:var(--mute
 .mcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:14px}
 .mhead{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:10px}.mteam{font-size:15px;font-weight:600}.mscore{font-size:40px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
 .mvs{text-align:center;color:var(--muted);font-size:13px}.mat{font-size:18px;color:var(--faint)}.mcards{margin:16px 0 0;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.mnote{font-size:13px;color:var(--muted);margin-top:12px;line-height:1.6}.mh{margin:18px 0 6px;font-size:14px}.mtry{margin-top:12px}a.chip{text-decoration:none;color:var(--text)}a.chip:hover{border-color:var(--acc)}.mtbl td:first-child{color:var(--muted)}.vtbl tr.on td{background:var(--soft)}.vtbl tr.on td:first-child{color:var(--text);font-weight:600}
-.scen{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 0;font-size:13px;color:var(--muted)}.scen input[type=range]{accent-color:var(--acc);width:180px}
+.presets{display:flex;flex-wrap:wrap;gap:6px}.scen{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 0;font-size:13px;color:var(--muted)}.scen input[type=range]{accent-color:var(--acc);width:180px}
 .eq{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:4px 0 8px}.eq>span{display:flex;flex-direction:column}.eq .op{font-size:18px;color:var(--faint)}.eq .when{display:block}
 .wbar{display:flex;gap:2px;height:6px;margin:8px 0 4px}.wbar span{display:block;height:100%;border-radius:3px;background:var(--line)}.wbar span.fav{background:var(--series)}
 #swap{align-self:flex-end;font-size:16px;padding:6px 12px}
@@ -76,7 +76,7 @@ th .sb{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 h2[id]{scroll-margin-top:52px}.summary[id]{scroll-margin-top:52px}
 .ci{display:block;font-size:12px;font-weight:500}.ci.warnc{color:var(--warn)}.ci.up{color:var(--good)}.ci.down{color:var(--bad)}
 .chartgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}.chart{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}.chart h4{margin:0 0 8px;font-size:13px;font-weight:600}.chart svg{width:100%;height:auto;display:block}
-.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}.gblock .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.big2{font-size:26px;font-weight:700;letter-spacing:-.02em;margin:4px 0}.gtxt{font-size:13px;color:var(--muted);line-height:1.5}
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.gblock .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.big2{font-size:26px;font-weight:700;letter-spacing:-.02em;margin:4px 0}.gtxt{font-size:13px;color:var(--muted);line-height:1.5}
 .summary p.gl{margin:6px 0;font-size:14px;line-height:1.5}
 tr.g.flash td{background:var(--accbg)}.card .v .when{display:block;font-size:12px}
 .pick{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:2px 0}.pick .t{font-size:13px}.pick .e{font-size:12px;color:var(--faint)}
@@ -117,13 +117,14 @@ table.games tr.g td{border:0;padding:10px 12px 2px}table.games td.c-proj{text-al
 </style></head><body><div class="wrap">
 <a class="skip" href="#content">Skip to content</a><header><div><h1>College football model<span class="tagline">market-blind forecasts</span></h1><div class="sub" id="sub"></div></div>
 <nav><a href="index.html" class="">Projections</a><a href="matchup.html" class="">Matchup</a><a href="ratings.html" class="on"><span class="navl">Team ratings</span><span class="navs">Ratings</span></a><a href="report.html" class=""><span class="navl">Performance</span><span class="navs">Results</span></a></nav></header><div id="content" tabindex="-1"></div>
-<script src="model.js?v=20261022233437"></script>
+<script src="model.js?v=20261023134050"></script>
 <details class="help"><summary>How to read this page</summary>
 <ul>
 <li><b>Rating</b> is how many points better than an average FBS team each team would be on a neutral field, using the same ratings and formula as the game projections. The gap between two teams' ratings is roughly the neutral-field spread; the Matchup page gives the exact number.</li>
 <li><b>Move</b> is the change since last week: places up or down in the ranking, then the rating change in points.</li>
 <li><b>Record</b> is the record so far. <b>Expected wins</b> adds each remaining scheduled game's win chance to the wins so far, so 10.4 means the model expects about 10–11 wins (bowls and title games count once they're scheduled). The team panel also shows how hard the remaining schedule is.</li>
-<li><b>Conferences</b> compares conferences by their teams' average rating.</li>
+<li><b>Conferences</b> compares conferences by their teams' average rating. <b>Schedule left</b> is the average rating of the opponents still to play, adjusted for where the games are.</li>
+<li><b>±</b> is the rating's 80% range: how far the true strength could plausibly be from the estimate. It shrinks as a team plays more games.</li>
 <li><b>Offense / Defense</b> are opponent-adjusted expected points (EPA) per play with garbage time removed, compared with an average FBS team. The small grey number is the rank. On defense, lower is better.</li>
 <li>Tap a column header to sort, and tap a team for its results, rating over the season, upcoming games with projections, and a link to compare it with any opponent.</li>
 </ul></details>
@@ -131,11 +132,11 @@ table.games tr.g td{border:0;padding:10px 12px 2px}table.games td.c-proj{text-al
 <div id="movers"></div>
 <div class="bar" id="tfilters"></div>
 <div id="confs" hidden></div>
-<div class="tbl" id="ttbl"><table class="rt"><thead><tr><th>#</th><th>Team</th><th aria-sort="descending" data-s="power"><button class="sb">Rating</button></th><th>Move</th><th class="hide-sm">Record</th><th class="hide-sm" data-s="pw"><button class="sb">Expected wins</button></th><th class="hide-sm" data-s="off"><button class="sb">Offense</button><span class="when">EPA/play, higher is better</span></th><th class="hide-sm" data-s="deff"><button class="sb">Defense</button><span class="when">EPA/play allowed, lower is better</span></th><th class="hide-sm" data-s="pace"><button class="sb">Plays/game</button></th></tr></thead><tbody id="teams"></tbody></table></div>
+<div class="tbl" id="ttbl"><table class="rt"><thead><tr><th>#</th><th>Team</th><th aria-sort="descending" data-s="power"><button class="sb">Rating</button></th><th>Move</th><th class="hide-sm">Record</th><th class="hide-sm" data-s="pw"><button class="sb">Expected wins</button></th><th class="hide-sm" data-s="sos"><button class="sb">Schedule left</button><span class="when">avg opponent rating</span></th><th class="hide-sm" data-s="off"><button class="sb">Offense</button><span class="when">EPA/play, higher is better</span></th><th class="hide-sm" data-s="deff"><button class="sb">Defense</button><span class="when">EPA/play allowed, lower is better</span></th><th class="hide-sm" data-s="pace"><button class="sb">Plays/game</button></th></tr></thead><tbody id="teams"></tbody></table></div>
 
 <p class="note" id="foot"></p>
 </div>
-<script src="data.js?v=20261022233437"></script>
+<script src="data.js?v=20261023134050"></script>
 <script>
 const D=window.DATA;
 if(!D){document.querySelector('.wrap').insertAdjacentHTML('afterbegin','<div class="summary"><b>Data unavailable.</b> The latest update did not publish its data file. It should be back after the next scheduled run.</div>');throw new Error('data.js missing');}
@@ -161,10 +162,15 @@ const resPill=(v,label)=>v?`<span class="pill ${v==='win'?'p-good':v==='loss'?'p
 const when=s=>new Date(s).toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',hour:'numeric',minute:'2-digit'});
 function line(home,away,s){if(s==null)return '—';if(s===0)return 'Pick';return s<0?`${home} −${Math.abs(s)}`:`${away} −${s}`;}
 const wkName=w=>w==null?'—':(w>20?'Bowls':`Week ${w}`);
+const gamesPlayed=t=>(D.schedule||[]).filter(r=>r[7]&&r[5]!=null&&(r[2]===t||r[3]===t)).length;
+// 80% range of a team's rating: tau2 learned from how much bigger early-season misses are (see cfb_model.rating_uncertainty)
+const ratingPM=t=>{const M=window.MODEL||{};if(!M.rating_tau2)return null;return 1.2816*Math.sqrt(M.rating_tau2/(gamesPlayed(t)+(M.lam||3)));};
 const teamRecord=t=>{let w=0,l=0;for(const r of (D.schedule||[])){if(!r[7]||r[5]==null)continue;if(r[2]===t){r[5]>r[6]?w++:l++;}else if(r[3]===t){r[6]>r[5]?w++:l++;}}return `${w}–${l}`;};
 // What the ratings reflect: preseason, or games through the latest completed week
 const ratedThrough=()=>{const w=Math.max(0,...(D.schedule||[]).filter(r=>r[7]).map(r=>r[0]));return w?`ratings through ${wkName(w)} games`:'preseason ratings';};
 const am=x=>x==null?'':(x>0?'+':'−')+Math.abs(Math.round(x));
+// Freshness, shown on every page: when the model last ran and when the newest lines were fetched
+const freshTxt=()=>{const f=t=>new Date(t).toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',hour:'numeric',minute:'2-digit'});return `model ${f(D.generated)} CT`+(D.lines_updated?` · lines ${f(D.lines_updated)} CT`:'');};
 const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 document.getElementById('foot').innerHTML=`Model run ${new Date(D.generated).toLocaleString('en-US',{timeZone:'America/Chicago',dateStyle:'medium',timeStyle:'short'})} CT · Data: CollegeFootballData.com (games, stats), The Odds API (lines), Open-Meteo (weather). Sportsbook lines are only used to grade and display picks, never as model inputs. For information only, not betting advice.`+(D.unmatched&&D.unmatched.length?` · Unmatched odds games: ${D.unmatched.length}`:'')+((D.health||{}).model_version?` · Model v${D.health.model_version}`:'')+((D.health||{}).build?` · build ${esc(D.health.build)}`:'');
@@ -187,6 +193,9 @@ function project(home,away,neutral){const h=neutral?0:1,f={};const MD=window.MOD
  if(tm&&tm.beta){const P=f.p_h+f.p_a,PQ=f.p_h*f.q_h+f.p_a*f.q_a,PS=f.p_h*f.s_h+f.p_a*f.s_a,R=(f.r_h||0)+(f.r_a||0);
   const th=MD.tiers[home],ta=MD.tiers[away];const x=[1,P,PQ,PS,R,(th==='P4'&&ta==='P4')?1:0,(th==='FCS'||ta==='FCS')?1:0];
   let t=x.reduce((acc,v,i)=>acc+v*tm.beta[i],0);if(tm.recal)t=tm.recal[0]+tm.recal[1]*t;const m=ph-pa;ph=(t+m)/2;pa=(t-m)/2;}
+ // Service-academy correction, same as the weekly projections
+ const ac=MD.academy||{};if(ac.n&&ac.teams){const ah=ac.teams.includes(home),aa=ac.teams.includes(away);
+  if(ah||aa){const m=ac.margin*((ah?1:0)-(aa?1:0)),t=ac.total;ph+=(m+t)/2;pa+=(t-m)/2;}}
  return {ph,pa};}
 const Phi=x=>{const t=1/(1+0.2316419*Math.abs(x)),d=0.3989423*Math.exp(-x*x/2),p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return x>0?1-p:p;};
 // Win chance from a projected margin, using how far off past predictions have been (normal approximation)
@@ -196,7 +205,7 @@ const fairOdds=p=>{p=Math.min(Math.max(p,0.005),0.995);return p>=0.5?`−${Math.
 const known=t=>!!((window.MODEL||{}).tiers&&t in window.MODEL.tiers);
 const pc=p=>p>0.995?'>99%':p<0.005?'<1%':Math.round(p*100)+'%';
 
-document.getElementById('sub').textContent=`${D.season} season · ${ratedThrough()}`;
+document.getElementById('sub').textContent=`${D.season} season · ${ratedThrough()} · ${freshTxt()}`;
 const f1=x=>x==null?'—':x.toFixed(1);const s1=x=>x==null?'—':(Math.abs(x)<0.05?'0.0':(x>0?'+':'−')+Math.abs(x).toFixed(1));
 const T=(D.teams||[]).map((t,i)=>({...t,rank:i+1}));
 const PMAX=Math.max(1,...T.map(t=>Math.abs(t.power||0)));
@@ -218,6 +227,9 @@ if(HAVE_MODEL)T.forEach(t=>{let w=0,l=0,ew=0,n=0;for(const r of games(t.team)){i
   else if(pending(r)){const g=gameP(t.team,r);if(g){ew+=g.p;n++;}}}
  PROJ[t.team]={w,l,ew,n,W:w+ew,L:l+n-ew};t.pw=w+ew;});
 const projTxt=t=>{const P=PROJ[t];return P?P.W.toFixed(1):'—';};
+// Chance of each final win total: combine each remaining game's win chance (games treated as independent)
+function winDist(t){const ps=[];for(const r of games(t).filter(pending)){const g=HAVE_MODEL?gameP(t,r):null;if(g)ps.push(g.p);}
+ let d=[1];for(const p of ps){const n=new Array(d.length+1).fill(0);d.forEach((v,k)=>{n[k]+=v*(1-p);n[k+1]+=v*p;});d=n;}return d;}
 // Remaining-schedule strength: average opponent rating, adjusted for where each game is played
 const HFA=(()=>{const T0=T[0];if(!HAVE_MODEL||!T0)return 0;const a=project(T0.team,T[1].team,false),b=project(T0.team,T[1].team,true);return (a.ph-a.pa)-(b.ph-b.pa);})();
 function sos(t){const P=[];for(const r of games(t.team).filter(pending)){const home=r[2]===t.team,opp=home?r[3]:r[2],o=(D.teams||[]).find(x=>x.team===opp);
@@ -226,10 +238,12 @@ const SOS={};T.forEach(t=>SOS[t.team]=sos(t));
 const sosRank=t=>{const v=SOS[t];if(v==null)return null;return 1+Object.values(SOS).filter(x=>x!=null&&x>v).length;};
 // Rating over the season (end of each completed week)
 function rhist(t){const h=(D.rating_hist||{})[t.team]||[];if(h.length<2)return '';
- const W=280,H=70,vals=h.map(x=>x[1]),lo=Math.min(...vals)-3,hi=Math.max(...vals)+3,X=i=>10+(W-20)*i/(h.length-1),Y=v=>6+(H-22)*(hi-v)/(hi-lo);
+ const W=280,H=70,vals=h.map(x=>x[1]),lo=Math.min(...vals)-9,hi=Math.max(...vals)+9,X=i=>10+(W-20)*i/(h.length-1),Y=v=>6+(H-22)*(hi-v)/(hi-lo);
  const path=h.map((x,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(x[1]).toFixed(1)}`).join('');
  const dots=h.map((x,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(x[1]).toFixed(1)}" r="2.5" fill="var(--series)"><title>${x[0]?wkName(x[0]):'Preseason'}: ${s1(x[1])}</title></circle>`).join('');
- return `<h4 style="margin-top:12px">Rating over the season</h4><svg class="rh" viewBox="0 0 ${W} ${H}" role="img" aria-label="Rating by week">${lo<0&&hi>0?`<line x1="10" x2="${W-10}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}" stroke="var(--line)"/><text x="${W-10}" y="${(Y(0)-3).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--faint)">average FBS team</text>`:''}<path d="${path}" fill="none" stroke="var(--series)" stroke-width="2"/>${dots}<text x="10" y="${H-3}" font-size="10" fill="var(--faint)">Preseason ${s1(h[0][1])}</text><text x="${W-10}" y="${H-3}" text-anchor="end" font-size="10" fill="var(--faint)">${wkName(h[h.length-1][0])} ${s1(h[h.length-1][1])}</text></svg>`;}
+ const M=window.MODEL||{},pm=x=>M.rating_tau2?1.2816*Math.sqrt(M.rating_tau2/(Math.max(0,x[0]-0)+(M.lam||3))):0;
+ const band=M.rating_tau2?`<path d="${h.map((x,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(x[1]+pm(x)).toFixed(1)}`).join('')}${h.slice().reverse().map((x,j)=>`L${X(h.length-1-j).toFixed(1)},${Y(x[1]-pm(x)).toFixed(1)}`).join('')}Z" fill="var(--series)" opacity=".15"/>`:'';
+ return `<h4 style="margin-top:12px">Rating over the season <span class="when" style="display:inline">shaded = 80% range</span></h4><svg class="rh" viewBox="0 0 ${W} ${H}" role="img" aria-label="Rating by week">${band}${lo<0&&hi>0?`<line x1="10" x2="${W-10}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}" stroke="var(--line)"/><text x="${W-10}" y="${(Y(0)-3).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--faint)">average FBS team</text>`:''}<path d="${path}" fill="none" stroke="var(--series)" stroke-width="2"/>${dots}<text x="10" y="${H-3}" font-size="10" fill="var(--faint)">Preseason ${s1(h[0][1])}</text><text x="${W-10}" y="${H-3}" text-anchor="end" font-size="10" fill="var(--faint)">${wkName(h[h.length-1][0])} ${s1(h[h.length-1][1])}</text></svg>`;}
 // Biggest movers since last week
 (()=>{const mv2=T.filter(t=>t.prev_power!=null).map(t=>({t,d:t.power-t.prev_power})).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d)).slice(0,6);
  if(!mv2.length)return;document.getElementById('movers').innerHTML=`<div class="movers"><span class="when" style="display:inline">Biggest movers since last week</span> ${mv2.map(x=>`<button class="chip mvr" data-t="${esc(x.t.team)}">${esc(x.t.team)} <span class="${x.d>0?'up':'down'}">${x.d>0?'+':'−'}${Math.abs(x.d).toFixed(1)}</span></button>`).join('')}</div>`;
@@ -262,17 +276,19 @@ function teamCard(t){
  const P=PROJ[t.team];
  return `<div class="dgrid"><div><h4>Results</h4>${res}</div><div><h4>Next games <span class="when" style="display:inline">spread · win chance</span></h4>${up}
   ${P&&P.n?`<div class="kv" style="margin-top:8px;border-top:1px solid var(--line);padding-top:6px"><span>Expected final record</span><b>${P.W.toFixed(1)}–${P.L.toFixed(1)}</b></div>`:''}
+  ${(()=>{const P=PROJ[t.team];if(!P||!P.n)return '';const d=winDist(t.team),w0=P.w,l0=P.l,best=d.indexOf(Math.max(...d)),n=d.length-1;
+    return `<div class="kv"><span>Chance to win out</span><span>${pct(d[n])}</span></div><div class="kv"><span>Most likely finish</span><span>${w0+best}–${l0+n-best} <span class="when" style="display:inline">${pct(d[best])}</span></span></div>`;})()}
   ${SOS[t.team]!=null?`<div class="kv"><span>Remaining schedule</span><span>opponents average ${s1(SOS[t.team])} <span class="when" style="display:inline">#${sosRank(t.team)} hardest of ${Object.values(SOS).filter(x=>x!=null).length}</span></span></div>`:''}</div>
   <div><h4>Profile</h4><div class="kv"><span>Score vs an average team</span><span>${t.pf==null?'—':`${f1(t.pf)}–${f1(t.pa)}`}</span></div>
   <div class="kv"><span>Offense rank</span><span>${t.off_rank} of ${T.length}</span></div><div class="kv"><span>Defense rank</span><span>${t.def_rank} of ${T.length}</span></div>
   <div class="kv"><span>Plays per game</span><span>${f1(t.pace)}</span></div>${t.prev_rank!=null?`<div class="kv"><span>Last week</span><span>#${t.prev_rank} · ${s1(t.prev_power)}</span></div>`:''}
   ${rhist(t)}
   <div style="margin-top:10px"><a class="lnk" href="matchup.html#${encodeURIComponent(t.team)}||0">Compare ${esc(t.team)} with any team →</a></div></div></div>`;}
-const SORTS={power:(a,b)=>a.rank-b.rank,pw:(a,b)=>(b.pw??-1)-(a.pw??-1),off:(a,b)=>b.off-a.off,deff:(a,b)=>a.deff-b.deff,pace:(a,b)=>b.pace-a.pace};
+const SORTS={sos:(a,b)=>(SOS[b.team]??-99)-(SOS[a.team]??-99),power:(a,b)=>a.rank-b.rank,pw:(a,b)=>(b.pw??-1)-(a.pw??-1),off:(a,b)=>b.off-a.off,deff:(a,b)=>a.deff-b.deff,pace:(a,b)=>b.pace-a.pace};
 function drawT(focus){const rows=T.filter(t=>(tc==='all'||t.tier===tc)&&(!tconf||t.conf===tconf)&&(!tq||t.team.toLowerCase().includes(tq))).sort(SORTS[sortK]||SORTS.power);
  document.querySelectorAll('th[data-s]').forEach(th=>{const on=th.dataset.s===sortK;th.classList.toggle('on',on);if(on)th.setAttribute('aria-sort',sortK==='deff'?'ascending':'descending');else th.removeAttribute('aria-sort');});
- document.getElementById('teams').innerHTML=rows.map(t=>`<tr class="g" data-t="${esc(t.team)}" tabindex="0" aria-expanded="${open===t.team}"><td>${t.rank}</td><td><b>${esc(t.team)}</b> <span class="when">${esc(t.conf||t.tier)}</span><span class="show-sm when">${teamRecord(t.team)}${PROJ[t.team]?` · ${projTxt(t.team)} expected wins`:''}</span></td><td class="nw"><b>${s1(t.power)}</b> ${bar(t.power)}</td><td>${mv(t)}</td><td class="hide-sm">${teamRecord(t.team)}</td><td class="hide-sm">${projTxt(t.team)}</td><td class="hide-sm">${epa(t.off)} <span class="when">${t.off_rank}</span></td><td class="hide-sm">${epa(t.deff)} <span class="when">${t.def_rank}</span></td><td class="hide-sm">${f1(t.pace)}</td></tr>
- <tr class="detail"${open===t.team?'':' hidden'}><td colspan="9">${open===t.team?teamCard(t):''}</td></tr>`).join('')||'<tr><td colspan="9" class="muted">No teams match.</td></tr>';
+ document.getElementById('teams').innerHTML=rows.map(t=>`<tr class="g" data-t="${esc(t.team)}" tabindex="0" aria-expanded="${open===t.team}"><td>${t.rank}</td><td><b>${esc(t.team)}</b> <span class="when">${esc(t.conf||t.tier)}</span><span class="show-sm when">${teamRecord(t.team)}${PROJ[t.team]?` · ${projTxt(t.team)} expected wins`:''}</span></td><td class="nw"><b>${s1(t.power)}</b>${ratingPM(t.team)?` <span class="when" style="display:inline" title="80% range of the rating">±${ratingPM(t.team).toFixed(1)}</span>`:''} ${bar(t.power)}</td><td>${mv(t)}</td><td class="hide-sm">${teamRecord(t.team)}</td><td class="hide-sm">${projTxt(t.team)}</td><td class="hide-sm">${SOS[t.team]!=null?s1(SOS[t.team]):'<span class="muted">—</span>'}</td><td class="hide-sm">${epa(t.off)} <span class="when">${t.off_rank}</span></td><td class="hide-sm">${epa(t.deff)} <span class="when">${t.def_rank}</span></td><td class="hide-sm">${f1(t.pace)}</td></tr>
+ <tr class="detail"${open===t.team?'':' hidden'}><td colspan="10">${open===t.team?teamCard(t):''}</td></tr>`).join('')||'<tr><td colspan="10" class="muted">No teams match.</td></tr>';
  document.querySelectorAll('#teams tr.g').forEach(tr=>{const go=()=>{open=open===tr.dataset.t?null:tr.dataset.t;drawT(tr.dataset.t);};tr.onclick=go;tr.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}};});
  if(focus){const el=[...document.querySelectorAll('#teams tr.g')].find(x=>x.dataset.t===focus);if(el)el.focus({preventScroll:true});}}
 drawT();
