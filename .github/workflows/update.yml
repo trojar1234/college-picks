@@ -6,6 +6,7 @@ name: Update model
 #   Daily 8am ............................ full update: results, ratings, grading, projections
 #   Weekdays 6pm ......................... line snapshot, re-project
 #   Saturdays 10am-10pm every 2 hours .... line snapshots close to kickoff
+#   Sundays noon, 4pm, 8pm ............... catch next week's opening lines (most open Sunday)
 on:
   schedule:
     # Daylight time (CDT, UTC-5): mid-March to early November
@@ -13,11 +14,15 @@ on:
     - cron: "7 23 * * 1-5"
     - cron: "7 15,17,19,21,23 * * 6"
     - cron: "7 1,3 * * 0"
+    - cron: "7 17,21 * * 0"
+    - cron: "7 1 * * 1"
     # Standard time (CST, UTC-6): early November to mid-March
     - cron: "7 14 * * *"
     - cron: "7 0 * * 2-6"
     - cron: "7 16,18,20,22 * * 6"
     - cron: "7 0,2,4 * * 0"
+    - cron: "7 18,22 * * 0"
+    - cron: "7 2 * * 1"
   workflow_dispatch:
     inputs:
       mode:
@@ -46,8 +51,8 @@ jobs:
           case "$SCHED" in
             "7 13 * * *") [ "$ZONE" = CDT ] && MODE=update ;;
             "7 14 * * *") [ "$ZONE" = CST ] && MODE=update ;;
-            "7 23 * * 1-5"|"7 15,17,19,21,23 * * 6"|"7 1,3 * * 0") [ "$ZONE" = CDT ] && MODE=odds ;;
-            "7 0 * * 2-6"|"7 16,18,20,22 * * 6"|"7 0,2,4 * * 0") [ "$ZONE" = CST ] && MODE=odds ;;
+            "7 23 * * 1-5"|"7 15,17,19,21,23 * * 6"|"7 1,3 * * 0"|"7 17,21 * * 0"|"7 1 * * 1") [ "$ZONE" = CDT ] && MODE=odds ;;
+            "7 0 * * 2-6"|"7 16,18,20,22 * * 6"|"7 0,2,4 * * 0"|"7 18,22 * * 0"|"7 2 * * 1") [ "$ZONE" = CST ] && MODE=odds ;;
           esac
           echo "Central time zone: $ZONE, schedule: $SCHED, mode: ${MODE:-skip}"
           echo "mode=${MODE:-skip}" >> "$GITHUB_OUTPUT"
