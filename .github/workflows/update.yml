@@ -1,11 +1,23 @@
 name: Update model
 
+# Runs at the same Central times all year. GitHub schedules run in UTC, so each run is listed twice
+# (once for daylight time, once for standard time) and the first step skips whichever one doesn't
+# match the current clock. Central times:
+#   Daily 8am ............................ full update: results, ratings, grading, projections
+#   Weekdays 6pm ......................... line snapshot, re-project
+#   Saturdays 10am-10pm every 2 hours .... line snapshots close to kickoff
 on:
   schedule:
-    - cron: "7 13 * * *"          # Full update daily, ~8am Central: results, ratings, grading, predictions
-    - cron: "7 23 * * 1-5"        # Line snapshot weekday evenings, ~6pm Central
-    - cron: "7 15,17,19,21,23 * * 6"  # Saturdays every 2 hours, ~10am-6pm Central (closing lines)
-    - cron: "7 1,3 * * 0"         # Saturday ~8pm and ~10pm Central
+    # Daylight time (CDT, UTC-5): mid-March to early November
+    - cron: "7 13 * * *"
+    - cron: "7 23 * * 1-5"
+    - cron: "7 15,17,19,21,23 * * 6"
+    - cron: "7 1,3 * * 0"
+    # Standard time (CST, UTC-6): early November to mid-March
+    - cron: "7 14 * * *"
+    - cron: "7 0 * * 2-6"
+    - cron: "7 16,18,20,22 * * 6"
+    - cron: "7 0,2,4 * * 0"
   workflow_dispatch:
     inputs:
       mode:
@@ -24,27 +36,51 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Decide what this run does
+        id: plan
+        run: |
+          SCHED="${{ github.event.schedule }}"
+          MODE="${{ github.event.inputs.mode }}"
+          if [ -z "$SCHED" ]; then echo "mode=${MODE:-update}" >> "$GITHUB_OUTPUT"; exit 0; fi
+          ZONE=$(TZ=America/Chicago date +%Z)   # CDT or CST right now
+          case "$SCHED" in
+            "7 13 * * *") [ "$ZONE" = CDT ] && MODE=update ;;
+            "7 14 * * *") [ "$ZONE" = CST ] && MODE=update ;;
+            "7 23 * * 1-5"|"7 15,17,19,21,23 * * 6"|"7 1,3 * * 0") [ "$ZONE" = CDT ] && MODE=odds ;;
+            "7 0 * * 2-6"|"7 16,18,20,22 * * 6"|"7 0,2,4 * * 0") [ "$ZONE" = CST ] && MODE=odds ;;
+          esac
+          echo "Central time zone: $ZONE, schedule: $SCHED, mode: ${MODE:-skip}"
+          echo "mode=${MODE:-skip}" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
+        if: steps.plan.outputs.mode != 'skip'
       - uses: actions/setup-python@v5
+        if: steps.plan.outputs.mode != 'skip'
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install -r requirements.txt
+      - uses: actions/setup-node@v4
+        if: steps.plan.outputs.mode != 'skip'
+        with:
+          node-version: "20"
+      - if: steps.plan.outputs.mode != 'skip'
+        run: pip install -r requirements.txt
       - name: Run model
+        if: steps.plan.outputs.mode != 'skip'
         env:
           CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-        run: |
-          MODE="${{ github.event.inputs.mode }}"
-          if [ -z "$MODE" ]; then
-            if [ "${{ github.event.schedule }}" = "7 13 * * *" ]; then MODE=update; else MODE=odds; fi
-          fi
-          echo "Mode: $MODE"
-          python run.py "$MODE"
+        run: python run.py "${{ steps.plan.outputs.mode }}"
+      # If any check fails, the job stops here: nothing is published and GitHub emails you.
+      - name: Check before publishing
+        if: steps.plan.outputs.mode != 'skip'
+        run: python cfb_selftest.py
       - name: Save results
+        if: steps.plan.outputs.mode != 'skip'
         run: |
           git config user.name "model-bot"
           git config user.email "model-bot@users.noreply.github.com"
           git add data docs
           git diff --cached --quiet || git commit -m "Model update $(date -u +%Y-%m-%dT%H:%MZ)"
+          # pick up anything uploaded while this run was going, so the push never gets rejected
+          git pull --rebase
           git push
