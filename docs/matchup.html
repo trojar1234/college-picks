@@ -117,7 +117,7 @@ table.games tr.g td{border:0;padding:10px 12px 2px}table.games td.c-proj{text-al
 </style></head><body><div class="wrap">
 <a class="skip" href="#content">Skip to content</a><header><div><h1>College football model<span class="tagline">market-blind forecasts</span></h1><div class="sub" id="sub"></div></div>
 <nav><a href="index.html" class="">Projections</a><a href="matchup.html" class="on">Matchup</a><a href="ratings.html" class=""><span class="navl">Team ratings</span><span class="navs">Ratings</span></a><a href="report.html" class=""><span class="navl">Performance</span><span class="navs">Results</span></a></nav></header><div id="content" tabindex="-1"></div>
-<script src="model.js?v=20261023134525"></script>
+<script src="model.js?v=20261023150829"></script>
 <details class="help"><summary>How to read this page</summary>
 <ul>
 <li>Pick any two teams and where they'd play. The projection uses the same ratings and formula as the weekly predictions, as of the latest update. Unlike the weekly projections, it doesn't include QB-change or manual adjustments, and it isn't a betting pick.</li>
@@ -125,7 +125,7 @@ table.games tr.g td{border:0;padding:10px 12px 2px}table.games td.c-proj{text-al
 <li><b>Fair odds</b> are the moneyline that matches the win chance with no sportsbook margin. A book's price longer than this on the same side would be value if the model is right.</li>
 <li>The <b>what-if</b> slider shifts Team 1's strength by a number of points; the presets use typical values (a backup QB is worth about 7 points, a key non-QB starter about 3). It's a scenario, not a projection, and the card shows the unadjusted number next to it.</li>
 <li><b>±</b> next to a rating is its 80% range: how far the true strength could plausibly be from the estimate, wider early in the season and for teams with few games.</li>
-<li>Win chance and the range use the same method as the weekly projections: a normal curve around the projected margin with the size of past out-of-sample misses (it was better calibrated than the score simulation). The weekly numbers can still differ slightly because they include QB-change and manual adjustments.</li>
+<li>Win chance and the range use the same method as the weekly projections: a normal curve around the projected margin with the size of past out-of-sample misses (it was better calibrated than the score simulation). The weekly numbers can still differ slightly when a manual adjustment (overrides.csv) applies; QB changes are flagged, not adjusted.</li>
 <li>Share a matchup by copying the page link: it remembers the teams and the venue.</li>
 </ul></details>
 <div class="mpick">
@@ -141,7 +141,7 @@ table.games tr.g td{border:0;padding:10px 12px 2px}table.games td.c-proj{text-al
 
 <p class="note" id="foot"></p>
 </div>
-<script src="data.js?v=20261023134525"></script>
+<script src="data.js?v=20261023150829"></script>
 <script>
 const D=window.DATA;
 if(!D){document.querySelector('.wrap').insertAdjacentHTML('afterbegin','<div class="summary"><b>Data unavailable.</b> The latest update did not publish its data file. It should be back after the next scheduled run.</div>');throw new Error('data.js missing');}
@@ -284,7 +284,7 @@ function go(){
  if(live&&(live.neutral?0:(live.home===a?1:2))===venue&&!adj){const mk=live.market||{},hw=live.p_home_win;
   cmpLive=`<div class="tbl" style="margin-top:10px"><table class="mtbl"><thead><tr><th></th><th>Spread</th><th>Total</th><th>${esc(live.home)} wins</th></tr></thead><tbody>
    <tr><td>This page (ratings only)</td><td>${line(live.home,live.away,Math.round(-(live.home===home?m:-m)*10)/10)}</td><td>${T.toFixed(1)}</td><td>${pc(live.home===a?p1:1-p1)}</td></tr>
-   <tr><td>Weekly projection <span class="when" style="display:inline">simulation + QB/manual adjustments</span></td><td>${line(live.home,live.away,live.model_spread)}</td><td>${fmt(live.model_total)}</td><td>${hw!=null?pc(hw):'—'}</td></tr>
+   <tr><td>Weekly projection <span class="when" style="display:inline">includes any manual adjustment</span></td><td>${line(live.home,live.away,live.model_spread)}</td><td>${fmt(live.model_total)}</td><td>${hw!=null?pc(hw):'—'}</td></tr>
    <tr><td>Sportsbooks <span class="when" style="display:inline">middle of the books</span></td><td>${line(live.home,live.away,mk.spread)}</td><td>${mk.total??'—'}</td><td>—</td></tr></tbody></table></div>`;}
  out.innerHTML=`<div class="mcard">
   <div class="mhead"><div><div class="mteam">${esc(a)} <span class="when" style="display:inline">${rk(a)} · ${teamRecord(a)}</span></div><div class="mscore">${S1}</div></div>

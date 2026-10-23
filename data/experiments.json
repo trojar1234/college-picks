@@ -1,6 +1,7 @@
 {
  "version": 5,
- "run": "2026-10-12T20:45:30.703727+00:00",
+ "keep_rule": 2,
+ "run": "2026-10-23T15:08:29.575256+00:00",
  "available": [
   "pbp",
   "players",
@@ -35,6 +36,11 @@
   "total": 13.247,
   "n": 6828
  },
+ "bets_baseline": {
+  "units": 28.5,
+  "w": 126,
+  "l": 86
+ },
  "holdout": {
   "season": 2025,
   "baseline": {
@@ -43,7 +49,7 @@
    "n": 934
   },
   "selected": {
-   "margin": 12.297,
+   "margin": 12.294,
    "total": 12.875,
    "n": 934
   }
@@ -55,7 +61,35 @@
    "margin": 12.97,
    "total": 13.247,
    "gain_margin": 0.051,
-   "gain_total": 0.004,
+   "gain_total": 0.003,
+   "range_margin": [
+    0.028,
+    0.075
+   ],
+   "range_total": [
+    -0.038,
+    0.033
+   ],
+   "bets": {
+    "units": 23.6,
+    "w": 114,
+    "l": 80,
+    "change": -4.9,
+    "noise": 7.9
+   },
+   "bets_ref": {
+    "units": 28.5,
+    "w": 126,
+    "l": 86
+   },
+   "confirm": {
+    "season": 2025,
+    "gain_margin": 0.06,
+    "gain_total": 0.017,
+    "bets_change": 2.5,
+    "noise": 7.1
+   },
+   "confirm_ok": true,
    "kept": false,
    "ok": true
   },
@@ -64,23 +98,79 @@
    "group": "players_off",
    "margin": 12.941,
    "total": 13.247,
-   "gain_margin": 0.08,
+   "gain_margin": 0.079,
    "gain_total": 0.004,
+   "range_margin": [
+    0.053,
+    0.107
+   ],
+   "range_total": [
+    -0.028,
+    0.032
+   ],
+   "bets": {
+    "units": 29.1,
+    "w": 109,
+    "l": 70,
+    "change": 0.5,
+    "noise": 8.1
+   },
+   "bets_ref": {
+    "units": 28.5,
+    "w": 126,
+    "l": 86
+   },
+   "confirm": {
+    "season": 2025,
+    "gain_margin": 0.063,
+    "gain_total": 0.031,
+    "bets_change": 9.4,
+    "noise": 9.0
+   },
+   "confirm_ok": true,
    "kept": true,
    "ok": true
   },
   {
    "feature": "Separate totals model: game-level fit with matchup type (Power 4 vs Power 4, FCS), recalibrated on past out-of-sample totals",
    "group": "totals",
-   "skipped": "data not available yet"
+   "skipped": "switched off: more accurate totals, but its over/under bets did worse against opening lines"
   },
   {
    "feature": "Play-by-play: non-garbage points per drive, finishing drives, field position",
    "group": "pbp",
-   "margin": 12.949,
-   "total": 13.238,
-   "gain_margin": -0.008,
-   "gain_total": 0.009,
+   "margin": 12.948,
+   "total": 13.239,
+   "gain_margin": -0.007,
+   "gain_total": 0.008,
+   "range_margin": [
+    -0.026,
+    0.013
+   ],
+   "range_total": [
+    -0.005,
+    0.022
+   ],
+   "bets": {
+    "units": 26.6,
+    "w": 103,
+    "l": 67,
+    "change": -2.5,
+    "noise": 4.3
+   },
+   "bets_ref": {
+    "units": 29.1,
+    "w": 109,
+    "l": 70
+   },
+   "confirm": {
+    "season": 2025,
+    "gain_margin": 0.015,
+    "gain_total": 0.004,
+    "bets_change": -0.3,
+    "noise": 4.7
+   },
+   "confirm_ok": true,
    "kept": false,
    "ok": false
   }
