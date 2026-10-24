@@ -41590,7 +41590,7 @@
     }
    ],
    "first_ts": "2026-10-18T13:35:09.765960+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-18T13:35:09.765960+00:00",
@@ -41671,15 +41671,20 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": -13.5,
      "total": 54.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": -13.5,
+     "total": 54.5
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 5.1000000000000005,
+   "wind": 5.533333333333334,
    "precip": 0.0,
-   "temp": 75.8
+   "temp": 75.9
   },
   "notes": [],
   "auto_adj": [],
@@ -41688,20 +41693,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": 0.013366741334225959,
-   "home_def": 0.05327328949901414,
-   "away_off": -0.08392724294940977,
-   "away_def": -0.04040993315329874,
+   "home_off": 0.013366741334226455,
+   "home_def": 0.053273289499013846,
+   "away_off": -0.08392724294940956,
+   "away_def": -0.04040993315329905,
    "home_pace": 63.7749598454886,
-   "away_pace": 62.05534242196803
+   "away_pace": 62.055342421968035
   },
   "home_med": 30,
   "away_med": 21,
-  "home_mean": 29.891687505779704,
-  "away_mean": 20.884853647768047,
-  "margin": 9.006833858011657,
-  "total_mean": 50.776541153547754,
-  "p_home_win": 0.7156869053088807,
+  "home_mean": 29.8916875057797,
+  "away_mean": 20.884853647768093,
+  "margin": 9.006833858011607,
+  "total_mean": 50.7765411535478,
+  "p_home_win": 0.7156869053088797,
   "likely": [
    [
     31,
@@ -41761,9 +41766,9 @@
    83,
    155
   ],
-  "p_home_cover": 0.38805608175145023,
+  "p_home_cover": 0.388056081751449,
   "p_push_spread": 0.0,
-  "p_over": 0.40809921279469924,
+  "p_over": 0.4080992127947003,
   "p_push_total": 0.0,
   "range80": [
    -11.2,
@@ -41793,8 +41798,8 @@
    "p": 0.516,
    "ev": 0.009
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -41895,7 +41900,7 @@
     }
    ],
    "first_ts": "2026-10-14T23:32:33.403402+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-14T23:32:33.403402+00:00",
@@ -42016,15 +42021,20 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": -6.5,
      "total": 57.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": -6.5,
+     "total": 57.5
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 2.5,
+   "wind": 2.466666666666667,
    "precip": 0.0,
-   "temp": 47.3
+   "temp": 47.2
   },
   "notes": [],
   "auto_adj": [],
@@ -42033,20 +42043,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": 0.12175507751996033,
-   "home_def": -0.014934545900673248,
-   "away_off": 0.1292909117651995,
-   "away_def": 0.028242818910312637,
-   "home_pace": 56.912765981485634,
-   "away_pace": 57.407129608034815
+   "home_off": 0.12175507751996086,
+   "home_def": -0.014934545900673809,
+   "away_off": 0.1292909117651996,
+   "away_def": 0.028242818910312068,
+   "home_pace": 56.91276598148563,
+   "away_pace": 57.407129608034786
   },
   "home_med": 34,
   "away_med": 27,
-  "home_mean": 34.74349456230447,
-  "away_mean": 26.601227482150243,
-  "margin": 8.142267080154227,
-  "total_mean": 61.34472204445471,
-  "p_home_win": 0.6968472712337201,
+  "home_mean": 34.743494562304434,
+  "away_mean": 26.601227482150215,
+  "margin": 8.14226708015422,
+  "total_mean": 61.34472204445465,
+  "p_home_win": 0.69684727123372,
   "likely": [
    [
     34,
@@ -42106,9 +42116,9 @@
    58,
    122
   ],
-  "p_home_cover": 0.5413935732214172,
+  "p_home_cover": 0.541393573221417,
   "p_push_spread": 0.0,
-  "p_over": 0.5948376269272527,
+  "p_over": 0.5948376269272512,
   "p_push_total": 0.0,
   "range80": [
    -12.1,
@@ -42138,8 +42148,8 @@
    "p": 0.516,
    "ev": 0.004
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -42223,7 +42233,7 @@
     {
      "book": "BetUS",
      "spread": -12.0,
-     "total": 51.0,
+     "total": 51.5,
      "home_price": -110.0,
      "away_price": -110.0,
      "over_price": -110.0,
@@ -42249,7 +42259,7 @@
     }
    ],
    "first_ts": "2026-10-14T23:32:33.403402+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-14T23:32:33.403402+00:00",
@@ -42370,15 +42380,20 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": -12.0,
      "total": 51.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": -12.0,
+     "total": 51.5
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 7.666666666666667,
+   "wind": 7.566666666666666,
    "precip": 0.0,
-   "temp": 75.2
+   "temp": 76.8
   },
   "notes": [],
   "auto_adj": [],
@@ -42387,20 +42402,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": 0.03242716718399024,
-   "home_def": -0.043237703908256424,
-   "away_off": -0.033989549418302116,
-   "away_def": 0.02208874575287379,
-   "home_pace": 54.204872836112294,
+   "home_off": 0.0324271671839907,
+   "home_def": -0.043237703908256986,
+   "away_off": -0.033989549418301734,
+   "away_def": 0.02208874575287333,
+   "home_pace": 54.20487283611228,
    "away_pace": 61.27652452320124
   },
   "home_med": 30,
   "away_med": 21,
-  "home_mean": 29.78591825812388,
-  "away_mean": 21.01227467541758,
-  "margin": 8.773643582706299,
-  "total_mean": 50.79819293354146,
-  "p_home_win": 0.7106608913830963,
+  "home_mean": 29.785918258123914,
+  "away_mean": 21.012274675417515,
+  "margin": 8.773643582706399,
+  "total_mean": 50.79819293354143,
+  "p_home_win": 0.7106608913830985,
   "likely": [
    [
     24,
@@ -42460,9 +42475,9 @@
    71,
    113
   ],
-  "p_home_cover": 0.4151454515307989,
+  "p_home_cover": 0.41514545153080135,
   "p_push_spread": 0.0079,
-  "p_over": 0.48252778160087134,
+  "p_over": 0.4825277816008706,
   "p_push_total": 0.0,
   "range80": [
    -11.5,
@@ -42492,8 +42507,8 @@
    "p": 0.503,
    "ev": -0.031
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -42544,13 +42559,13 @@
      "total": 51.5,
      "home_price": -115.0,
      "away_price": -105.0,
-     "over_price": -110.0,
-     "under_price": -110.0
+     "over_price": -115.0,
+     "under_price": -105.0
     },
     {
      "book": "LowVig.ag",
      "spread": 1.0,
-     "total": 52.0,
+     "total": 52.5,
      "home_price": -106.0,
      "away_price": -106.0,
      "over_price": -103.0,
@@ -42559,7 +42574,7 @@
     {
      "book": "BetOnline.ag",
      "spread": 1.0,
-     "total": 52.0,
+     "total": 52.5,
      "home_price": -110.0,
      "away_price": -110.0,
      "over_price": -105.0,
@@ -42586,7 +42601,7 @@
     {
      "book": "BetUS",
      "spread": 1.0,
-     "total": 51.5,
+     "total": 52.0,
      "home_price": -110.0,
      "away_price": -110.0,
      "over_price": -110.0,
@@ -42594,7 +42609,7 @@
     },
     {
      "book": "Bovada",
-     "spread": 1.0,
+     "spread": 1.5,
      "total": 51.5,
      "home_price": -110.0,
      "away_price": -110.0,
@@ -42603,7 +42618,7 @@
     }
    ],
    "first_ts": "2026-10-18T13:35:09.765960+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-18T13:35:09.765960+00:00",
@@ -42684,15 +42699,20 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": 1.0,
      "total": 51.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": 1.0,
+     "total": 51.5
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 4.066666666666666,
+   "wind": 3.0666666666666664,
    "precip": 0.0,
-   "temp": 79.2
+   "temp": 77.8
   },
   "notes": [
    "Arizona State: Mikey Keene started last game instead of Cutter Boley (0.9 yds/att worse career)"
@@ -42705,20 +42725,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": -0.07834164737377908,
-   "home_def": 0.06122941998949076,
-   "away_off": 0.01653446279294141,
-   "away_def": 0.04190264970833667,
-   "home_pace": 54.75679144655535,
-   "away_pace": 58.67912135594371
+   "home_off": -0.07834164737377879,
+   "home_def": 0.061229419989490295,
+   "away_off": 0.016534462792941847,
+   "away_def": 0.041902649708336244,
+   "home_pace": 54.75679144655533,
+   "away_pace": 58.67912135594369
   },
   "home_med": 27,
   "away_med": 30,
-  "home_mean": 27.325847074038922,
-  "away_mean": 30.323592585399993,
-  "margin": -2.997745511361071,
-  "total_mean": 57.64943965943891,
-  "p_home_win": 0.42475704854851914,
+  "home_mean": 27.32584707403906,
+  "away_mean": 30.323592585399933,
+  "margin": -2.997745511360872,
+  "total_mean": 57.649439659439,
+  "p_home_win": 0.4247570485485241,
   "likely": [
    [
     24,
@@ -42741,8 +42761,8 @@
     0.0072
    ],
    [
-    20,
-    31,
+    24,
+    34,
     0.0061
    ]
   ],
@@ -42778,9 +42798,9 @@
    15,
    13
   ],
-  "p_home_cover": 0.44068994905445225,
+  "p_home_cover": 0.44068994905445724,
   "p_push_spread": 0.018,
-  "p_over": 0.649466047480681,
+  "p_over": 0.6494660474806829,
   "p_push_total": 0.0,
   "range80": [
    -23.2,
@@ -42810,8 +42830,8 @@
    "p": 0.526,
    "ev": 0.022
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -43250,7 +43270,7 @@
     }
    ],
    "first_ts": "2026-10-14T23:32:33.403402+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-14T23:32:33.403402+00:00",
@@ -43366,15 +43386,20 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": -3.0,
      "total": 49.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": -3.0,
+     "total": 49.5
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 4.933333333333333,
+   "wind": 4.733333333333333,
    "precip": 0.0,
-   "temp": 60.1
+   "temp": 58.6
   },
   "notes": [],
   "auto_adj": [],
@@ -43383,20 +43408,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": -0.12284739109966569,
-   "home_def": -0.08310869642885495,
-   "away_off": 0.04287524863091526,
-   "away_def": 0.08120737189681984,
-   "home_pace": 57.206119051080506,
+   "home_off": -0.12284739109966535,
+   "home_def": -0.08310869642885511,
+   "away_off": 0.04287524863091534,
+   "away_def": 0.08120737189681959,
+   "home_pace": 57.20611905108049,
    "away_pace": 61.419931900822
   },
   "home_med": 27,
   "away_med": 21,
-  "home_mean": 26.83746550062058,
-  "away_mean": 22.33909619181656,
-  "margin": 4.498369308804023,
-  "total_mean": 49.17656169243714,
-  "p_home_win": 0.6120700881532386,
+  "home_mean": 26.8374655006207,
+  "away_mean": 22.339096191816587,
+  "margin": 4.4983693088041115,
+  "total_mean": 49.17656169243729,
+  "p_home_win": 0.6120700881532408,
   "likely": [
    [
     31,
@@ -43456,9 +43481,9 @@
    26,
    50
   ],
-  "p_home_cover": 0.512927992219139,
+  "p_home_cover": 0.5129279922191412,
   "p_push_spread": 0.0497,
-  "p_over": 0.49194563751323883,
+  "p_over": 0.4919456375132425,
   "p_push_total": 0.0,
   "range80": [
    -15.8,
@@ -43488,8 +43513,8 @@
    "p": 0.501,
    "ev": -0.012
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -50324,57 +50349,57 @@
   "market": {
    "open_spread": -11.5,
    "open_total": 49.5,
-   "spread": -10.5,
+   "spread": -11.5,
    "total": 48.5,
    "books": [
     {
      "book": "DraftKings",
-     "spread": -10.5,
+     "spread": -11.5,
      "total": 48.5,
-     "home_price": -105.0,
-     "away_price": -115.0,
-     "over_price": -110.0,
-     "under_price": -110.0
-    },
-    {
-     "book": "BetMGM",
-     "spread": -10.5,
-     "total": 48.5,
-     "home_price": -108.0,
-     "away_price": -110.0,
-     "over_price": -110.0,
+     "home_price": -112.0,
+     "away_price": -108.0,
+     "over_price": -112.0,
      "under_price": -108.0
     },
     {
-     "book": "LowVig.ag",
-     "spread": -11.0,
+     "book": "BetMGM",
+     "spread": -11.5,
      "total": 48.5,
-     "home_price": -101.0,
-     "away_price": -111.0,
+     "home_price": -108.0,
+     "away_price": -110.0,
+     "over_price": -120.0,
+     "under_price": -110.0
+    },
+    {
+     "book": "LowVig.ag",
+     "spread": -11.5,
+     "total": 49.5,
+     "home_price": -106.0,
+     "away_price": -106.0,
      "over_price": -108.0,
      "under_price": -108.0
     },
     {
      "book": "BetOnline.ag",
-     "spread": -11.0,
-     "total": 48.5,
-     "home_price": -105.0,
-     "away_price": -115.0,
+     "spread": -11.5,
+     "total": 49.5,
+     "home_price": -110.0,
+     "away_price": -110.0,
      "over_price": -110.0,
      "under_price": -110.0
     },
     {
      "book": "FanDuel",
-     "spread": -9.5,
+     "spread": -11.5,
      "total": 48.5,
-     "home_price": -120.0,
-     "away_price": -102.0,
-     "over_price": -110.0,
-     "under_price": -110.0
+     "home_price": -105.0,
+     "away_price": -115.0,
+     "over_price": -115.0,
+     "under_price": -105.0
     },
     {
      "book": "MyBookie.ag",
-     "spread": -10.0,
+     "spread": -12.0,
      "total": 48.5,
      "home_price": -110.0,
      "away_price": -110.0,
@@ -50383,34 +50408,34 @@
     },
     {
      "book": "BetUS",
-     "spread": -11.0,
+     "spread": -12.0,
      "total": 48.5,
-     "home_price": -105.0,
-     "away_price": -115.0,
+     "home_price": -110.0,
+     "away_price": -110.0,
      "over_price": -110.0,
      "under_price": -110.0
     },
     {
      "book": "BetRivers",
-     "spread": -10.0,
+     "spread": -10.5,
      "total": 48.5,
-     "home_price": -109.0,
+     "home_price": -110.0,
      "away_price": -113.0,
-     "over_price": -107.0,
-     "under_price": -115.0
+     "over_price": -114.0,
+     "under_price": -109.0
     },
     {
      "book": "Bovada",
-     "spread": -10.5,
+     "spread": -12.0,
      "total": 49.0,
-     "home_price": -105.0,
-     "away_price": -115.0,
-     "over_price": -105.0,
-     "under_price": -115.0
+     "home_price": -110.0,
+     "away_price": -110.0,
+     "over_price": -110.0,
+     "under_price": -110.0
     }
    ],
    "first_ts": "2026-10-19T13:53:01.383387+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-19T13:53:01.383387+00:00",
@@ -50486,15 +50511,20 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": -10.5,
      "total": 48.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": -11.5,
+     "total": 48.5
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 3.9333333333333336,
+   "wind": 4.566666666666666,
    "precip": 0.0,
-   "temp": 64.4
+   "temp": 64.9
   },
   "notes": [],
   "auto_adj": [],
@@ -50503,20 +50533,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": -0.06617898823619137,
-   "home_def": 0.11953966834416803,
-   "away_off": -0.18188791713774902,
-   "away_def": 0.19500205919841826,
-   "home_pace": 63.45262762068316,
-   "away_pace": 59.12033643426303
+   "home_off": -0.06617898823619102,
+   "home_def": 0.11953966834416747,
+   "away_off": -0.18188791713774868,
+   "away_def": 0.195002059198418,
+   "home_pace": 63.45262762068315,
+   "away_pace": 59.12033643426302
   },
   "home_med": 34,
   "away_med": 20,
-  "home_mean": 34.606051344910775,
-  "away_mean": 20.388831061991056,
-  "margin": 14.217220282919719,
+  "home_mean": 34.60605134491078,
+  "away_mean": 20.38883106199105,
+  "margin": 14.217220282919733,
   "total_mean": 54.99488240690183,
-  "p_home_win": 0.815902791074645,
+  "p_home_win": 0.8159027910746453,
   "likely": [
    [
     34,
@@ -50539,8 +50569,8 @@
     0.007
    ],
    [
-    31,
-    24,
+    41,
+    17,
     0.0069
    ]
   ],
@@ -50576,7 +50606,7 @@
    147,
    283
   ],
-  "p_home_cover": 0.5930029987590176,
+  "p_home_cover": 0.5682745362113611,
   "p_push_spread": 0.0,
   "p_over": 0.6574242658286151,
   "p_push_total": 0.0,
@@ -50584,32 +50614,32 @@
    -6.0,
    34.5
   ],
-  "spread_edge": 3.7,
+  "spread_edge": 2.7,
   "spread_side": "home",
   "spread_flag": false,
-  "p_side_cover": 0.523,
+  "p_side_cover": 0.517,
   "total_edge": 6.5,
   "total_side": "over",
   "total_flag": false,
   "p_side_total": 0.528,
-  "ev_spread": -0.002,
+  "ev_spread": -0.013,
   "best_spread": {
    "book": "BetRivers",
-   "line": -10.0,
-   "price": -109,
-   "p": 0.523,
-   "ev": 0.026
+   "line": -10.5,
+   "price": -110,
+   "p": 0.541,
+   "ev": 0.033
   },
   "ev_total": 0.008,
   "best_total": {
-   "book": "BetRivers",
+   "book": "MyBookie.ag",
    "line": 48.5,
-   "price": -107,
+   "price": -110,
    "p": 0.528,
-   "ev": 0.021
+   "ev": 0.007
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -50633,44 +50663,44 @@
   "market": {
    "open_spread": -16.5,
    "open_total": 51.0,
-   "spread": -12.5,
+   "spread": -13.0,
    "total": 50.5,
    "books": [
     {
      "book": "DraftKings",
-     "spread": -12.5,
+     "spread": -13.5,
      "total": 50.5,
-     "home_price": -112.0,
-     "away_price": -108.0,
-     "over_price": -108.0,
-     "under_price": -112.0
+     "home_price": -110.0,
+     "away_price": -110.0,
+     "over_price": -112.0,
+     "under_price": -108.0
     },
     {
      "book": "BetMGM",
-     "spread": -13.0,
+     "spread": -13.5,
      "total": 50.5,
      "home_price": -110.0,
-     "away_price": -108.0,
-     "over_price": -108.0,
-     "under_price": -110.0
+     "away_price": -110.0,
+     "over_price": -112.0,
+     "under_price": -105.0
     },
     {
      "book": "BetOnline.ag",
-     "spread": -12.5,
-     "total": 50.5,
+     "spread": -13.0,
+     "total": 51.5,
      "home_price": -115.0,
      "away_price": -105.0,
-     "over_price": -110.0,
-     "under_price": -110.0
+     "over_price": -105.0,
+     "under_price": -115.0
     },
     {
      "book": "LowVig.ag",
-     "spread": -12.5,
-     "total": 50.5,
+     "spread": -13.0,
+     "total": 51.5,
      "home_price": -111.0,
      "away_price": -101.0,
-     "over_price": -108.0,
-     "under_price": -108.0
+     "over_price": -103.0,
+     "under_price": -114.0
     },
     {
      "book": "FanDuel",
@@ -50692,34 +50722,34 @@
     },
     {
      "book": "BetUS",
-     "spread": -12.5,
-     "total": 50.5,
-     "home_price": -115.0,
-     "away_price": -105.0,
-     "over_price": -110.0,
-     "under_price": -110.0
+     "spread": -13.0,
+     "total": 51.5,
+     "home_price": -110.0,
+     "away_price": -110.0,
+     "over_price": -105.0,
+     "under_price": -115.0
     },
     {
      "book": "BetRivers",
      "spread": -13.0,
-     "total": 49.5,
+     "total": 50.5,
      "home_price": -109.0,
      "away_price": -114.0,
-     "over_price": -112.0,
-     "under_price": -112.0
+     "over_price": -117.0,
+     "under_price": -107.0
     },
     {
      "book": "Bovada",
-     "spread": -12.5,
-     "total": 50.0,
-     "home_price": -110.0,
-     "away_price": -110.0,
-     "over_price": -110.0,
-     "under_price": -110.0
+     "spread": -13.5,
+     "total": 50.5,
+     "home_price": -115.0,
+     "away_price": -105.0,
+     "over_price": -115.0,
+     "under_price": -105.0
     }
    ],
    "first_ts": "2026-10-19T13:53:01.383387+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-19T13:53:01.383387+00:00",
@@ -50795,13 +50825,18 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": -12.5,
      "total": 50.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": -13.0,
+     "total": 50.5
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 10.133333333333335,
+   "wind": 10.633333333333333,
    "precip": 0.0,
    "temp": 71.9
   },
@@ -50812,20 +50847,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": -0.13907358886478857,
-   "home_def": 0.14497503432343423,
-   "away_off": -0.2942956786997821,
-   "away_def": 0.26074590022898286,
-   "home_pace": 67.22087292017882,
-   "away_pace": 57.06208972745199
+   "home_off": -0.13907358886478838,
+   "home_def": 0.1449750343234339,
+   "away_off": -0.2942956786997818,
+   "away_def": 0.2607459002289825,
+   "home_pace": 67.2208729201788,
+   "away_pace": 57.06208972745201
   },
   "home_med": 37,
   "away_med": 17,
-  "home_mean": 37.07719002996071,
-  "away_mean": 18.097579088965087,
-  "margin": 18.979610940995624,
-  "total_mean": 55.174769118925795,
-  "p_home_win": 0.8851806403276972,
+  "home_mean": 37.07719002996069,
+  "away_mean": 18.097579088965134,
+  "margin": 18.979610940995556,
+  "total_mean": 55.17476911892582,
+  "p_home_win": 0.8851806403276965,
   "likely": [
    [
     34,
@@ -50885,40 +50920,40 @@
    262,
    592
   ],
-  "p_home_cover": 0.6591405352631475,
-  "p_push_spread": 0.0,
-  "p_over": 0.6147889704895194,
+  "p_home_cover": 0.6296099197383836,
+  "p_push_spread": 0.0357,
+  "p_over": 0.6147889704895201,
   "p_push_total": 0.0,
   "range80": [
    -1.3,
    39.2
   ],
-  "spread_edge": 6.5,
+  "spread_edge": 6.0,
   "spread_side": "home",
   "spread_flag": false,
-  "p_side_cover": 0.539,
+  "p_side_cover": 0.532,
   "total_edge": 4.7,
   "total_side": "over",
   "total_flag": false,
   "p_side_total": 0.52,
-  "ev_spread": 0.029,
+  "ev_spread": 0.051,
   "best_spread": {
-   "book": "Bovada",
-   "line": -12.5,
-   "price": -110,
-   "p": 0.539,
+   "book": "BetRivers",
+   "line": -13.0,
+   "price": -109,
+   "p": 0.524,
    "ev": 0.029
   },
   "ev_total": -0.007,
   "best_total": {
-   "book": "BetRivers",
-   "line": 49.5,
-   "price": -112,
-   "p": 0.544,
-   "ev": 0.029
+   "book": "FanDuel",
+   "line": 50.5,
+   "price": -110,
+   "p": 0.52,
+   "ev": -0.007
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -50968,8 +51003,8 @@
      "book": "DraftKings",
      "spread": -5.5,
      "total": 46.5,
-     "home_price": -112.0,
-     "away_price": -108.0,
+     "home_price": -108.0,
+     "away_price": -112.0,
      "over_price": -108.0,
      "under_price": -112.0
     },
@@ -50977,8 +51012,8 @@
      "book": "BetMGM",
      "spread": -5.5,
      "total": 46.5,
-     "home_price": -110.0,
-     "away_price": -108.0,
+     "home_price": -108.0,
+     "away_price": -110.0,
      "over_price": -108.0,
      "under_price": -110.0
     },
@@ -51038,16 +51073,16 @@
     },
     {
      "book": "Bovada",
-     "spread": -5.5,
+     "spread": -5.0,
      "total": 46.5,
-     "home_price": -115.0,
-     "away_price": -105.0,
+     "home_price": -110.0,
+     "away_price": -110.0,
      "over_price": -110.0,
      "under_price": -110.0
     }
    ],
    "first_ts": "2026-10-19T13:53:01.383387+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-19T13:53:01.383387+00:00",
@@ -51123,15 +51158,20 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": -5.0,
      "total": 46.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": -5.0,
+     "total": 46.5
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 6.633333333333333,
+   "wind": 6.166666666666667,
    "precip": 0.0,
-   "temp": 55.8
+   "temp": 55.1
   },
   "notes": [
    "Nevada: AJ Bianco started last game instead of Carter Jones (0.7 yds/att worse career)",
@@ -51145,20 +51185,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": -0.19314761192596472,
-   "home_def": 0.18104459107326362,
-   "away_off": -0.16543997348051584,
-   "away_def": 0.13978140434875216,
-   "home_pace": 69.65281247483404,
-   "away_pace": 67.24132885449905
+   "home_off": -0.1931476119259643,
+   "home_def": 0.18104459107326326,
+   "away_off": -0.1654399734805156,
+   "away_def": 0.13978140434875175,
+   "home_pace": 69.65281247483405,
+   "away_pace": 67.24132885449903
   },
   "home_med": 26,
   "away_med": 21,
-  "home_mean": 25.725575740906717,
-  "away_mean": 21.731872868902958,
-  "margin": 3.993702872003759,
-  "total_mean": 47.457448609809674,
-  "p_home_win": 0.5997794500779976,
+  "home_mean": 25.725575740906777,
+  "away_mean": 21.731872868902904,
+  "margin": 3.9937028720038725,
+  "total_mean": 47.45744860980968,
+  "p_home_win": 0.5997794500780005,
   "likely": [
    [
     24,
@@ -51181,8 +51221,8 @@
     0.0084
    ],
    [
-    27,
     24,
+    21,
     0.007
    ]
   ],
@@ -51218,9 +51258,9 @@
    35,
    53
   ],
-  "p_home_cover": 0.46990762585495977,
+  "p_home_cover": 0.4699076258549626,
   "p_push_spread": 0.0094,
-  "p_over": 0.523830117521199,
+  "p_over": 0.5238301175211991,
   "p_push_total": 0.0,
   "range80": [
    -16.3,
@@ -51236,11 +51276,11 @@
   "p_side_total": 0.504,
   "ev_spread": -0.027,
   "best_spread": {
-   "book": "Bovada",
-   "line": 5.5,
-   "price": -105,
-   "p": 0.519,
-   "ev": 0.013
+   "book": "LowVig.ag",
+   "line": 5.0,
+   "price": -104,
+   "p": 0.494,
+   "ev": -0.007
   },
   "ev_total": -0.038,
   "best_total": {
@@ -51250,8 +51290,8 @@
    "p": 0.504,
    "ev": -0.006
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -51361,7 +51401,7 @@
     }
    ],
    "first_ts": "2026-10-19T13:53:01.383387+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-19T13:53:01.383387+00:00",
@@ -51437,15 +51477,20 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": 10.0,
      "total": 52.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": 10.0,
+     "total": 52.5
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 7.900000000000001,
+   "wind": 8.466666666666667,
    "precip": 0.0,
-   "temp": 78.9
+   "temp": 78.3
   },
   "notes": [],
   "auto_adj": [],
@@ -51454,20 +51499,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": -0.21240043692676394,
-   "home_def": 0.16545041973837274,
-   "away_off": -0.11384795193902164,
-   "away_def": 0.0011598864307243442,
-   "home_pace": 54.808221554697184,
-   "away_pace": 63.2187173781678
+   "home_off": -0.21240043692676386,
+   "home_def": 0.16545041973837235,
+   "away_off": -0.1138479519390214,
+   "away_def": 0.0011598864307240347,
+   "home_pace": 54.80822155469719,
+   "away_pace": 63.21871737816781
   },
   "home_med": 21,
   "away_med": 30,
-  "home_mean": 21.60750639314643,
-  "away_mean": 29.0237625518131,
-  "margin": -7.41625615866667,
-  "total_mean": 50.63126894495953,
-  "p_home_win": 0.31939102409662895,
+  "home_mean": 21.60750639314655,
+  "away_mean": 29.023762551813082,
+  "margin": -7.416256158666531,
+  "total_mean": 50.63126894495963,
+  "p_home_win": 0.319391024096632,
   "likely": [
    [
     24,
@@ -51527,9 +51572,9 @@
    5,
    1
   ],
-  "p_home_cover": 0.5433512877405967,
+  "p_home_cover": 0.5433512877406002,
   "p_push_spread": 0.0432,
-  "p_over": 0.45356644890609754,
+  "p_over": 0.4535664489061,
   "p_push_total": 0.0,
   "range80": [
    -27.7,
@@ -51559,8 +51604,8 @@
    "p": 0.508,
    "ev": 0.002
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -51585,10 +51630,46 @@
    "open_spread": -10.5,
    "open_total": 46.0,
    "spread": -14.0,
-   "total": 43.5,
+   "total": 44.0,
    "books": [
     {
      "book": "DraftKings",
+     "spread": -13.5,
+     "total": 43.5,
+     "home_price": -115.0,
+     "away_price": -105.0,
+     "over_price": -118.0,
+     "under_price": -102.0
+    },
+    {
+     "book": "BetMGM",
+     "spread": -14.0,
+     "total": 44.5,
+     "home_price": -105.0,
+     "away_price": -112.0,
+     "over_price": -102.0,
+     "under_price": -118.0
+    },
+    {
+     "book": "BetOnline.ag",
+     "spread": -14.0,
+     "total": 44.0,
+     "home_price": -105.0,
+     "away_price": -115.0,
+     "over_price": -113.0,
+     "under_price": -107.0
+    },
+    {
+     "book": "LowVig.ag",
+     "spread": -14.0,
+     "total": 44.0,
+     "home_price": -101.0,
+     "away_price": -111.0,
+     "over_price": -112.0,
+     "under_price": -105.0
+    },
+    {
+     "book": "FanDuel",
      "spread": -13.5,
      "total": 43.5,
      "home_price": -115.0,
@@ -51597,45 +51678,9 @@
      "under_price": -110.0
     },
     {
-     "book": "BetMGM",
-     "spread": -14.0,
-     "total": 43.5,
-     "home_price": -108.0,
-     "away_price": -110.0,
-     "over_price": -110.0,
-     "under_price": -108.0
-    },
-    {
-     "book": "BetOnline.ag",
-     "spread": -14.0,
-     "total": 43.5,
-     "home_price": -105.0,
-     "away_price": -115.0,
-     "over_price": -111.0,
-     "under_price": -109.0
-    },
-    {
-     "book": "LowVig.ag",
-     "spread": -14.0,
-     "total": 43.5,
-     "home_price": -101.0,
-     "away_price": -111.0,
-     "over_price": -109.0,
-     "under_price": -107.0
-    },
-    {
-     "book": "FanDuel",
-     "spread": -13.5,
-     "total": 43.5,
-     "home_price": -122.0,
-     "away_price": 100.0,
-     "over_price": -110.0,
-     "under_price": -110.0
-    },
-    {
      "book": "MyBookie.ag",
      "spread": -14.0,
-     "total": 43.5,
+     "total": 44.0,
      "home_price": -110.0,
      "away_price": -110.0,
      "over_price": -110.0,
@@ -51662,7 +51707,7 @@
     {
      "book": "Bovada",
      "spread": -14.0,
-     "total": 43.5,
+     "total": 44.5,
      "home_price": -105.0,
      "away_price": -115.0,
      "over_price": -110.0,
@@ -51670,7 +51715,7 @@
     }
    ],
    "first_ts": "2026-10-19T13:53:01.383387+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-19T13:53:01.383387+00:00",
@@ -51746,15 +51791,20 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": -14.0,
      "total": 43.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": -14.0,
+     "total": 44.0
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 6.433333333333334,
+   "wind": 6.3999999999999995,
    "precip": 0.0,
-   "temp": 85.0
+   "temp": 85.1
   },
   "notes": [
    "Old Dominion: Ryan Huff started last game instead of Quinn Henicle (0.2 yds/att better career)"
@@ -51767,20 +51817,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": -0.08484097822317463,
-   "home_def": 0.05411584467777142,
-   "away_off": -0.2923407110702888,
-   "away_def": 0.007829824375283193,
-   "home_pace": 60.6122297572331,
-   "away_pace": 54.90780329493571
+   "home_off": -0.0848409782231744,
+   "home_def": 0.05411584467777097,
+   "away_off": -0.2923407110702886,
+   "away_def": 0.00782982437528252,
+   "home_pace": 60.612229757233095,
+   "away_pace": 54.907803294935704
   },
   "home_med": 27,
   "away_med": 14,
-  "home_mean": 26.72608327815287,
-  "away_mean": 14.612981812050686,
-  "margin": 12.113101466102185,
-  "total_mean": 41.339065090203555,
-  "p_home_win": 0.7783650383453626,
+  "home_mean": 26.726083278152828,
+  "away_mean": 14.612981812050606,
+  "margin": 12.113101466102222,
+  "total_mean": 41.339065090203434,
+  "p_home_win": 0.7783650383453634,
   "likely": [
    [
     24,
@@ -51840,10 +51890,10 @@
    89,
    159
   ],
-  "p_home_cover": 0.4269678180754584,
+  "p_home_cover": 0.4269678180754593,
   "p_push_spread": 0.051,
-  "p_over": 0.4463468337562739,
-  "p_push_total": 0.0,
+  "p_over": 0.41248554909398943,
+  "p_push_total": 0.0431,
   "range80": [
    -8.1,
    32.4
@@ -51852,28 +51902,28 @@
   "spread_side": "away",
   "spread_flag": false,
   "p_side_cover": 0.505,
-  "total_edge": 2.2,
+  "total_edge": 2.7,
   "total_side": "under",
   "total_flag": false,
-  "p_side_total": 0.509,
+  "p_side_total": 0.508,
   "ev_spread": 0.015,
   "best_spread": {
-   "book": "FanDuel",
-   "line": 13.5,
-   "price": 100,
+   "book": "MyBookie.ag",
+   "line": 14.0,
+   "price": -110,
    "p": 0.499,
-   "ev": -0.002
+   "ev": -0.022
   },
-  "ev_total": -0.028,
+  "ev_total": 0.013,
   "best_total": {
-   "book": "LowVig.ag",
-   "line": 43.5,
-   "price": -107,
-   "p": 0.51,
-   "ev": -0.014
+   "book": "Bovada",
+   "line": 44.5,
+   "price": -110,
+   "p": 0.524,
+   "ev": 0.0
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -51898,7 +51948,7 @@
    "open_spread": 14.5,
    "open_total": 50.5,
    "spread": 14.5,
-   "total": 52.5,
+   "total": 52.0,
    "books": [
     {
      "book": "FanDuel",
@@ -51912,20 +51962,20 @@
     {
      "book": "BetMGM",
      "spread": 14.5,
-     "total": 52.5,
+     "total": 51.5,
      "home_price": -112.0,
-     "away_price": -108.0,
-     "over_price": -105.0,
-     "under_price": -115.0
+     "away_price": -105.0,
+     "over_price": -115.0,
+     "under_price": -102.0
     },
     {
      "book": "DraftKings",
      "spread": 14.5,
-     "total": 52.5,
+     "total": 51.5,
      "home_price": -115.0,
      "away_price": -105.0,
-     "over_price": -108.0,
-     "under_price": -112.0
+     "over_price": -115.0,
+     "under_price": -105.0
     },
     {
      "book": "LowVig.ag",
@@ -51957,7 +52007,7 @@
     {
      "book": "BetUS",
      "spread": 14.5,
-     "total": 52.5,
+     "total": 52.0,
      "home_price": -110.0,
      "away_price": -110.0,
      "over_price": -110.0,
@@ -51975,7 +52025,7 @@
     {
      "book": "Bovada",
      "spread": 14.5,
-     "total": 52.5,
+     "total": 52.0,
      "home_price": -110.0,
      "away_price": -110.0,
      "over_price": -110.0,
@@ -51983,7 +52033,7 @@
     }
    ],
    "first_ts": "2026-10-18T13:35:09.765960+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-18T13:35:09.765960+00:00",
@@ -52064,15 +52114,20 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": 14.5,
      "total": 52.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": 14.5,
+     "total": 52.0
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 4.966666666666666,
+   "wind": 4.233333333333333,
    "precip": 0.0,
-   "temp": 53.5
+   "temp": 54.0
   },
   "notes": [
    "Washington State: Owen Eshelman started last game instead of Caden Pinnick (0.7 yds/att better career)"
@@ -52085,20 +52140,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": -0.1773248828776808,
-   "home_def": 0.08286610097035775,
-   "away_off": 0.09337283780566975,
-   "away_def": 0.05742316853698944,
-   "home_pace": 56.474764009876495,
-   "away_pace": 67.8381172085286
+   "home_off": -0.17732488287768058,
+   "home_def": 0.08286610097035732,
+   "away_off": 0.09337283780567018,
+   "away_def": 0.05742316853698899,
+   "home_pace": 56.47476400987648,
+   "away_pace": 67.83811720852859
   },
   "home_med": 21,
   "away_med": 34,
-  "home_mean": 21.58114778045902,
-  "away_mean": 33.436219431996406,
-  "margin": -11.855071651537386,
-  "total_mean": 55.017367212455426,
-  "p_home_win": 0.2265215204247465,
+  "home_mean": 21.581147780459062,
+  "away_mean": 33.43621943199632,
+  "margin": -11.855071651537259,
+  "total_mean": 55.01736721245538,
+  "p_home_win": 0.22652152042474882,
   "likely": [
    [
     17,
@@ -52106,13 +52161,13 @@
     0.0074
    ],
    [
+    17,
     24,
-    27,
     0.0072
    ],
    [
-    17,
     24,
+    27,
     0.0072
    ],
    [
@@ -52158,10 +52213,10 @@
    1,
    2
   ],
-  "p_home_cover": 0.5664752218742797,
+  "p_home_cover": 0.5664752218742829,
   "p_push_spread": 0.0,
-  "p_over": 0.5624354491620598,
-  "p_push_total": 0.0,
+  "p_over": 0.5627525421710503,
+  "p_push_total": 0.0239,
   "range80": [
    -32.1,
    8.4
@@ -52170,7 +52225,7 @@
   "spread_side": "home",
   "spread_flag": false,
   "p_side_cover": 0.516,
-  "total_edge": 2.5,
+  "total_edge": 3.0,
   "total_side": "over",
   "total_flag": false,
   "p_side_total": 0.511,
@@ -52182,16 +52237,16 @@
    "p": 0.516,
    "ev": -0.011
   },
-  "ev_total": -0.024,
+  "ev_total": -0.001,
   "best_total": {
    "book": "LowVig.ag",
    "line": 52.0,
    "price": -108,
-   "p": 0.511,
-   "ev": 0.008
+   "p": 0.501,
+   "ev": -0.011
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -52266,7 +52321,7 @@
     {
      "book": "MyBookie.ag",
      "spread": 1.0,
-     "total": 59.5,
+     "total": 59.0,
      "home_price": -110.0,
      "away_price": -110.0,
      "over_price": -110.0,
@@ -52301,7 +52356,7 @@
     }
    ],
    "first_ts": "2026-10-18T13:35:09.765960+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-18T13:35:09.765960+00:00",
@@ -52382,15 +52437,20 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": 1.0,
      "total": 59.0
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": 1.0,
+     "total": 59.0
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 8.533333333333333,
+   "wind": 8.233333333333334,
    "precip": 0.0,
-   "temp": 55.4
+   "temp": 53.8
   },
   "notes": [
    "San Diego State: Stone Saunders started last game instead of Jayden Denegal (0.8 yds/att worse career)"
@@ -52403,20 +52463,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": -0.0257386901178131,
-   "home_def": 0.23861252102592978,
-   "away_off": -0.21146406949580074,
-   "away_def": 0.08066777287737525,
-   "home_pace": 60.95190855428892,
-   "away_pace": 48.52916422677453
+   "home_off": -0.025738690117812907,
+   "home_def": 0.23861252102592945,
+   "away_off": -0.21146406949580066,
+   "away_def": 0.08066777287737482,
+   "home_pace": 60.95190855428893,
+   "away_pace": 48.529164226774526
   },
   "home_med": 34,
   "away_med": 30,
-  "home_mean": 33.54837881130371,
-  "away_mean": 29.768078103901765,
-  "margin": 3.780300707401942,
-  "total_mean": 63.31645691520547,
-  "p_home_win": 0.5945516010940555,
+  "home_mean": 33.548378811303664,
+  "away_mean": 29.76807810390182,
+  "margin": 3.7803007074018424,
+  "total_mean": 63.316456915205485,
+  "p_home_win": 0.5945516010940531,
   "likely": [
    [
     31,
@@ -52429,6 +52489,11 @@
     0.0065
    ],
    [
+    38,
+    31,
+    0.006
+   ],
+   [
     34,
     31,
     0.006
@@ -52436,11 +52501,6 @@
    [
     34,
     27,
-    0.006
-   ],
-   [
-    38,
-    31,
     0.006
    ]
   ],
@@ -52476,9 +52536,9 @@
    33,
    51
   ],
-  "p_home_cover": 0.6076385327502527,
+  "p_home_cover": 0.6076385327502504,
   "p_push_spread": 0.0225,
-  "p_over": 0.5984602929945008,
+  "p_over": 0.5984602929945011,
   "p_push_total": 0.0155,
   "range80": [
    -16.5,
@@ -52508,8 +52568,8 @@
    "p": 0.507,
    "ev": -0.0
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -52602,11 +52662,11 @@
     {
      "book": "BetRivers",
      "spread": 2.5,
-     "total": 58.5,
+     "total": 59.5,
      "home_price": -107.0,
      "away_price": -117.0,
-     "over_price": -112.0,
-     "under_price": -112.0
+     "over_price": -109.0,
+     "under_price": -113.0
     },
     {
      "book": "Bovada",
@@ -52619,7 +52679,7 @@
     }
    ],
    "first_ts": "2026-10-19T13:53:01.383387+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-19T13:53:01.383387+00:00",
@@ -52695,15 +52755,20 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": 2.5,
      "total": 58.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": 2.5,
+     "total": 58.5
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 4.333333333333333,
+   "wind": 5.3999999999999995,
    "precip": 0.0,
-   "temp": 73.7
+   "temp": 74.1
   },
   "notes": [],
   "auto_adj": [],
@@ -52712,20 +52777,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": -0.12152578481129939,
-   "home_def": 0.18115691490667457,
-   "away_off": -0.021718219213534527,
-   "away_def": 0.14846028905284,
-   "home_pace": 59.37318749546772,
-   "away_pace": 58.63837668170686
+   "home_off": -0.12152578481129912,
+   "home_def": 0.18115691490667424,
+   "away_off": -0.02171821921353415,
+   "away_def": 0.14846028905283976,
+   "home_pace": 59.37318749546769,
+   "away_pace": 58.638376681706866
   },
   "home_med": 31,
   "away_med": 32,
-  "home_mean": 30.61749365944067,
-  "away_mean": 31.794997850584725,
-  "margin": -1.177504191144056,
-  "total_mean": 62.41249151002539,
-  "p_home_win": 0.4702948881803076,
+  "home_mean": 30.617493659440765,
+  "away_mean": 31.794997850584714,
+  "margin": -1.1775041911439494,
+  "total_mean": 62.412491510025475,
+  "p_home_win": 0.4702948881803103,
   "likely": [
    [
     27,
@@ -52785,9 +52850,9 @@
    21,
    29
   ],
-  "p_home_cover": 0.5333547748917291,
+  "p_home_cover": 0.5333547748917318,
   "p_push_spread": 0.0,
-  "p_over": 0.5964766048487878,
+  "p_over": 0.5964766048487898,
   "p_push_total": 0.0,
   "range80": [
    -21.4,
@@ -52817,8 +52882,8 @@
    "p": 0.517,
    "ev": -0.005
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -52928,7 +52993,7 @@
     }
    ],
    "first_ts": "2026-10-14T23:32:33.403402+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-14T23:32:33.403402+00:00",
@@ -53044,15 +53109,20 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": -10.5,
      "total": 51.0
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": -10.5,
+     "total": 51.0
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 5.1000000000000005,
+   "wind": 5.5,
    "precip": 0.0,
-   "temp": 62.7
+   "temp": 63.7
   },
   "notes": [],
   "auto_adj": [],
@@ -53061,20 +53131,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": 0.07576921191800515,
-   "home_def": -0.071601716877577,
-   "away_off": -0.04731448610863302,
-   "away_def": 0.029305275782401885,
-   "home_pace": 65.84896143370743,
-   "away_pace": 63.11806030919897
+   "home_off": 0.07576921191800536,
+   "home_def": -0.07160171687757727,
+   "away_off": -0.04731448610863284,
+   "away_def": 0.029305275782401483,
+   "home_pace": 65.84896143370744,
+   "away_pace": 63.118060309198974
   },
   "home_med": 37,
   "away_med": 20,
-  "home_mean": 36.36121041217129,
-  "away_mean": 19.684769893393742,
-  "margin": 16.676440518777547,
-  "total_mean": 56.04598030556503,
-  "p_home_win": 0.8544048034060304,
+  "home_mean": 36.361210412171246,
+  "away_mean": 19.684769893393767,
+  "margin": 16.67644051877748,
+  "total_mean": 56.04598030556501,
+  "p_home_win": 0.8544048034060295,
   "likely": [
    [
     38,
@@ -53134,9 +53204,9 @@
    223,
    462
   ],
-  "p_home_cover": 0.6520754537423007,
+  "p_home_cover": 0.6520754537422991,
   "p_push_spread": 0.0,
-  "p_over": 0.6030675632726491,
+  "p_over": 0.6030675632726487,
   "p_push_total": 0.0411,
   "range80": [
    -3.6,
@@ -53166,8 +53236,8 @@
    "p": 0.51,
    "ev": 0.028
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -53261,14 +53331,14 @@
      "book": "Bovada",
      "spread": -3.0,
      "total": 54.0,
-     "home_price": -115.0,
-     "away_price": -105.0,
-     "over_price": -110.0,
-     "under_price": -110.0
+     "home_price": -110.0,
+     "away_price": -110.0,
+     "over_price": -115.0,
+     "under_price": -105.0
     }
    ],
    "first_ts": "2026-10-14T23:32:33.403402+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-14T23:32:33.403402+00:00",
@@ -53389,15 +53459,20 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": -3.0,
      "total": 54.0
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": -3.0,
+     "total": 54.0
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 7.633333333333333,
+   "wind": 7.699999999999999,
    "precip": 0.0,
-   "temp": 83.6
+   "temp": 83.8
   },
   "notes": [],
   "auto_adj": [],
@@ -53406,20 +53481,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": 0.04834527492202526,
-   "home_def": -0.17544586787945773,
-   "away_off": 0.22769063888393376,
-   "away_def": -0.02069288741629732,
-   "home_pace": 62.79718785544034,
-   "away_pace": 61.61629862045365
+   "home_off": 0.04834527492202537,
+   "home_def": -0.17544586787945807,
+   "away_off": 0.2276906388839342,
+   "away_def": -0.020692887416297445,
+   "home_pace": 62.79718785544032,
+   "away_pace": 61.61629862045363
   },
   "home_med": 31,
   "away_med": 24,
-  "home_mean": 30.82823179480807,
-  "away_mean": 24.932768086222225,
-  "margin": 5.895463708585844,
-  "total_mean": 55.760999881030294,
-  "p_home_win": 0.6454800262116124,
+  "home_mean": 30.828231794808104,
+  "away_mean": 24.93276808622224,
+  "margin": 5.895463708585865,
+  "total_mean": 55.760999881030344,
+  "p_home_win": 0.6454800262116129,
   "likely": [
    [
     34,
@@ -53479,9 +53554,9 @@
    43,
    91
   ],
-  "p_home_cover": 0.5501048131797492,
+  "p_home_cover": 0.5501048131797498,
   "p_push_spread": 0.0452,
-  "p_over": 0.5289177812582442,
+  "p_over": 0.5289177812582454,
   "p_push_total": 0.0297,
   "range80": [
    -14.4,
@@ -53511,8 +53586,8 @@
    "p": 0.52,
    "ev": -0.027
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -53537,7 +53612,7 @@
    "open_spread": -9.0,
    "open_total": 44.5,
    "spread": -9.0,
-   "total": 49.5,
+   "total": 50.0,
    "books": [
     {
      "book": "FanDuel",
@@ -53550,26 +53625,26 @@
     },
     {
      "book": "BetRivers",
-     "spread": -10.0,
-     "total": 48.0,
-     "home_price": -108.0,
-     "away_price": -115.0,
-     "over_price": -114.0,
-     "under_price": -109.0
+     "spread": -9.5,
+     "total": 50.5,
+     "home_price": -114.0,
+     "away_price": -109.0,
+     "over_price": -109.0,
+     "under_price": -114.0
     },
     {
      "book": "BetMGM",
      "spread": -9.5,
-     "total": 49.5,
-     "home_price": -108.0,
-     "away_price": -110.0,
-     "over_price": -110.0,
-     "under_price": -108.0
+     "total": 50.5,
+     "home_price": -110.0,
+     "away_price": -108.0,
+     "over_price": -108.0,
+     "under_price": -110.0
     },
     {
      "book": "DraftKings",
      "spread": -9.5,
-     "total": 49.5,
+     "total": 50.5,
      "home_price": -108.0,
      "away_price": -112.0,
      "over_price": -108.0,
@@ -53596,7 +53671,7 @@
     {
      "book": "MyBookie.ag",
      "spread": -9.0,
-     "total": 49.5,
+     "total": 50.0,
      "home_price": -110.0,
      "away_price": -110.0,
      "over_price": -110.0,
@@ -53614,7 +53689,7 @@
     {
      "book": "Bovada",
      "spread": -9.5,
-     "total": 49.0,
+     "total": 50.5,
      "home_price": -110.0,
      "away_price": -110.0,
      "over_price": -110.0,
@@ -53622,7 +53697,7 @@
     }
    ],
    "first_ts": "2026-10-18T13:35:09.765960+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-18T13:35:09.765960+00:00",
@@ -53703,13 +53778,18 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": -9.0,
      "total": 49.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": -9.0,
+     "total": 50.0
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 6.066666666666666,
+   "wind": 5.3,
    "precip": 0.0,
    "temp": 58.9
   },
@@ -53724,20 +53804,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": 0.020600919826409658,
-   "home_def": -0.018305139567889518,
-   "away_off": -0.08588756549404634,
-   "away_def": 0.02749879781982889,
-   "home_pace": 55.75834680332359,
+   "home_off": 0.020600919826409977,
+   "home_def": -0.018305139567889702,
+   "away_off": -0.0858875654940459,
+   "away_def": 0.02749879781982869,
+   "home_pace": 55.758346803323604,
    "away_pace": 76.27438836954417
   },
   "home_med": 30,
   "away_med": 21,
-  "home_mean": 30.258549275264894,
-  "away_mean": 21.84417102398286,
-  "margin": 8.414378251282034,
-  "total_mean": 52.10272029924775,
-  "p_home_win": 0.7028368664980715,
+  "home_mean": 30.25854927526496,
+  "away_mean": 21.844171023982824,
+  "margin": 8.414378251282137,
+  "total_mean": 52.102720299247785,
+  "p_home_win": 0.702836866498074,
   "likely": [
    [
     27,
@@ -53797,10 +53877,10 @@
    56,
    129
   ],
-  "p_home_cover": 0.47726612131485036,
+  "p_home_cover": 0.47726612131485296,
   "p_push_spread": 0.0159,
-  "p_over": 0.5645341092954547,
-  "p_push_total": 0.0,
+  "p_over": 0.5416161711957709,
+  "p_push_total": 0.0212,
   "range80": [
    -11.8,
    28.7
@@ -53809,28 +53889,28 @@
   "spread_side": "away",
   "spread_flag": false,
   "p_side_cover": 0.502,
-  "total_edge": 2.6,
+  "total_edge": 2.1,
   "total_side": "over",
   "total_flag": false,
-  "p_side_total": 0.511,
+  "p_side_total": 0.507,
   "ev_spread": -0.026,
   "best_spread": {
-   "book": "BetRivers",
-   "line": 10.0,
-   "price": -115,
+   "book": "BetMGM",
+   "line": 9.5,
+   "price": -108,
    "p": 0.516,
-   "ev": -0.01
+   "ev": -0.006
   },
-  "ev_total": -0.024,
+  "ev_total": -0.011,
   "best_total": {
-   "book": "BetRivers",
-   "line": 48.0,
+   "book": "FanDuel",
+   "line": 49.5,
    "price": -114,
-   "p": 0.536,
-   "ev": 0.03
+   "p": 0.521,
+   "ev": -0.021
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -53854,15 +53934,15 @@
   "market": {
    "open_spread": 1.5,
    "open_total": 52.5,
-   "spread": 3.0,
+   "spread": 2.5,
    "total": 50.0,
    "books": [
     {
      "book": "DraftKings",
-     "spread": 3.0,
+     "spread": 2.5,
      "total": 50.5,
-     "home_price": -118.0,
-     "away_price": -102.0,
+     "home_price": -105.0,
+     "away_price": -115.0,
      "over_price": -105.0,
      "under_price": -115.0
     },
@@ -53906,17 +53986,17 @@
      "book": "BetMGM",
      "spread": 2.5,
      "total": 49.5,
-     "home_price": -108.0,
-     "away_price": -112.0,
-     "over_price": -112.0,
-     "under_price": -105.0
+     "home_price": -102.0,
+     "away_price": -118.0,
+     "over_price": -120.0,
+     "under_price": -110.0
     },
     {
      "book": "MyBookie.ag",
-     "spread": 3.0,
+     "spread": 2.5,
      "total": 50.0,
-     "home_price": -120.0,
-     "away_price": 100.0,
+     "home_price": -110.0,
+     "away_price": -110.0,
      "over_price": -110.0,
      "under_price": -110.0
     },
@@ -53940,7 +54020,7 @@
     }
    ],
    "first_ts": "2026-10-14T23:32:33.403402+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-14T23:32:33.403402+00:00",
@@ -54061,15 +54141,20 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": 3.0,
      "total": 50.0
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": 2.5,
+     "total": 50.0
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 6.8,
+   "wind": 7.266666666666667,
    "precip": 0.0,
-   "temp": 63.7
+   "temp": 64.0
   },
   "notes": [],
   "auto_adj": [],
@@ -54078,20 +54163,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": 0.0011270089124911218,
-   "home_def": -0.07494281847456416,
-   "away_off": 0.1968913940510881,
-   "away_def": 0.008531087260099388,
-   "home_pace": 52.26482976657317,
-   "away_pace": 63.97556616033688
+   "home_off": 0.0011270089124914046,
+   "home_def": -0.07494281847456458,
+   "away_off": 0.19689139405108855,
+   "away_def": 0.00853108726009917,
+   "home_pace": 52.26482976657319,
+   "away_pace": 63.97556616033687
   },
   "home_med": 27,
   "away_med": 30,
-  "home_mean": 26.77808582794623,
-  "away_mean": 29.08084603806012,
-  "margin": -2.302760210113888,
-  "total_mean": 55.85893186600635,
-  "p_home_win": 0.44205927919475024,
+  "home_mean": 26.778085827946203,
+  "away_mean": 29.080846038060052,
+  "margin": -2.302760210113849,
+  "total_mean": 55.85893186600626,
+  "p_home_win": 0.44205927919475124,
   "likely": [
    [
     24,
@@ -54109,8 +54194,8 @@
     0.0074
    ],
    [
+    20,
     24,
-    34,
     0.0065
    ],
    [
@@ -54151,40 +54236,40 @@
    4,
    14
   ],
-  "p_home_cover": 0.4960999666347086,
-  "p_push_spread": 0.043,
-  "p_over": 0.6320220685702133,
+  "p_home_cover": 0.5049802813807939,
+  "p_push_spread": 0.0,
+  "p_over": 0.632022068570211,
   "p_push_total": 0.0214,
   "range80": [
    -22.6,
    17.9
   ],
-  "spread_edge": 0.7,
+  "spread_edge": 0.2,
   "spread_side": "home",
   "spread_flag": false,
-  "p_side_cover": 0.499,
+  "p_side_cover": 0.501,
   "total_edge": 5.9,
   "total_side": "over",
   "total_flag": false,
   "p_side_total": 0.523,
-  "ev_spread": -0.004,
+  "ev_spread": -0.044,
   "best_spread": {
    "book": "FanDuel",
    "line": 2.5,
    "price": 100,
-   "p": 0.492,
-   "ev": -0.017
+   "p": 0.501,
+   "ev": 0.002
   },
   "ev_total": 0.02,
   "best_total": {
-   "book": "BetMGM",
-   "line": 49.5,
-   "price": -112,
-   "p": 0.537,
-   "ev": 0.016
+   "book": "LowVig.ag",
+   "line": 50.0,
+   "price": -108,
+   "p": 0.514,
+   "ev": 0.012
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -54234,19 +54319,19 @@
     },
     {
      "book": "BetMGM",
-     "spread": -14.0,
+     "spread": -13.5,
      "total": 60.5,
-     "home_price": -108.0,
+     "home_price": -120.0,
      "away_price": -110.0,
-     "over_price": -110.0,
-     "under_price": -108.0
+     "over_price": -108.0,
+     "under_price": -110.0
     },
     {
      "book": "DraftKings",
-     "spread": -13.5,
+     "spread": -14.0,
      "total": 60.5,
-     "home_price": -118.0,
-     "away_price": -102.0,
+     "home_price": -110.0,
+     "away_price": -110.0,
      "over_price": -110.0,
      "under_price": -110.0
     },
@@ -54290,8 +54375,8 @@
      "book": "BetRivers",
      "spread": -14.0,
      "total": 61.5,
-     "home_price": -108.0,
-     "away_price": -114.0,
+     "home_price": -114.0,
+     "away_price": -109.0,
      "over_price": -107.0,
      "under_price": -115.0
     },
@@ -54306,7 +54391,7 @@
     }
    ],
    "first_ts": "2026-10-18T13:35:09.765960+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-18T13:35:09.765960+00:00",
@@ -54387,15 +54472,20 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": -14.0,
      "total": 60.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": -14.0,
+     "total": 60.5
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 8.466666666666667,
+   "wind": 9.1,
    "precip": 0.0,
-   "temp": 83.0
+   "temp": 83.5
   },
   "notes": [],
   "auto_adj": [],
@@ -54404,20 +54494,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": 0.12068010873976946,
-   "home_def": 0.1345534482961202,
-   "away_off": -0.20244610667546806,
-   "away_def": 0.08262592836150884,
-   "home_pace": 69.4456167662451,
-   "away_pace": 60.09892472594373
+   "home_off": 0.12068010873976974,
+   "home_def": 0.13455344829611976,
+   "away_off": -0.20244610667546759,
+   "away_def": 0.08262592836150844,
+   "home_pace": 69.44561676624507,
+   "away_pace": 60.098924725943725
   },
   "home_med": 37,
   "away_med": 20,
-  "home_mean": 36.934789593014834,
-  "away_mean": 20.94886020263254,
-  "margin": 15.985929390382292,
-  "total_mean": 57.88364979564737,
-  "p_home_win": 0.8441852605879003,
+  "home_mean": 36.934789593014756,
+  "away_mean": 20.948860202632545,
+  "margin": 15.98592939038221,
+  "total_mean": 57.8836497956473,
+  "p_home_win": 0.8441852605878992,
   "likely": [
    [
     34,
@@ -54477,9 +54567,9 @@
    212,
    446
   ],
-  "p_home_cover": 0.5303140492185442,
+  "p_home_cover": 0.5303140492185422,
   "p_push_spread": 0.0394,
-  "p_over": 0.4351309254964354,
+  "p_over": 0.4351309254964337,
   "p_push_total": 0.0,
   "range80": [
    -4.3,
@@ -54509,8 +54599,8 @@
    "p": 0.536,
    "ev": 0.002
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -54632,7 +54722,7 @@
     }
    ],
    "first_ts": "2026-10-19T13:53:01.383387+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-19T13:53:01.383387+00:00",
@@ -54708,15 +54798,20 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": 3.0,
      "total": 51.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": 3.0,
+     "total": 51.5
     }
    ],
    "spread_src": "odds",
    "total_src": "odds"
   },
   "weather": {
-   "wind": 5.033333333333333,
+   "wind": 4.733333333333333,
    "precip": 0.0,
-   "temp": 66.9
+   "temp": 67.2
   },
   "notes": [
    "Tulane: Trace Johnson started last game instead of Kadin Semonza (0.5 yds/att worse career)"
@@ -54729,20 +54824,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": -0.13860724570768573,
-   "home_def": 0.04943759304149675,
-   "away_off": -0.028510295591792852,
-   "away_def": 0.09931132432184998,
-   "home_pace": 66.25451381276703,
-   "away_pace": 68.43883855452974
+   "home_off": -0.13860724570768537,
+   "home_def": 0.04943759304149622,
+   "away_off": -0.028510295591792505,
+   "away_def": 0.0993113243218496,
+   "home_pace": 66.254513812767,
+   "away_pace": 68.43883855452975
   },
   "home_med": 26,
   "away_med": 24,
   "home_mean": 25.71227780539742,
-  "away_mean": 24.773593530729908,
-  "margin": 0.9386842746675121,
-  "total_mean": 50.48587133612733,
-  "p_home_win": 0.5236883456422107,
+  "away_mean": 24.773593530729876,
+  "margin": 0.9386842746675441,
+  "total_mean": 50.485871336127296,
+  "p_home_win": 0.5236883456422115,
   "likely": [
    [
     17,
@@ -54751,12 +54846,12 @@
    ],
    [
     24,
-    17,
+    20,
     0.0078
    ],
    [
     24,
-    20,
+    17,
     0.0078
    ],
    [
@@ -54802,9 +54897,9 @@
    25,
    32
   ],
-  "p_home_cover": 0.5794332933764258,
+  "p_home_cover": 0.5794332933764266,
   "p_push_spread": 0.038,
-  "p_over": 0.47476099297572666,
+  "p_over": 0.4747609929757258,
   "p_push_total": 0.0,
   "range80": [
    -19.3,
@@ -54834,8 +54929,8 @@
    "p": 0.504,
    "ev": 0.019
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -54937,15 +55032,15 @@
     {
      "book": "Bovada",
      "spread": -5.0,
-     "total": 40.5,
+     "total": 40.0,
      "home_price": -110.0,
      "away_price": -110.0,
-     "over_price": -105.0,
-     "under_price": -115.0
+     "over_price": -115.0,
+     "under_price": -105.0
     }
    ],
    "first_ts": "2026-10-14T23:32:33.403402+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-14T23:32:33.403402+00:00",
@@ -55061,6 +55156,11 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": -4.5,
      "total": 39.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": -4.5,
+     "total": 39.5
     }
    ],
    "spread_src": "odds",
@@ -55068,8 +55168,8 @@
   },
   "weather": {
    "wind": 16.933333333333334,
-   "precip": 0.087,
-   "temp": 59.3
+   "precip": 0.0,
+   "temp": 59.5
   },
   "notes": [],
   "auto_adj": [],
@@ -55080,20 +55180,20 @@
   ],
   "soft_notes": {},
   "ratings": {
-   "home_off": -0.08966520830392138,
-   "home_def": -0.01674128372617759,
-   "away_off": -0.1611899929342968,
-   "away_def": -0.027761692067440905,
-   "home_pace": 50.3409997688943,
-   "away_pace": 50.171742631428685
+   "home_off": -0.0896652083039211,
+   "home_def": -0.016741283726177964,
+   "away_off": -0.16118999293429645,
+   "away_def": -0.027761692067441623,
+   "home_pace": 50.34099976889429,
+   "away_pace": 50.17174263142867
   },
   "home_med": 27,
   "away_med": 16,
-  "home_mean": 26.09835091917352,
-  "away_mean": 15.981017688650251,
-  "margin": 10.117333230523268,
-  "total_mean": 42.07936860782377,
-  "p_home_win": 0.7390318702384899,
+  "home_mean": 26.098350919173587,
+  "away_mean": 15.981017688650175,
+  "margin": 10.117333230523412,
+  "total_mean": 42.07936860782376,
+  "p_home_win": 0.7390318702384929,
   "likely": [
    [
     24,
@@ -55153,9 +55253,9 @@
    49,
    83
   ],
-  "p_home_cover": 0.6389081582436663,
+  "p_home_cover": 0.6389081582436698,
   "p_push_spread": 0.0,
-  "p_over": 0.5639601163436218,
+  "p_over": 0.5639601163436216,
   "p_push_total": 0.0,
   "range80": [
    -10.1,
@@ -55185,8 +55285,8 @@
    "p": 0.511,
    "ev": -0.015
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-18T13:33:57.944870+00:00",
@@ -55224,7 +55324,7 @@
     }
    ],
    "first_ts": "2026-10-22T23:35:33.508941+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-22T23:35:33.508941+00:00",
@@ -55265,6 +55365,11 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": 2.5,
      "total": 59.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": 2.5,
+     "total": 59.5
     }
    ],
    "spread_src": "odds",
@@ -55289,20 +55394,20 @@
    "total": "thin market: only 1 book quoting"
   },
   "ratings": {
-   "home_off": -0.1855241241025482,
-   "home_def": 0.18928978416178427,
-   "away_off": -0.10581935752960867,
-   "away_def": 0.214839769555382,
+   "home_off": -0.18552412410254782,
+   "home_def": 0.18928978416178402,
+   "away_off": -0.10581935752960833,
+   "away_def": 0.21483976955538164,
    "home_pace": 60.02342044767032,
-   "away_pace": 51.037707254657754
+   "away_pace": 51.03770725465775
   },
   "home_med": 31,
   "away_med": 24,
-  "home_mean": 30.37212560633971,
-  "away_mean": 25.65274710539132,
-  "margin": 4.719378500948391,
-  "total_mean": 56.024872711731035,
-  "p_home_win": 0.6174181854110741,
+  "home_mean": 30.37212560633975,
+  "away_mean": 25.652747105391338,
+  "margin": 4.719378500948412,
+  "total_mean": 56.02487271173109,
+  "p_home_win": 0.6174181854110747,
   "likely": [
    [
     34,
@@ -55320,13 +55425,13 @@
     0.007
    ],
    [
-    34,
-    24,
+    31,
+    27,
     0.0066
    ],
    [
-    31,
-    27,
+    34,
+    24,
     0.0066
    ]
   ],
@@ -55362,9 +55467,9 @@
    30,
    62
   ],
-  "p_home_cover": 0.6761433672124958,
+  "p_home_cover": 0.6761433672124963,
   "p_push_spread": 0.0,
-  "p_over": 0.41412945243420735,
+  "p_over": 0.41412945243420873,
   "p_push_total": 0.0,
   "range80": [
    -15.5,
@@ -55394,8 +55499,8 @@
    "p": 0.515,
    "ev": -0.017
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-21T23:35:34.306496+00:00",
@@ -55433,7 +55538,7 @@
     }
    ],
    "first_ts": "2026-10-22T23:35:33.508941+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-22T23:35:33.508941+00:00",
@@ -55474,6 +55579,11 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": -6.5,
      "total": 51.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": -6.5,
+     "total": 51.5
     }
    ],
    "spread_src": "odds",
@@ -55494,20 +55604,20 @@
    "total": "thin market: only 1 book quoting"
   },
   "ratings": {
-   "home_off": -0.19572447788869737,
-   "home_def": 0.24916126258219873,
-   "away_off": -0.2514472694954823,
-   "away_def": 0.1596981041105757,
+   "home_off": -0.19572447788869723,
+   "home_def": 0.24916126258219845,
+   "away_off": -0.25144726949548196,
+   "away_def": 0.15969810411057522,
    "home_pace": 58.84380790863887,
    "away_pace": 58.223123697885086
   },
   "home_med": 27,
   "away_med": 24,
-  "home_mean": 27.593399050286948,
-  "away_mean": 25.042075069927552,
-  "margin": 2.5513239803593954,
-  "total_mean": 52.6354741202145,
-  "p_home_win": 0.5641434073956981,
+  "home_mean": 27.593399050287058,
+  "away_mean": 25.042075069927513,
+  "margin": 2.5513239803595447,
+  "total_mean": 52.63547412021457,
+  "p_home_win": 0.5641434073957019,
   "likely": [
    [
     31,
@@ -55530,8 +55640,8 @@
     0.0064
    ],
    [
-    31,
-    17,
+    34,
+    27,
     0.0063
    ]
   ],
@@ -55567,9 +55677,9 @@
    36,
    26
   ],
-  "p_home_cover": 0.4013221482398463,
+  "p_home_cover": 0.4013221482398499,
   "p_push_spread": 0.0,
-  "p_over": 0.5282541935248434,
+  "p_over": 0.5282541935248452,
   "p_push_total": 0.0,
   "range80": [
    -17.7,
@@ -55599,8 +55709,8 @@
    "p": 0.505,
    "ev": -0.036
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-22T13:48:54.183758+00:00",
@@ -55638,7 +55748,7 @@
     }
    ],
    "first_ts": "2026-10-23T23:34:18.357242+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-23T23:34:18.357242+00:00",
@@ -55657,6 +55767,11 @@
     },
     {
      "ts": "2026-10-24T17:29:35.308569+00:00",
+     "spread": -3.5,
+     "total": 50.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
      "spread": -3.5,
      "total": 50.5
     }
@@ -55679,20 +55794,20 @@
    "total": "thin market: only 1 book quoting"
   },
   "ratings": {
-   "home_off": -0.17429151523378708,
-   "home_def": 0.19943172000645049,
-   "away_off": -0.19696960478587366,
-   "away_def": 0.16914232677312208,
+   "home_off": -0.17429151523378694,
+   "home_def": 0.1994317200064501,
+   "away_off": -0.19696960478587355,
+   "away_def": 0.16914232677312166,
    "home_pace": 59.90890207734995,
    "away_pace": 57.295453902731126
   },
   "home_med": 24,
   "away_med": 23,
-  "home_mean": 25.034999567578126,
-  "away_mean": 22.912586773159227,
-  "margin": 2.1224127944188993,
-  "total_mean": 47.94758634073735,
-  "p_home_win": 0.5534313125796816,
+  "home_mean": 25.03499956757802,
+  "away_mean": 22.912586773159244,
+  "margin": 2.122412794418775,
+  "total_mean": 47.94758634073726,
+  "p_home_win": 0.5534313125796785,
   "likely": [
    [
     24,
@@ -55752,9 +55867,9 @@
    15,
    24
   ],
-  "p_home_cover": 0.46525920770850376,
+  "p_home_cover": 0.46525920770850065,
   "p_push_spread": 0.0,
-  "p_over": 0.4367026134198379,
+  "p_over": 0.43670261341983563,
   "p_push_total": 0.0,
   "range80": [
    -18.1,
@@ -55784,8 +55899,8 @@
    "p": 0.511,
    "ev": -0.024
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-22T23:34:37.907047+00:00",
@@ -55823,7 +55938,7 @@
     }
    ],
    "first_ts": "2026-10-22T23:35:33.508941+00:00",
-   "last_ts": "2026-10-24T17:29:35.308569+00:00",
+   "last_ts": "2026-10-24T19:29:23.422683+00:00",
    "history": [
     {
      "ts": "2026-10-22T23:35:33.508941+00:00",
@@ -55864,6 +55979,11 @@
      "ts": "2026-10-24T17:29:35.308569+00:00",
      "spread": 2.5,
      "total": 49.5
+    },
+    {
+     "ts": "2026-10-24T19:29:23.422683+00:00",
+     "spread": 2.5,
+     "total": 49.5
     }
    ],
    "spread_src": "odds",
@@ -55888,20 +56008,20 @@
    "total": "thin market: only 1 book quoting"
   },
   "ratings": {
-   "home_off": -0.27815442557864545,
-   "home_def": 0.16407776523893847,
-   "away_off": -0.0972930676341575,
-   "away_def": 0.15570966165756592,
+   "home_off": -0.27815442557864517,
+   "home_def": 0.1640777652389379,
+   "away_off": -0.09729306763415717,
+   "away_def": 0.15570966165756542,
    "home_pace": 64.1475801690879,
-   "away_pace": 61.68901951203679
+   "away_pace": 61.689019512036786
   },
   "home_med": 26,
   "away_med": 27,
-  "home_mean": 25.69239717944047,
-  "away_mean": 27.678190792235654,
-  "margin": -1.9857936127951845,
-  "total_mean": 53.37058797167612,
-  "p_home_win": 0.44998935226278086,
+  "home_mean": 25.6923971794405,
+  "away_mean": 27.678190792235647,
+  "margin": -1.9857936127951454,
+  "total_mean": 53.370587971676144,
+  "p_home_win": 0.4499893522627818,
   "likely": [
    [
     24,
@@ -55961,9 +56081,9 @@
    12,
    22
   ],
-  "p_home_cover": 0.5129816959133595,
+  "p_home_cover": 0.5129816959133605,
   "p_push_spread": 0.0,
-  "p_over": 0.5954633821934847,
+  "p_over": 0.5954633821934852,
   "p_push_total": 0.0,
   "range80": [
    -22.2,
@@ -55993,8 +56113,8 @@
    "p": 0.517,
    "ev": -0.013
   },
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-23T13:41:59.562158+00:00",
@@ -56031,20 +56151,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": 0.12136597546690642,
-   "home_def": 0.1255124307017052,
-   "away_off": -0.03477800814404459,
-   "away_def": 0.2653577562946698,
-   "home_pace": 53.47418732978429,
-   "away_pace": 56.88255503164756
+   "home_off": 0.12136597546690674,
+   "home_def": 0.12551243070170479,
+   "away_off": -0.03477800814404417,
+   "away_def": 0.26535775629466957,
+   "home_pace": 53.47418732978428,
+   "away_pace": 56.882555031647584
   },
   "home_med": 44,
   "away_med": 30,
-  "home_mean": 44.180221296668606,
-  "away_mean": 30.04122333014827,
-  "margin": 14.138997966520336,
-  "total_mean": 74.22144462681688,
-  "p_home_win": 0.814582308971338,
+  "home_mean": 44.18022129666875,
+  "away_mean": 30.041223330148213,
+  "margin": 14.138997966520535,
+  "total_mean": 74.22144462681696,
+  "p_home_win": 0.8145823089713414,
   "likely": [
    [
     48,
@@ -56062,8 +56182,8 @@
     0.005
    ],
    [
-    37,
-    27,
+    41,
+    20,
     0.0049
    ],
    [
@@ -56108,8 +56228,8 @@
    -6.1,
    34.4
   ],
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-23T23:34:18.357242+00:00",
@@ -56146,20 +56266,20 @@
   "total_caution": [],
   "soft_notes": {},
   "ratings": {
-   "home_off": -0.036310266796645285,
-   "home_def": 0.057924968107574165,
-   "away_off": -0.13907358886478857,
-   "away_def": 0.14497503432343423,
+   "home_off": -0.036310266796645084,
+   "home_def": 0.057924968107573666,
+   "away_off": -0.13907358886478838,
+   "away_def": 0.1449750343234339,
    "home_pace": 65.77961019912435,
-   "away_pace": 69.0002930340019
+   "away_pace": 69.00029303400188
   },
   "home_med": 36,
   "away_med": 20,
-  "home_mean": 36.05667154312483,
-  "away_mean": 20.234300769178176,
-  "margin": 15.822370773946652,
-  "total_mean": 56.290972312303005,
-  "p_home_win": 0.8416969376113095,
+  "home_mean": 36.056671543124864,
+  "away_mean": 20.2343007691781,
+  "margin": 15.822370773946766,
+  "total_mean": 56.29097231230296,
+  "p_home_win": 0.8416969376113113,
   "likely": [
    [
     41,
@@ -56223,8 +56343,8 @@
    -4.4,
    36.1
   ],
-  "fit_id": "6da6bb8243",
-  "updated": "2026-10-24T17:29:35.308569+00:00",
+  "fit_id": "9927fce1fe",
+  "updated": "2026-10-24T19:29:23.422683+00:00",
   "version": "5|spread 7.0|total 7.0",
   "first_model": {
    "ts": "2026-10-23T23:34:18.357242+00:00",
