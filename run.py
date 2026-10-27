@@ -287,6 +287,7 @@ def main(mode):
         live=dict(report.live(store, season, state.get("margin_sd"), state.get("total_sd")), value_decay=report.value_decay(store, hist, season),
                   flag_clv=report.flag_clv(store, pd.read_csv(DECISIONS) if DECISIONS.exists() else None, season)),
         state={k: state[k] for k in ("lam", "rho", "sim_sd", "margin_sd", "total_sd", "updated", "tuned_at")},
+        monitor=report.monitor(wf, season, state),
         tune=state["tune_results"],
         experiments=exp_old,
         features=features,
@@ -336,12 +337,19 @@ def main(mode):
         stale_quotes=sum(1 for p in preds if (p.get("market") or {}).get("last_ts") and fetched - pd.Timestamp(p["market"]["last_ts"]) > pd.Timedelta(hours=C.BET_MAX_QUOTE_AGE_H)),
         oddities=(snap.attrs.get("oddities") or [])[:10], academy=state.get("academy") or {}, fit_id=fit_id,
         cautions=dict(early_season_blocks_spreads=getattr(C, "EARLY_SEASON_BLOCKS_SPREADS", True),
+                      early_season_blocks_totals=getattr(C, "EARLY_SEASON_BLOCKS_TOTALS", True),
                       fcs_blocks_spreads=getattr(C, "FCS_BLOCKS_SPREADS", True)),
         bets_graded=sum(1 for p in graded_season for k in ("ats", "ou") if (p["result"] or {}).get(k)),
     )
     print("Health:", health)
+    # Team colors and short names for the site (labels only)
+    hexok = lambda c: isinstance(c, str) and len(c) == 7 and c.startswith("#")
+    team_meta = {t.get("school"): dict(c=t.get("color") if hexok(t.get("color")) else None,
+                                       c2=t.get("alternateColor") if hexok(t.get("alternateColor")) else None,
+                                       ab=t.get("abbreviation"))
+                 for t in fetch.teams(season) if isinstance(t, dict) and t.get("school")}
     site.build(season, wk, slate, store, rep, finals[season], now, unmatched, state, prev_final, lines_ts, games,
-               rating_hist=rating_hist, health=health)
+               rating_hist=rating_hist, health=health, team_meta=team_meta)
     print(f"Done. Week {wk}: {len(preds)} games projected, {sum(p.get('spread_flag', False) for p in preds)} spread edges.")
     if unmatched:
         print("Unmatched odds games:", unmatched[:10])

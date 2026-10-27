@@ -13,18 +13,40 @@ import cfb_ratings as Rt
 import cfb_sim as sim
 from cfb_lines import _f
 
-STORE = C.DATA / "predictions.json"
+STORE = C.DATA / "predictions.json"   # everything recorded before Oct 2026 (read only)
+STORE_DIR = C.DATA / "predictions"    # one file per season and week: past weeks stop changing
 OVERRIDES = C.DATA / "overrides.csv"
 if not OVERRIDES.exists() and (C.DATA.parent / "overrides.csv").exists():
     OVERRIDES = C.DATA.parent / "overrides.csv"  # also accept the file at the repo root
 
 
 def load_store():
-    return json.loads(STORE.read_text()) if STORE.exists() else {}
+    """Every recorded prediction, keyed by game id: the older single file, then the per-week files
+    (newer, so they win when both have a game)."""
+    s = json.loads(STORE.read_text()) if STORE.exists() else {}
+    if STORE_DIR.exists():
+        for f in sorted(STORE_DIR.glob("*/week-*.json")):
+            s.update(json.loads(f.read_text()))
+    return s
+
+
+def _week_file(p):
+    t = pd.Timestamp(p.get("start")) if p.get("start") else None
+    season = (t.year if t.month >= 7 else t.year - 1) if t is not None else 0
+    return STORE_DIR / str(season) / f"week-{int(p.get('wk') or 0):02d}.json"
 
 
 def save_store(s):
-    STORE.write_text(json.dumps(s, indent=1, default=str))
+    """Write each season-week's predictions to its own file, only when something in it changed."""
+    groups = {}
+    for k, p in s.items():
+        groups.setdefault(_week_file(p), {})[k] = p
+    for f, g in groups.items():
+        txt = json.dumps(g, indent=1, sort_keys=True, default=str)
+        if f.exists() and f.read_text() == txt:
+            continue
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(txt)
 
 
 def load_overrides():
@@ -169,18 +191,24 @@ def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_r
         s["p_home_cover"] = _ncdf((eh - ea + spread) / msd) - s["p_push_spread"] / 2
     if total is not None:
         s["p_over"] = _ncdf((eh + ea - total) / tsd) - s["p_push_total"] / 2
-    # Cautions that can be limited to totals (see cfb_config): by default they block both bets.
-    tot_only = []
+    # Cautions with a switch per market (see cfb_config). FCS games always block totals.
+    tot_only, spr_only = [], []
     if "FCS" in (tiers.get(r.home), tiers.get(r.away)):
         (low if getattr(C, "FCS_BLOCKS_SPREADS", True) else tot_only).append("FCS opponent")
     if gp < 3:
-        (low if getattr(C, "EARLY_SEASON_BLOCKS_SPREADS", True) else tot_only).append("early season")
+        es, et = getattr(C, "EARLY_SEASON_BLOCKS_SPREADS", True), getattr(C, "EARLY_SEASON_BLOCKS_TOTALS", True)
+        if es and et:
+            low.append("early season")
+        elif es:
+            spr_only.append("early season")
+        elif et:
+            tot_only.append("early season")
     model_spread = round(-(eh - ea), 1)
     model_total = round(eh + ea, 1)
     # When the model and market differ a lot, the market usually knows something the model
     # doesn't (injury, QB, opt-outs): in the backtest the market was closer 2 times in 3.
     # Each caution applies only to its own bet: a big gap on the total doesn't block the spread.
-    spread_caution, total_caution, soft = [], list(tot_only), {}
+    spread_caution, total_caution, soft = list(spr_only), list(tot_only), {}
     if spread is not None and abs(model_spread - spread) >= C.DISAGREE_SPREAD:
         spread_caution.append("big disagreement: check injury/QB news")
     elif spread is not None and abs(model_spread - spread) >= C.NEWS_NOTE:

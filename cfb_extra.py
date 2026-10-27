@@ -250,7 +250,7 @@ def pbp_table(all_games, first_season):
             missing += 1
             continue
         budget -= 1
-        resp = requests.get(f"{C.CFBD_BASE}/plays", params={"year": int(season), "week": int(w), "seasonType": st},
+        resp = F._get(f"{C.CFBD_BASE}/plays", params={"year": int(season), "week": int(w), "seasonType": st},
                             headers={"Authorization": f"Bearer {C.CFBD_KEY}", "Accept": "application/json"}, timeout=180)
         if resp.status_code in (401, 403):
             denied = f"CFBD refused play-by-play ({resp.status_code}); it may need a Patreon tier"

@@ -98,6 +98,8 @@ def _block_boot(x, reps=2000, seed=7):
     if len(x) < 20:
         return None
     g = x.assign(win=(x.res == "win").astype(int)).groupby(["season", "wk"]).win.agg(["sum", "count"]).to_numpy()
+    if len(g) < 8:  # too few weeks to resample: the range would look far more certain than it is
+        return None
     rng = np.random.default_rng(seed)
     idx = rng.integers(0, len(g), size=(reps, len(g)))
     rates = g[idx, 0].sum(1) / g[idx, 1].sum(1)
@@ -112,10 +114,12 @@ def _logloss(p, y):
 def _units_range(x, reps=2000, seed=11):
     """95% range for total units from bets x (columns season, wk, res), resampling whole weeks."""
     x = x[x.res.isin(["win", "loss", "push"])]
-    if len(x) < 10:
+    if len(x) < 20:
         return None
     u = x.res.map({"win": 100 / 110, "loss": -1.0, "push": 0.0})
     g = u.groupby([x.season, x.wk]).sum().to_numpy()
+    if len(g) < 8:  # too few weeks to resample: the range would look far more certain than it is
+        return None
     rng = np.random.default_rng(seed)
     tot = g[rng.integers(0, len(g), size=(reps, len(g)))].sum(1)
     return [round(float(np.quantile(tot, 0.025)), 1), round(float(np.quantile(tot, 0.975)), 1)]
@@ -196,15 +200,21 @@ def backtest(wf, SEASONS, qb=None):
     ta = ta[ta.pt != ta.cfbd_total]
     so = _grade_spread(d, "cfbd_spread_open", C.SPREAD_EDGE)
     to = _grade_total(d, "cfbd_total_open", C.TOTAL_EDGE)
-    # The same bets under the live rules: gaps of 10+ ("check news"), FCS games, the first three
-    # weeks and QB changes don't become bets. (Weather can't be replayed historically.)
-    def live_rule(x, gap, cap):
-        ok = (gap.abs() < cap) & (x.wk > 3) & ~x.qbc
-        if "home_tier" in x and "away_tier" in x:
+    # The same bets under the live rules: gaps of 10+ ("check news") and QB changes never become bets;
+    # the first three weeks and FCS games follow the switches in cfb_config (FCS always blocks totals).
+    # (Weather can't be replayed historically.)
+    early_s = getattr(C, "EARLY_SEASON_BLOCKS_SPREADS", True)
+    early_t = getattr(C, "EARLY_SEASON_BLOCKS_TOTALS", True)
+    fcs_s = getattr(C, "FCS_BLOCKS_SPREADS", True)
+    def live_rule(x, gap, cap, spreads):
+        ok = (gap.abs() < cap) & ~x.qbc
+        if early_s if spreads else early_t:
+            ok &= x.wk > 3
+        if (not spreads or fcs_s) and "home_tier" in x and "away_tier" in x:
             ok &= (x.home_tier != "FCS") & (x.away_tier != "FCS")
         return x[ok]
-    sol = live_rule(so, so.cfbd_spread_open + so.pm, C.DISAGREE_SPREAD)
-    tol = live_rule(to, to.pt - to.cfbd_total_open, C.DISAGREE_TOTAL)
+    sol = live_rule(so, so.cfbd_spread_open + so.pm, C.DISAGREE_SPREAD, True)
+    tol = live_rule(to, to.pt - to.cfbd_total_open, C.DISAGREE_TOTAL, False)
     # Does the line move toward the model? (opening -> closing, games with a real disagreement)
     mv = d.dropna(subset=["cfbd_spread", "cfbd_spread_open"])
     e = mv.cfbd_spread_open + mv.pm
@@ -279,23 +289,30 @@ def backtest(wf, SEASONS, qb=None):
         return (x.home_tier == "FCS") | (x.away_tier == "FCS")
     fs_, ft_ = gso[gso.edge >= C.SPREAD_EDGE], gto[gto.edge >= C.TOTAL_EDGE]
     cautions = []
+    clean_s = (fs_.edge < C.DISAGREE_SPREAD) & ~fs_.qbc
+    clean_t = (ft_.edge < C.DISAGREE_TOTAL) & ~ft_.qbc & ~fcs(ft_)
     for lab, fs_m, ft_m in (
             ("Gap 10+ points (blocked)", fs_.edge >= C.DISAGREE_SPREAD, ft_.edge >= C.DISAGREE_TOTAL),
-            ("Weeks 1–3 (blocked)", fs_.wk <= 3, ft_.wk <= 3),
+            ("Weeks 1–3 (" + ("blocked" if early_s and early_t else "allowed from 2027" if not early_s and not early_t
+                             else "spreads allowed from 2027" if not early_s else "totals allowed from 2027") + ")", fs_.wk <= 3, ft_.wk <= 3),
             ("FCS opponent (blocked)", fcs(fs_), fcs(ft_)),
             *((("QB change (blocked)", fs_.qbc, ft_.qbc),) if has_qb else ()),
-            ("None of these: a bet under today's rules",
-             (fs_.edge < C.DISAGREE_SPREAD) & (fs_.wk > 3) & ~fcs(fs_) & ~fs_.qbc,
-             (ft_.edge < C.DISAGREE_TOTAL) & (ft_.wk > 3) & ~fcs(ft_) & ~ft_.qbc)):
+            ("Weeks 1–3 with no other caution", (fs_.wk <= 3) & clean_s & ~fcs(fs_), (ft_.wk <= 3) & clean_t),
+            ("After week 3 with no caution", (fs_.wk > 3) & clean_s & ~fcs(fs_), (ft_.wk > 3) & clean_t)):
         cautions.append(dict(label=lab, spread=_rec(fs_[fs_m].res), total=_rec(ft_[ft_m].res)))
 
     # Honest threshold test (no season helps pick its own rule), with and without the cautions
-    def live_ok(x, cap):
-        return x[(x.edge < cap) & (x.wk > 3) & ~fcs(x) & ~x.qbc]
+    def live_ok(x, cap, spreads):
+        ok = (x.edge < cap) & ~x.qbc
+        if early_s if spreads else early_t:
+            ok &= x.wk > 3
+        if not spreads or fcs_s:
+            ok &= ~fcs(x)
+        return x[ok]
     nested = dict(
         spread=_nested(gso, (5, 6, 7, 8, 9, 10)), total=_nested(gto, (5, 6, 7, 8, 9, 10)),
-        spread_live=_nested(live_ok(gso, C.DISAGREE_SPREAD), (5, 6, 7, 8, 9)),
-        total_live=_nested(live_ok(gto, C.DISAGREE_TOTAL), (5, 6, 7, 8, 9)),
+        spread_live=_nested(live_ok(gso, C.DISAGREE_SPREAD, True), (5, 6, 7, 8, 9)),
+        total_live=_nested(live_ok(gto, C.DISAGREE_TOTAL, False), (5, 6, 7, 8, 9)),
     )
 
     # Uncertainty that allows for bets in the same week moving together
@@ -437,6 +454,33 @@ def segments(d):
         total_by_week=_seg(d, "week_bucket", "total_err"),
         total_by_matchup=_seg(d, "matchup", "total_err"),
     )
+
+
+def monitor(wf, season, state):
+    """Drift checks for this season, from the walk-forward predictions (each week predicted before it
+    was played): does the model lean too high or too low on margins, home teams or totals? A lean is
+    flagged when it's more than 2.5 standard errors from zero."""
+    out = {}
+    d = wf[(wf.season == season) & wf.home_pts.notna()] if len(wf) else wf
+    if len(d):
+        d = d[d.home_tier.isin(["P4", "G5"]) & d.away_tier.isin(["P4", "G5"])]
+    def lean(err, label):
+        err = pd.Series(err).dropna()
+        if len(err) < 30:
+            return None
+        m, se = float(err.mean()), float(err.std() / math.sqrt(len(err)))
+        return dict(label=label, lean=round(m, 2), se=round(se, 2), n=int(len(err)), flag=bool(abs(m) > 2.5 * se))
+    if len(d):
+        pm, am = d.pred_h - d.pred_a, d.home_pts - d.away_pts
+        out["leans"] = [x for x in (
+            lean(pm - am, "Home team's margin (projected minus actual)"),
+            lean((d.pred_h + d.pred_a) - (d.home_pts + d.away_pts), "Game total (projected minus actual)"),
+            lean(((pm - am) * np.where(pm >= 0, 1, -1)), "Favorite's margin (projected minus actual)"),
+        ) if x]
+    hf = (state or {}).get("home_field") or {}
+    if hf:
+        out["home_field"] = hf
+    return out
 
 
 def season_of(start):

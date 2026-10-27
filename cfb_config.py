@@ -62,12 +62,19 @@ ACADEMY_SHRINK = 50
 # or a snapshot older than this many hours, can be shown but never become a recorded bet.
 BET_MAX_QUOTE_AGE_H = 36
 
-# Optional caution changes (both off = today's rules). In the 2023-2025 backtest against opening lines,
-# 7+ point spread gaps in weeks 1-3 went 88-52 (63%) and in FCS games 61-36 (63%), vs 42-33 (56%) for
-# the spread bets the rules allow (better in 2023 and 2024, worse in 2025). Against closing lines
-# (2017-2025) the early-season gaps went 52-53% in total and beat 50% in 6 of 9 seasons, while the
-# allowed spread bets went about 45% and were under 50% in 8 of 9. Set either to False to let those SPREAD gaps become bets
-# (totals stay blocked: FCS totals went 7-13 against opening lines). Only three seasons of opening lines
-# exist and they also shaped the rules, so the live shadow record is the place to confirm it.
-EARLY_SEASON_BLOCKS_SPREADS = True
+# Early-season bets. Until Oct 2026 every 7+ point gap in weeks 1-3 (before the typical FBS team has played
+# 3 games) was blocked. The evidence says the block costs money: early gaps that no other caution touches
+# (gap under 10, no FCS team, no QB change) did at least as well as the bets the rules allowed, in both markets.
+#                         early (weeks 1-3)             allowed (after week 3)
+#   spreads vs opening    31-20 (61%)                   31-28 (53%)
+#   spreads vs closing    35-25 (58%)                   26-31 (46%)
+#   totals vs opening     24-8  (75%)                   41-24 (63%)
+#   totals vs closing     16-13 (55%)                   31-30 (51%)
+# (walk-forward 2023-2026 with the live model; 2026 was never used to set any rule and agreed: spreads 9-6,
+# totals 5-0 against opening lines.) From 2027 week 1 these become bets. Set either back to True to restore
+# the old rule for that market.
+EARLY_SEASON_BLOCKS_SPREADS = False
+EARLY_SEASON_BLOCKS_TOTALS = False
+# FCS games: spread gaps went 9-5 against opening lines but 8-8 against closing lines (2023-2026); too few to
+# change the rule, so FCS games still block spread bets. FCS totals went 7-13 and stay blocked.
 FCS_BLOCKS_SPREADS = True

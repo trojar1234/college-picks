@@ -49,6 +49,23 @@ def stale(name, days):
     return datetime.now(timezone.utc) - datetime.fromisoformat(ts) > timedelta(days=days)
 
 
+def _get(url, tries=3, **kw):
+    """GET with a few retries for brief outages (timeouts, dropped connections, 429/5xx), so one
+    hiccup at a data provider doesn't fail the whole run. Other errors are returned as-is."""
+    wait = 3
+    for i in range(tries):
+        try:
+            r = requests.get(url, **kw)
+            if r.status_code not in (429, 500, 502, 503, 504) or i == tries - 1:
+                return r
+        except (requests.ConnectionError, requests.Timeout):
+            if i == tries - 1:
+                raise
+        time.sleep(wait)
+        wait *= 3
+    return r
+
+
 def cfbd(endpoint, params, name, refresh=False):
     """Fetch a CFBD endpoint, using the cache unless refresh=True."""
     cached = _load(name)
@@ -58,7 +75,7 @@ def cfbd(endpoint, params, name, refresh=False):
         return []
     if not C.CFBD_KEY:
         raise SystemExit("CFBD_API_KEY is not set.")
-    r = requests.get(
+    r = _get(
         f"{C.CFBD_BASE}{endpoint}",
         params=params,
         headers={"Authorization": f"Bearer {C.CFBD_KEY}", "Accept": "application/json"},
@@ -102,6 +119,16 @@ def venues():
     return cfbd("/venues", {}, "venues")
 
 
+def teams(year):
+    """FBS teams with their colors and abbreviations (one call per season, cached), used only to
+    label teams on the site. Optional: any failure just means no team colors."""
+    try:
+        return cfbd("/teams/fbs", {"year": year}, f"teams_{year}") or []
+    except (Exception, SystemExit) as e:
+        print("Team colors skipped:", e)
+        return []
+
+
 def odds_snapshot():
     """Current spreads and totals for every listed NCAAF game (2 Odds API credits)."""
     if C.OFFLINE:
@@ -109,16 +136,20 @@ def odds_snapshot():
     if not C.ODDS_KEY:
         print("ODDS_API_KEY not set; skipping line snapshot.")
         return []
-    r = requests.get(
-        C.ODDS_URL,
-        params={
-            "apiKey": C.ODDS_KEY,
-            "regions": "us",
-            "markets": "spreads,totals",
-            "oddsFormat": "american",
-        },
-        timeout=60,
-    )
+    try:
+        r = _get(
+            C.ODDS_URL,
+            params={
+                "apiKey": C.ODDS_KEY,
+                "regions": "us",
+                "markets": "spreads,totals",
+                "oddsFormat": "american",
+            },
+            timeout=60,
+        )
+    except requests.RequestException as e:  # no snapshot this run; the last one stays in use
+        print(f"Odds API unreachable: {e}")
+        return []
     if r.status_code != 200:
         print(f"Odds API returned {r.status_code}: {r.text[:200]}")
         return []

@@ -142,6 +142,37 @@ def test_keep_rule():
     check(u["w"] == 3 and u["l"] == 1, "bet check grades spreads and totals against opening lines correctly")
 
 
+def test_storage():
+    """The bet store and line history survive a save and reload exactly, and finished weeks aren't rewritten."""
+    import cfb_lines as L
+    tmp = Path(tempfile.mkdtemp())
+    old = (predict.STORE, predict.STORE_DIR, L.HIST, L.HIST_DIR)
+    try:
+        predict.STORE, predict.STORE_DIR = tmp / "predictions.json", tmp / "predictions"
+        L.HIST, L.HIST_DIR = tmp / "line_history.csv", tmp / "lines"
+        store = {"1": dict(start="2025-09-06T16:00:00+00:00", wk=2, home="A", away="B", first_spread_flag=dict(line=-3.5)),
+                 "2": dict(start="2026-01-01T20:00:00+00:00", wk=21, home="C", away="D"),
+                 "3": dict(start="2026-10-31T16:00:00+00:00", wk=10, home="E", away="F")}
+        predict.save_store(store)
+        check(predict.load_store() == store, "bet store: save and reload give back exactly the same records")
+        check((predict.STORE_DIR / "2025" / "week-21.json").exists(), "bet store: a January bowl is filed under the season it belongs to")
+        f = predict.STORE_DIR / "2025" / "week-02.json"
+        before = f.stat().st_mtime_ns
+        store["3"]["model_spread"] = -7.0
+        predict.save_store(store)
+        check(f.stat().st_mtime_ns == before, "bet store: a finished week's file isn't rewritten when another week changes")
+        rows = pd.DataFrame(dict(ts=[pd.Timestamp("2026-10-27T14:00:00Z")] * 2, game_id=[1, 2], book=["X", "Y"],
+                                 home_spread=[-3.5, 7.0], total=[50.5, 44.0]))
+        for c in L.COLS:
+            if c not in rows:
+                rows[c] = np.nan
+        h = L.append(rows)
+        check(len(h) == 2 and set(h.game_id) == {1, 2}, "line history: a snapshot is saved and read back")
+    finally:
+        predict.STORE, predict.STORE_DIR, L.HIST, L.HIST_DIR = old
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def test_published():
     site = C.SITE
     def load(name, var):
@@ -187,7 +218,7 @@ def test_published():
     if not node:
         print("skip  JavaScript checks (node not installed)")
         return
-    for page in ("index", "matchup", "ratings", "report"):
+    for page in ("index", "matchup", "ratings", "report", "method"):
         p = site / f"{page}.html"
         if not p.exists():
             check(False, f"{page}.html exists")
@@ -228,6 +259,7 @@ if __name__ == "__main__":
     test_odds_matching()
     test_record_keeping()
     test_keep_rule()
+    test_storage()
     test_published()
     if FAIL:
         print(f"\n{len(FAIL)} check(s) failed. Nothing should be published until they pass.")

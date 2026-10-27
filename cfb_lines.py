@@ -1,6 +1,6 @@
-"""Line tracking. Odds API snapshots are matched to CFBD games and appended to
-data/line_history.csv. Lines are only ever used for display and grading,
-never as model inputs."""
+"""Line tracking. Odds API snapshots are matched to CFBD games and saved, one small file per snapshot,
+under data/lines/<season>/ (data/line_history.csv holds the snapshots taken before Oct 2026 and is no
+longer written). Lines are only ever used for display and grading, never as model inputs."""
 import math
 import re
 import unicodedata
@@ -10,7 +10,8 @@ import pandas as pd
 
 import cfb_config as C
 
-HIST = C.DATA / "line_history.csv"
+HIST = C.DATA / "line_history.csv"   # older snapshots (read only)
+HIST_DIR = C.DATA / "lines"            # one file per snapshot: a finished file never changes, so the repo stays small
 # Prices are American odds for each side (e.g. -110), kept so results can later be graded at real prices.
 COLS = ["ts", "game_id", "book", "home_spread", "total", "home_price", "away_price", "over_price", "under_price"]
 
@@ -112,23 +113,35 @@ def snapshot_rows(odds, games, ts):
 
 
 def load_history():
-    if HIST.exists():
-        h = pd.read_csv(HIST)
-        h["ts"] = pd.to_datetime(h.ts, utc=True, format="ISO8601")
-        for c in COLS:  # files written before prices were tracked
-            if c not in h:
-                h[c] = np.nan
-        return h
-    return pd.DataFrame(columns=COLS)
+    parts = []
+    files = [HIST] if HIST.exists() else []
+    if HIST_DIR.exists():
+        files += sorted(HIST_DIR.glob("*/*.csv"))
+    for f in files:
+        try:
+            parts.append(pd.read_csv(f))
+        except pd.errors.EmptyDataError:
+            continue
+    if not parts:
+        return pd.DataFrame(columns=COLS)
+    h = pd.concat(parts, ignore_index=True)
+    h["ts"] = pd.to_datetime(h.ts, utc=True, format="ISO8601")
+    for c in COLS:  # files written before prices were tracked
+        if c not in h:
+            h[c] = np.nan
+    return h.drop_duplicates(["ts", "game_id", "book"], keep="last").reset_index(drop=True)
 
 
 def append(rows):
-    h = load_history()
+    """Save one snapshot as its own file and return the full history."""
     if len(rows):
-        h = pd.concat([h, rows], ignore_index=True)
-        h["ts"] = pd.to_datetime(h.ts, utc=True, format="ISO8601")
-        h.to_csv(HIST, index=False)
-    return h
+        ts = pd.Timestamp(pd.to_datetime(rows.ts, utc=True).max())
+        d = HIST_DIR / str(ts.year)
+        d.mkdir(parents=True, exist_ok=True)
+        out = rows.copy()
+        out["ts"] = pd.to_datetime(out.ts, utc=True).map(lambda t: t.isoformat())
+        out[COLS].to_csv(d / f"{ts.strftime('%Y%m%dT%H%M%S')}.csv", index=False)
+    return load_history()
 
 
 def market_view(hist, games):

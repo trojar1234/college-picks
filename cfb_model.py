@@ -13,10 +13,9 @@ Optional (kept only if the improvement on the tuning seasons is real and it does
   pbp - play-by-play: non-garbage points per drive, finishing drives, field position
 """
 import numpy as np
-
-import cfb_config as C
 import pandas as pd
 
+import cfb_config as C
 import cfb_data as Dt
 import cfb_ratings as Rt
 import cfb_sim as sim
@@ -265,6 +264,11 @@ def walk_forward(bt, eval_from, groups=()):
         if s < eval_from:
             continue
         p = predict_bt(bt[bt.season == s], conv, groups, tm)
+        # The live projections correct the service academies (see academy_adjust); the backtest applies the
+        # same correction, estimated only from earlier seasons' misses, so its record matches the live system.
+        p["pred_h_raw"], p["pred_a_raw"] = p.pred_h.to_numpy(), p.pred_a.to_numpy()
+        if parts:
+            p = apply_academy(p, academy_adjust(pd.concat(parts)))
         if errs:  # error size measured on earlier seasons' genuinely out-of-sample predictions
             e = pd.concat(errs[-3:])
             sd_m, sd_t = float(e.m.std()), float(e.t.std())
@@ -534,7 +538,55 @@ def fit_state(SEASONS, lam, current_season, features=None, players=None):
     )
     state["academy"] = academy_adjust(wf)
     state["rating_tau2"] = rating_uncertainty(wf, lam)
+    try:  # monitoring only: never let it stop a run
+        state["home_field"] = home_field_check(bt, finals, conv, groups, SEASONS, current_season)
+    except Exception as e:
+        print("Home-field check skipped:", e)
     return state, finals, bt, wf, info
+
+
+def home_field_check(bt, finals, conv, groups, SEASONS, season):
+    """Monitoring: the home-field edge the model applies this season (projected margin at home minus the
+    same game on a neutral field) next to the edge this season's results show (least squares on
+    FBS-vs-FBS margins, capped at 35 points so blowouts don't dominate)."""
+    R = finals.get(season)
+    out = {}
+    sched = SEASONS[season]["games"]
+    sched = sched[~sched.neutral.astype(bool) & (sched.home_cls == "fbs") & (sched.away_cls == "fbs")]
+    if len(sched) and R:  # every home game this season, with today's ratings
+        rows = [(dict(season=season, game_id=0, **game_feats(R, r.home, r.away, False)),
+                 dict(season=season, game_id=0, **game_feats(R, r.home, r.away, True))) for r in sched.itertuples()]
+        p1 = predict_bt(pd.DataFrame([a for a, _ in rows]), conv, groups)
+        p0 = predict_bt(pd.DataFrame([b for _, b in rows]), conv, groups)
+        out["model"] = round(float(((p1.pred_h - p1.pred_a) - (p0.pred_h - p0.pred_a)).mean()), 2)
+    g = SEASONS[season]["games"]
+    g = g[g.completed & (g.home_cls == "fbs") & (g.away_cls == "fbs")]
+    if len(g) >= 100:
+        teams = sorted(set(g.home) | set(g.away))
+        ix = {t: i for i, t in enumerate(teams)}
+        X = np.zeros((len(g), len(teams) + 1))
+        for r, (h, a, n) in enumerate(zip(g.home, g.away, g.neutral)):
+            X[r, ix[h]], X[r, ix[a]], X[r, -1] = 1, -1, 0 if n else 1
+        y = np.clip((g.home_pts - g.away_pts).to_numpy(float), -35, 35)
+        A = X.T @ X + np.diag([0.01] * len(teams) + [0.0])
+        b = np.linalg.solve(A, X.T @ y)
+        resid = y - X @ b
+        dof = max(1, len(y) - len(teams) - 1)
+        se = float(np.sqrt(resid @ resid / dof * np.linalg.inv(A)[-1, -1]))
+        out.update(realized=round(float(b[-1]), 2), se=round(se, 2), n=int(len(g)))
+    return out
+
+
+def apply_academy(p, ac):
+    """Add the service-academy correction to a frame of predictions (pred_h, pred_a)."""
+    if not ac or not ac.get("n"):
+        return p
+    p = p.copy()
+    side = p.home.isin(ac["teams"]).astype(int) - p.away.isin(ac["teams"]).astype(int)
+    m, t = ac["margin"] * side, ac["total"] * (side != 0)
+    p["pred_h"] = p.pred_h + (m + t) / 2
+    p["pred_a"] = p.pred_a + (t - m) / 2
+    return p
 
 
 def rating_uncertainty(wf, lam):
@@ -555,11 +607,14 @@ def rating_uncertainty(wf, lam):
 
 def academy_adjust(wf):
     """How much the service academies beat their projections, from out-of-sample walk-forward
-    errors, shrunk toward zero. Returns {} when switched off or with too few games."""
+    errors (before any academy correction), shrunk toward zero. Returns {} when switched off or with
+    too few games."""
     teams = list(getattr(C, "ACADEMIES", []) or [])
     if not teams or wf is None or not len(wf):
         return {}
     d = wf[wf.home_pts.notna()]
+    if "pred_h_raw" in d:
+        d = d.assign(pred_h=d.pred_h_raw.fillna(d.pred_h), pred_a=d.pred_a_raw.fillna(d.pred_a))
     side = d.home.isin(teams).astype(int) - d.away.isin(teams).astype(int)
     g = d[side != 0]
     if len(g) < 30:
