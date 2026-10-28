@@ -12,6 +12,8 @@ Core model (always on):
 Optional (kept only if the improvement on the tuning seasons is real and it does not cost bets: see _better):
   pbp - play-by-play: non-garbage points per drive, finishing drives, field position
 """
+import math
+
 import numpy as np
 import pandas as pd
 
@@ -243,7 +245,8 @@ def apply_totals(out, tm):
 
 
 def walk_forward(bt, eval_from, groups=()):
-    """Score each season with a points conversion fit only on earlier seasons."""
+    """Score each week with a points conversion fit only on earlier games: earlier seasons plus this
+    season's completed weeks, the same information the live model has at that point."""
     parts, oos = [], []  # oos: earlier seasons' out-of-sample raw totals, for the recalibration
     errs = []  # earlier seasons' out-of-sample (margin, total) errors, for honest error sizes
     use_tot = "totals" in groups
@@ -263,7 +266,18 @@ def walk_forward(bt, eval_from, groups=()):
             oos.append(pd.DataFrame(dict(season=s, raw=raw, actual=(cur.home_pts + cur.away_pts).to_numpy(float))))
         if s < eval_from:
             continue
-        p = predict_bt(bt[bt.season == s], conv, groups, tm)
+        cur = bt[bt.season == s]
+        if use_tot:
+            p = predict_bt(cur, conv, groups, tm)
+        else:  # refit each week, as the live model does
+            sf_tr, sf_cur = side_frame(train), side_frame(cur)
+            sf_cur["wk"] = sf_cur.game_id.map(cur.drop_duplicates("game_id").set_index("game_id").wk)
+            ps = []
+            for w in sorted(cur.wk.unique()):
+                tr = pd.concat([sf_tr, sf_cur[sf_cur.wk < w].drop(columns="wk")], ignore_index=True)
+                c = fit_conv(tr[tr.pts.notna()], groups)  # unplayed or cancelled games carry no information
+                ps.append(predict_bt(cur[cur.wk == w], c, groups))
+            p = pd.concat(ps)
         # The live projections correct the service academies (see academy_adjust); the backtest applies the
         # same correction, estimated only from earlier seasons' misses, so its record matches the live system.
         p["pred_h_raw"], p["pred_a_raw"] = p.pred_h.to_numpy(), p.pred_a.to_numpy()
@@ -537,6 +551,15 @@ def fit_state(SEASONS, lam, current_season, features=None, players=None):
         total_sd=float((rh + ra).std()),
     )
     state["academy"] = academy_adjust(wf)
+    state["key_margin"] = key_numbers(wf)
+    # Challenger, recorded but never bet: the separate game-level totals model. It forecast totals more
+    # accurately in the backtest but picked worse totals bets, so it is tracked prospectively on the
+    # Performance page before anyone decides anything (see cfb_report.live, "challenger").
+    if "totals" not in groups and len(done) > 3000:
+        try:
+            state["challenger_total_model"] = fit_total_model(done)
+        except Exception as e:  # tracking only: never let it stop a run
+            print("Totals challenger skipped:", e)
     state["rating_tau2"] = rating_uncertainty(wf, lam)
     try:  # monitoring only: never let it stop a run
         state["home_field"] = home_field_check(bt, finals, conv, groups, SEASONS, current_season)
@@ -603,6 +626,30 @@ def rating_uncertainty(wf, lam):
     X = np.column_stack([np.ones(keep.sum()), 2 / (n[keep] + lam)])
     b = np.linalg.lstsq(X, v[keep].to_numpy(), rcond=None)[0]
     return round(float(max(b[1], 0.0)), 1)
+
+
+def key_numbers(wf, upto=40, c=20.0):
+    """How much more (or less) often FBS games end by each margin (0..upto points) than the normal curve
+    around the model's out-of-sample projections says: games land on 3 about 2.6 times as often, 7 about
+    2.3 times, 10 about 1.4 times, and never on 0 (overtime). Each weight is shrunk toward 1 by `c`
+    expected games so a rare margin can't get an extreme weight. Used by lines.margin_pmf for spread
+    pushes and the value of a half point. Returns None with too little history."""
+    d = wf[wf.home_pts.notna()] if len(wf) else wf
+    if "home_tier" in d:
+        d = d[d.home_tier.isin(["P4", "G5"]) & d.away_tier.isin(["P4", "G5"])]
+    if len(d) < 2000:
+        return None
+    mu = (d.pred_h - d.pred_a).to_numpy(float)
+    sd = np.asarray(d.sd_m if "sd_m" in d else np.full(len(d), float((d.home_pts - d.away_pts - mu).std())), float)
+    erf = np.vectorize(math.erf)
+    cdf = lambda x: 0.5 * (1 + erf((x - mu) / (sd * math.sqrt(2))))
+    exp = np.array([(cdf(k + 0.5) - cdf(k - 0.5)).sum() + ((cdf(-k + 0.5) - cdf(-k - 0.5)).sum() if k else 0.0)
+                    for k in range(upto + 1)])
+    am = (d.home_pts - d.away_pts).abs().round().astype(int).to_numpy()
+    obs = np.bincount(np.clip(am, 0, upto + 1), minlength=upto + 2)[: upto + 1]
+    f = (obs + c) / (exp + c)
+    f[0] = 0.0  # college football has no ties
+    return [round(float(x), 3) for x in f]
 
 
 def academy_adjust(wf):

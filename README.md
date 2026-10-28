@@ -11,11 +11,11 @@ and display prices.
 
 | Page | What it answers |
 |---|---|
-| **Projections** | This week's games: projected score, win chance, the line vs the model, the model's pick in every game, and the week's **bets** and **flags**. Tap a game for probabilities, the score distribution, every book's line and price (best first), line history, and when a bet was flagged. |
-| **Matchup** | Any two teams at any venue (home, away, neutral), with spread, total, win chance, fair odds, an 80% range, a what-if slider and a breakdown of why. |
-| **Team ratings** | Every FBS team's power rating (points better than an average FBS team on a neutral field), movement, expected wins, offense/defense, rating history, remaining schedule strength, and a conference comparison. |
+| **Projections** | This week's games: projected score, win chance, the line vs the model, the model's lean in every game (a lean is not a bet), and the week's **bets** and **flags**. Tap a game for probabilities (calibrated and the model's raw chance), the worst price a bet still breaks even at, the score distribution, every book's line and price (best first), line history, and when a bet was flagged. |
+| **Matchup** | Any two teams at any venue (home, away, neutral), with spread, total, win chance, fair odds, an 80% range, the chance to cover at nearby lines (with pushes on 3, 7, 10...), a what-if slider and a breakdown of why. |
+| **Team ratings** | Every FBS team's power rating (points better than an average FBS team on a neutral field), movement, expected wins, offense/defense, rating history, how much of the rating is still the preseason prior, remaining schedule strength, and a conference comparison. |
 | **How it works** | The method in plain language: ratings, priors, projections, probabilities, bet rules, testing, limits, and a glossary. |
-| **Performance** | Live results this season (spread and total scorecards: record, units, ROI, drawdown, closing-line value), the historical backtest, results by edge size, how the cautions perform, an out-of-sample test of the 7-point rule, probability calibration, model tests, every graded game (with CSV download) and data health. |
+| **Performance** | Live results this season (spread and total scorecards: record, units, ROI, drawdown, closing-line value), model vs market on the same games broken down by kind of game, a shadow totals challenger, the historical backtest (research, not a betting record), results by edge size, how the cautions perform, an out-of-sample test of the 7-point rule, probability calibration, model tests, every graded game (with CSV download) and data health. |
 
 ## Bet rules
 
@@ -30,12 +30,18 @@ and display prices.
 - A bet keeps the line it was first flagged at and is graded there (1 unit at −110). If the line
   later moves so the gap is under 7, it shows as **LINE MOVED**: still graded, but not a bet at
   today's number.
-- A bet needs a **live sportsbook quote less than 36 hours old**. A game that only has the backup line
-  from CollegeFootballData can be flagged but never becomes a bet.
+- A bet needs a **live sportsbook quote less than 36 hours old for that market**, offered by at least one
+  book in the newest snapshot. Spreads and totals are checked separately, so a fresh total never makes
+  an old or pulled spread count. A game that only has the backup line from CollegeFootballData can be
+  flagged but never becomes a bet.
 - Each bet also shows the **best single book** for that side, chosen by expected value (line and price
   together). Grading stays at the middle of the books, which is the conservative choice.
 - Every bet and blocked flag is written once, never edited, to `data/decisions.csv` (also downloadable
-  from the Performance page) with the time, line, best book, price, probability, reasons and model fit.
+  from the Performance page) with its own id, the time, line, best book, price, calibrated and raw
+  probability, reasons, the quote time, the model fit and the betting policy that made it (model
+  version and gap thresholds). If a later policy makes a fresh decision on the same game, the new entry
+  names the one it supersedes. QB-change alerts come from the previous game's box score and are not
+  confirmed starters.
 
 ## How it works
 
@@ -45,13 +51,15 @@ and display prices.
    every game, starting from preseason priors built from returning production, QB quality and
    transfers.
 3. **Points**: ratings are converted to expected points for each team. Those expected points are the
-   projected spread and total (the numbers the backtest scores). A score simulation (10,000 games)
-   gives the shape of the outcomes: win, cover and push chances, likely scores.
+   projected spread and total (the numbers the backtest scores). Win, cover and over chances come from
+   a normal curve sized by past out-of-sample misses; spread pushes and the value of a half point use how
+   often games really end on each margin (3 and 7 about 2.5 times a smooth curve, never 0). One function
+   produces every probability, expected value and best-book choice. A score simulation gives likely scores.
 4. **Service-academy correction**: Army, Navy and Air Force beat their projections in every backtest
    season, so their margins get a correction learned only from past out-of-sample misses. The backtest
    applies the same correction (from earlier seasons only), so its record matches the live system.
 5. **Self-checks**: every optional input is tested on past seasons (walk-forward: each week predicted
-   only from data before it). It's kept only if (1) the accuracy gain is real, meaning at least 0.01
+   only from data before it, with the points conversion refit every week as the live model does). It's kept only if (1) the accuracy gain is real, meaning at least 0.01
    points with a 95% range above zero (resampling whole weeks), (2) it doesn't cost bets: units on
    7+ point gaps against opening lines can't drop by more than chance explains, and (3) it doesn't make
    the newest complete season, which played no part in (1) and (2), clearly worse. Rule (2) exists
@@ -61,6 +69,8 @@ and display prices.
 7. **Drift checks**: the Performance page shows whether the model is leaning one way this season
    (home teams, totals, favorites) and compares the home-field edge it applies with what this season's
    results show.
+8. **Challenger**: a separate totals model (more accurate in the backtest, worse bets) is recorded with
+   every projection but never bet, so whether to switch can be decided on games it never saw.
 
 ## When it runs (Central time, all year)
 
@@ -78,10 +88,16 @@ This stays inside both free API tiers.
 
 ## Checks before anything is published
 
-- `run.py` stops if any projection isn't a real number in a sensible range, or if team ratings are missing.
+- `run.py` stops if any projection isn't a real number in a sensible range, if team ratings are missing,
+  or if this season's completed games or rated teams fell since the last update (an incomplete download).
 - `cfb_selftest.py` then checks the grading rules, prices and expected value, which lines can become
-  bets, best-line logic, odds matching, record keeping, saving and reloading the bet store and line
-  history, and the feature keep rule on known cases; that every data file loads; that every page's JavaScript is valid; that the bet list adds
+  bets (including adverse cases: a fresh total next to an expired or pulled spread), that the
+  probabilities fit together at every line a book could hang (win + push + loss = 1, more points never
+  hurt, half a point off 3, 7, 10 or 14 turns exactly those pushes into wins, one side's win is the
+  other's loss), both spellings of CollegeFootballData's line fields, best-line logic, odds matching,
+  record keeping, saving and reloading the bet store and line history, the feature keep rule on known
+  cases, and that the backtest can't see the future (rewriting one week's results must leave every
+  earlier projection unchanged); that the decision log's ids and supersede links are intact; that every data file loads; that every page's JavaScript is valid; that the bet list adds
   up to the season totals; and that the Matchup page's formula still reproduces the weekly projections.
 
 If any check fails, the run stops, the last good site stays up, and GitHub emails you.
@@ -91,7 +107,8 @@ If any check fails, the run stops, the last good site stays up, and GitHub email
 Production code is everything starting with `cfb_`, plus `run.py`, `overrides.csv` and
 `requirements.txt` (exact package versions, so a library update can't quietly change results). Each
 run saves a fingerprint of the fitted model with every prediction, and a copy of the fit to
-`data/states/` once a day. The schedule is `.github/workflows/update.yml`. Generated data lives in `data/`
+`data/states/` once a day, along with a summary of that day's backtest (`data/backtests/`), so a change
+in method never silently rewrites the historical record. The schedule is `.github/workflows/update.yml`. Generated data lives in `data/`
 and the website in `docs/`. Predictions are saved one file per season and week (`data/predictions/`)
 and line snapshots one file per snapshot (`data/lines/`), so finished files never change and the
 repository doesn't balloon. `data/predictions.json` and `data/line_history.csv` hold everything
@@ -111,8 +128,9 @@ Delete the line when it no longer applies.
 
 ## Running it by hand
 
-Actions tab → **Update model** → **Run workflow**, with mode `update` (full), `odds` (lines only) or
-`retune` (re-tune the prior strength).
+Uploading any code file, `overrides.csv` or the workflow starts a full update on its own. To run one
+yourself: Actions tab → **Update model** → **Run workflow**, with mode `update` (full), `odds` (lines
+only) or `retune` (re-tune the prior strength).
 
 ## Privacy
 
@@ -128,6 +146,21 @@ are an expired or mistyped API key, or a change at one of the data providers. Th
 
 ## Changelog
 
+- **Oct 28, 2026** (from a third-party audit, each item checked against the code and data first):
+  quote freshness is checked per market; CollegeFootballData's snake_case line fields are read; one
+  probability function for every cover, push, best-book and EV number, with key-number pushes (better
+  out of sample than the simulation or a smooth curve); fixed a slip that let a likely push inflate the
+  published cover chance by up to about 2 points (EV by about 0.01 on average; no bet changed); the
+  backtest refits the points conversion every week like the live model; decision-log ids, policy and
+  supersede links; adverse-case and leakage self-tests; model-vs-market breakdown and a shadow totals
+  challenger on the Performance page; "Model lean", raw vs calibrated chances, break-even prices,
+  quote ages, prior share and a key-number cover table on the site. Tested and not adopted: play-count
+  weights in the ratings and a team-specific prior strength (both cost bets and made 2025 worse).
+  Projections and bet rules unchanged.
+  Follow-up the same day: every probability now comes from one whole-number distribution per market, with
+  automated checks that they fit together at every line; recorded bets compared with the line at the moment
+  they were flagged; daily backtest archive. Tested and not adopted: dynamic (week-to-week drifting)
+  ratings, which made totals worse at every setting and moved margin error by less than 0.01.
 - **Oct 27, 2026**: redesigned site (new type, light and dark themes, team colors, an edge meter on
   every game) and a How-it-works page; early-season gaps become bets from 2027; the backtest applies
   the service-academy correction like the live projections; drift checks on the Performance page;

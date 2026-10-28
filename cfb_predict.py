@@ -130,6 +130,15 @@ def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_r
                              away_tier=tiers.get(r.away, "FCS"), **f)])
     pr = model.predict_bt(bt1, conv, groups, state.get("total_model"))
     eh, ea = float(pr.pred_h.iloc[0]), float(pr.pred_a.iloc[0])
+    base_total = eh + ea
+    ch = state.get("challenger_total_model")  # shadow totals model: recorded, never bet
+    ch_total = None
+    if ch:
+        try:
+            cp = model.predict_bt(bt1, conv, groups, ch)
+            ch_total = float(cp.pred_h.iloc[0] + cp.pred_a.iloc[0])
+        except Exception:
+            ch_total = None
     notes, low = [], []
     # QB change alert (information only: the model can't see who starts).
     for side, team in (("h", r.home), ("a", r.away)):
@@ -167,30 +176,19 @@ def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_r
     # Fixed seed per game: identical inputs always give identical numbers (no run-to-run flicker)
     rng = np.random.default_rng([int(r.game_id), 7])
     h, a = sim.simulate(eh, ea, drives, state["sim_sd"], state["rho"], n=C.SIMS, rng=rng)
-    # The simulation's averages drift slightly from the expected points (overtime adds about half a
-    # point to totals on average). Shift its outcomes so it agrees with the expected points, which is
-    # what the backtest scored.
-    sm = (eh - ea) - float((h - a).mean())
-    st_ = (eh + ea) - float((h + a).mean())
-    s = sim.summarize(h, a, None if spread is None else spread + sm, None if total is None else total - st_)
-    s.update(margin=eh - ea, total_mean=eh + ea, home_mean=eh, away_mean=ea,
-             p_home_win=float(((h - a) + sm > 0).mean()))
-    if spread is not None:
-        s["p_push_spread"] = float(((h - a) + spread == 0).mean())
-    if total is not None:
-        s["p_push_total"] = float(((h + a) == total).mean())
-    # Win, cover and over chances and the 80% range come from a normal curve around the expected points
-    # with the out-of-sample error size. In the backtest this was better calibrated than the simulation
-    # (Brier 0.1674 vs 0.1678; its 80% range held 80% of results vs the simulation's 75%), and it's the
-    # same method the Matchup page and the backtest use. The simulation still gives likely scores and pushes.
+    # The simulation now supplies only the likely final scores shown on the page; no probability uses it.
+    s = sim.summarize(h, a)
+    s.update(margin=eh - ea, total_mean=eh + ea, home_mean=eh, away_mean=ea)
+    # Win, cover, over and push chances and the 80% range come from a normal curve around the expected
+    # points with the out-of-sample error size (better calibrated than the simulation in the backtest:
+    # Brier 0.1674 vs 0.1678; its 80% range held 80% of results vs 75%). Spread pushes and the value of
+    # a half point use the key-number distribution (lines.margin_pmf): out of sample it predicted pushes
+    # on whole-number spreads better than the simulation or a smooth curve (log loss 0.174 vs 0.178 and
+    # 0.185). All of it goes through lines._cover_prob, the same function that picks the best book.
     msd, tsd = state.get("margin_sd") or 16.0, state.get("total_sd") or 16.5
-    nm = _ncdf((eh - ea) / msd)
-    s["p_home_win"] = nm
+    key = state.get("key_margin")
+    s["p_home_win"] = _ncdf((eh - ea) / msd)
     s["range80"] = [round((eh - ea) - 1.2816 * msd, 1), round((eh - ea) + 1.2816 * msd, 1)]
-    if spread is not None:
-        s["p_home_cover"] = _ncdf((eh - ea + spread) / msd) - s["p_push_spread"] / 2
-    if total is not None:
-        s["p_over"] = _ncdf((eh + ea - total) / tsd) - s["p_push_total"] / 2
     # Cautions with a switch per market (see cfb_config). FCS games always block totals.
     tot_only, spr_only = [], []
     if "FCS" in (tiers.get(r.home), tiers.get(r.away)):
@@ -217,11 +215,10 @@ def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_r
         total_caution.append("big disagreement: check injury/QB news")
     elif total is not None and abs(model_total - total) >= C.NEWS_NOTE:
         soft["total"] = "8+ pts apart: worth a quick injury/QB news check"
-    nb = len(mkt.get("books") or [])
-    if 0 < nb < 3:
-        for k in ("spread", "total"):
-            if mkt.get(k) is not None and k not in soft:
-                soft[k] = f"thin market: only {nb} book{'s' if nb > 1 else ''} quoting"
+    for k in ("spread", "total"):
+        nb = mkt.get(f"{k}_books", len(mkt.get("books") or []))
+        if 0 < nb < 3 and mkt.get(k) is not None and k not in soft:
+            soft[k] = f"thin market: only {nb} book{'s' if nb > 1 else ''} quoting"
     w = wx or {}
     if not w.get("dome") and ((w.get("wind") or 0) >= C.WEATHER_WIND or (w.get("precip") or 0) >= C.WEATHER_RAIN):
         total_caution.append("wind/rain forecast: the model doesn't use weather, the market does")
@@ -240,43 +237,58 @@ def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_r
         ),
         **s,
     )
+    # Probabilities at the consensus line. "raw" is the model's own chance; the published one is
+    # calibrated (shrunk toward a coin flip by how much of the model's edge held up in the backtest).
+    # The calibration shrinks the model's edge, never the push: with no edge, winning and losing stay
+    # equally likely whatever the push chance (before Oct 28, 2026 a likely push could add up to about
+    # 2 points to the published chance of winning on lines of 3 and 7).
+    if ch_total is not None:  # same manual and academy adjustments as the incumbent, so only the model differs
+        out["challenger_total"] = round(ch_total + (eh + ea - base_total), 1)
     if spread is not None:
         e = spread - model_spread  # >0: home side has value
+        side = "home" if e > 0 else "away"
+        sl = spread if side == "home" else -spread
+        out["p_home_cover"], out["p_push_spread"] = lines._cover_prob("spread", "home", spread, model_spread, msd, 1.0, key=key)
         out["spread_edge"] = round(abs(e), 1)
-        out["spread_side"] = "home" if e > 0 else "away"
+        out["spread_side"] = side
         out["spread_flag"] = abs(e) >= C.SPREAD_EDGE
-        pc = s.get("p_home_cover", 0.5)
-        raw = pc if e > 0 else 1 - pc - s.get("p_push_spread", 0)
-        out["p_side_cover"] = round(0.5 + shrink[0] * (raw - 0.5), 3)  # calibrated against backtest
+        out["p_side_cover_raw"] = round(lines._cover_prob("spread", side, sl, model_spread, msd, 1.0, key=key)[0], 3)
+        out["p_side_cover"] = round(lines._cover_prob("spread", side, sl, model_spread, msd, shrink[0], key=key)[0], 3)
     if total is not None:
         e = model_total - total
+        side = "over" if e > 0 else "under"
+        out["p_over"], out["p_push_total"] = lines._cover_prob("total", "over", total, model_total, tsd, 1.0)
         out["total_edge"] = round(abs(e), 1)
-        out["total_side"] = "over" if e > 0 else "under"
+        out["total_side"] = side
         out["total_flag"] = abs(e) >= C.TOTAL_EDGE
-        po = s.get("p_over", 0.5)
-        raw = po if e > 0 else 1 - po - s.get("p_push_total", 0)
-        out["p_side_total"] = round(0.5 + shrink[1] * (raw - 0.5), 3)
+        out["p_side_total_raw"] = round(lines._cover_prob("total", side, total, model_total, tsd, 1.0)[0], 3)
+        out["p_side_total"] = round(lines._cover_prob("total", side, total, model_total, tsd, shrink[1])[0], 3)
     # Expected value per unit risked at -110 for the model's side, and the best single book by
-    # expected value (line and price together), using calibrated probabilities.
-    sd_m, sd_t = state.get("margin_sd") or 16.0, state.get("total_sd") or 16.5
+    # expected value (line and price together), using the same calibrated probabilities.
     if spread is not None and out.get("spread_side"):
-        out["ev_spread"] = round(lines.ev(out["p_side_cover"], s.get("p_push_spread", 0), None), 3)
+        out["ev_spread"] = round(lines.ev(out["p_side_cover"], out["p_push_spread"], None), 3)
         out["best_spread"] = lines.best_line(mkt.get("books") or [], "spread", out["spread_side"],
-                                             model=model_spread, sd=sd_m, shrink=shrink[0])
+                                             model=model_spread, sd=msd, shrink=shrink[0], key=key)
     if total is not None and out.get("total_side"):
-        out["ev_total"] = round(lines.ev(out["p_side_total"], s.get("p_push_total", 0), None), 3)
+        out["ev_total"] = round(lines.ev(out["p_side_total"], out["p_push_total"], None), 3)
         out["best_total"] = lines.best_line(mkt.get("books") or [], "total", out["total_side"],
-                                            model=model_total, sd=sd_t, shrink=shrink[1])
+                                            model=model_total, sd=tsd, shrink=shrink[1])
     return out
 
 
 def bet_eligible(p, kind, now):
-    """A recorded bet needs a real sportsbook quote for that market (not the CollegeFootballData
-    backup line) taken within the last C.BET_MAX_QUOTE_AGE_H hours."""
+    """A recorded bet needs a real sportsbook quote for THAT market (not the CollegeFootballData backup
+    line): offered by at least one book in the newest snapshot, taken within the last
+    C.BET_MAX_QUOTE_AGE_H hours. The other market's quote never counts."""
     m = p.get("market") or {}
     if m.get(f"{kind}_src", "odds") != "odds" or not m.get("books"):
         return False
-    ts = m.get("last_ts")
+    if f"{kind}_books" in m:  # per-market freshness (snapshots taken since Oct 28, 2026)
+        if not m.get(f"{kind}_books") or not m.get(f"{kind}_ts"):
+            return False
+        ts = m[f"{kind}_ts"]
+    else:
+        ts = m.get("last_ts")
     if not ts:
         return False
     return now - pd.Timestamp(ts) <= pd.Timedelta(hours=getattr(C, "BET_MAX_QUOTE_AGE_H", 36))
@@ -307,7 +319,8 @@ def update_store(store, preds, now, version):
                 m = p.get("market") or {}
                 new[fk] = dict(ts=now.isoformat(), side=p[f"{kind}_side"], version=version,
                                line=m.get(line_key), model=p[f"model_{kind}"], best=p.get(f"best_{kind}"),
-                               quote_ts=m.get("last_ts"), books=len(m.get("books") or []),
+                               quote_ts=m.get(f"{kind}_ts") or m.get("last_ts"),
+                               books=m.get(f"{kind}_books", len(m.get("books") or [])),
                                p=p.get("p_side_cover" if kind == "spread" else "p_side_total"),
                                ev=p.get(f"ev_{kind}"), fit=p.get("fit_id"))
         store[key] = new

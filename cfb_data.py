@@ -114,17 +114,17 @@ def lines_table(raw):
             continue
         cons = [l for l in ls if str(_g(l, "provider", default="")).lower() == "consensus"]
         use = cons or ls
-        def med(key):
-            v = [_num(_g(l, key)) for l in use]
+        def med(*keys):  # every spelling CFBD has used (v2 camelCase, v1 snake_case)
+            v = [_num(_g(l, *keys)) for l in use]
             v = [x for x in v if not np.isnan(x)]
             return float(np.median(v)) if v else np.nan
         rows.append(
             dict(
                 game_id=int(_g(d, "id")),
                 cfbd_spread=med("spread"),
-                cfbd_spread_open=med("spreadOpen") if any(_g(l, "spreadOpen", "spread_open") is not None for l in use) else np.nan,
-                cfbd_total=med("overUnder"),
-                cfbd_total_open=med("overUnderOpen"),
+                cfbd_spread_open=med("spreadOpen", "spread_open"),
+                cfbd_total=med("overUnder", "over_under"),
+                cfbd_total_open=med("overUnderOpen", "over_under_open"),
             )
         )
     return pd.DataFrame(rows, columns=["game_id", "cfbd_spread", "cfbd_spread_open", "cfbd_total", "cfbd_total_open"])

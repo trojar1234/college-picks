@@ -89,7 +89,7 @@ def model_export(final, state):
     return dict(conv=state["conv"], groups=state.get("groups") or M.BASE_GROUPS,
                 margin_sd=state.get("margin_sd"), total_sd=state.get("total_sd"),
                 total_model=state.get("total_model"), metrics=metrics, academy=state.get("academy") or {},
-                rating_tau2=state.get("rating_tau2"), lam=state.get("lam"),
+                rating_tau2=state.get("rating_tau2"), lam=state.get("lam"), key_margin=state.get("key_margin"),
                 tiers={t: final["tiers"][t] for t in teams})
 
 
@@ -464,7 +464,11 @@ const teamRecord=t=>{let w=0,l=0;for(const r of (D.schedule||[])){if(!r[7]||r[5]
 const ratedThrough=()=>{const w=Math.max(0,...(D.schedule||[]).filter(r=>r[7]).map(r=>r[0]));return w?`ratings through ${wkName(w)} games`:'preseason ratings';};
 const am=x=>x==null?'':(x>0?'+':'−')+Math.abs(Math.round(x));
 // Freshness, shown on every page: when the model last ran and when the newest lines were fetched
-const freshTxt=()=>{const f=t=>new Date(t).toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',hour:'numeric',minute:'2-digit'});return `Model updated ${f(D.generated)}`+(D.lines_updated?`, lines ${f(D.lines_updated)}`:'')+' (Central time)';};
+// How long ago, from the moment the page is viewed
+const ago=t=>{if(!t)return '';const h=(Date.now()-new Date(t))/36e5;return h<1/60?'just now':h<1?`${Math.round(h*60)} min ago`:h<48?`${Math.round(h)} h ago`:`${Math.round(h/24)} days ago`;};
+const freshTxt=()=>{const f=t=>new Date(t).toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',hour:'numeric',minute:'2-digit'});return `Model updated ${f(D.generated)} CT (${ago(D.generated)})`+(D.lines_updated?`, lines ${f(D.lines_updated)} (${ago(D.lines_updated)})`:'');};
+// The worst American price at which a bet with win chance p (and push chance u) still breaks even
+const beOdds=(p,u)=>{if(p==null||!(p>0))return null;const b=(1-p-(u||0))/p;if(!(b>0))return null;return b>=1?`+${Math.round(100*b)}`:`−${Math.round(100/b)}`;};
 const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 // Team color bar (colors from CollegeFootballData; grey when unknown)
@@ -509,19 +513,20 @@ INDEX_BODY = NAV("p", "Projections") + r"""
 <ul>
 <li><b>Prediction</b> is the model's projected score (away–home, rounded so it matches the model's spread and total) and the favorite's chance to win. Tap any game for the full breakdown: score distribution, likely range, inputs, every sportsbook's line, and weather.</li>
 <li><b>Line</b> is the middle of the sportsbooks' lines; <b>Model</b> is the model's own number. The top number is the spread, the bottom the total. <b>Edge</b> is the gap between the two, in points.</li>
-<li><b>Pick</b> is the model's side in every game. Most are close calls: picks with an edge under 2 points are shown in grey, 2+ in bold.</li>
+<li><b>Model lean</b> is the model's side in every game. A lean is not a bet: most are close calls (leans with an edge under 2 points are shown in grey, 2+ in bold). Only games marked Bet qualify.</li>
 <li><span class="pill p-good">Bet</span> = the model and line are 7+ points apart and nothing makes the projection shaky. In past seasons these went <span id="h-rates">about 60% against the spread and 64% on totals</span> against opening lines. A bet keeps the line it was first flagged at.</li>
 <li><span class="pill p-warn">Flag</span> = 7+ points apart, but with a reason for caution: a QB change, a manual adjustment, wind or rain (the model doesn't use weather), an FCS team, or a gap of 10+ points<span id="h-early"></span>. A 10+ point gap usually means news the model can't see (an injury, a suspension, a QB change). In past seasons those gaps won about as often as other flags against opening lines but only about half the time against closing lines, so they're held for a news check instead of bet automatically (the Performance page tracks how each caution does). 8–10 point bets, and lines quoted by fewer than 3 books, get a reminder to check.</li>
 <li><span class="pill p-mv">Line moved</span> / <span class="pill p-mv">Model moved</span> = a recorded bet whose edge today is under 7 points, because the line moved or the model's number changed (QB news, a correction). It's still graded at the original line, but it isn't a bet at today's number.</li>
 <li>A bet needs a live sportsbook quote from the last 36 hours. When a game only has the backup line from CollegeFootballData, a 7-point gap shows as a flag instead.</li>
-<li><b>EV</b> is the expected profit per unit at −110 for the model's side, using probabilities calibrated on every past game. It's deliberately conservative, so small positive numbers are normal; the best-book suggestion is chosen by the same measure (line and price together).</li>
+<li><b>EV</b> is the expected profit per unit at −110 for the model's side, using probabilities calibrated on every past game. It's deliberately conservative, so small positive numbers are normal; the best-book suggestion is chosen by the same measure (line and price together). Each game's details also show the model's raw chance next to the calibrated one, and the worst price at which the bet still breaks even.</li>
+<li><b>QB change</b> alerts are inferred from who started each team's last game (the box score), not from a confirmed depth chart, so treat them as unverified until the news confirms the starter.</li>
 <li>The model's edge is against early-week lines (about 50% against closing lines), so bets are worth acting on early. Each bet shows the <b>best available book</b> for that side; results are still graded at the middle of the books, which is the conservative choice. Sportsbook lines are never model inputs.</li>
 </ul></details>
 <div id="summary"></div>
 <div class="bar" id="filters"></div>
 <div class="legend"><span><span class="meter m-bet" aria-hidden="true"><i style="--v:80%"></i></span>Edge meter: the shaded end zone starts at 7 points</span><span><span class="pill p-good">Bet</span> 7+ points, no caution</span><span><span class="pill p-warn">Flag</span> 7+ with a caution</span><span><span class="pill p-mv">Line moved</span> recorded bet, under 7 today</span><span>Tap a game for details</span><button class="chip" id="wcsv" style="margin-left:auto">Download this week (CSV)</button></div>
 <div class="tbl"><table class="games"><thead><tr>
-<th title="Away team @ home team, kickoff in Central time">Game</th><th title="Projected score (away–home) and the favorite's chance to win">Prediction <span class="when">score · win chance</span></th><th class="hide-sm" title="Middle of the sportsbooks' current lines">Line <span class="when">spread · total</span></th><th class="hide-sm" title="The model's own spread and total, from expected points">Model <span class="when">spread · total</span></th><th class="hide-sm" title="Points between the model and the line; 7+ can be a bet">Edge</th><th title="The model's side in every game; BET = qualifies, FLAG = 7+ with a caution">Pick</th>
+<th title="Away team @ home team, kickoff in Central time">Game</th><th title="Projected score (away–home) and the favorite's chance to win">Prediction <span class="when">score · win chance</span></th><th class="hide-sm" title="Middle of the sportsbooks' current lines">Line <span class="when">spread · total</span></th><th class="hide-sm" title="The model's own spread and total, from expected points">Model <span class="when">spread · total</span></th><th class="hide-sm" title="Points between the model and the line; 7+ can be a bet">Edge</th><th title="The model's side in every game (a lean, not a bet); BET = qualifies, FLAG = 7+ with a caution">Model lean</th>
 </tr></thead><tbody id="rows"></tbody></table></div>
 """.replace("</div>\n<p", "</div>\n<p", 1) + "<script>window.PAGE='index'</script>"
 
@@ -532,7 +537,7 @@ REPORT_BODY = NAV("r", "Performance") + r"""
 <div id="recon"></div>
 
 <h2 id="s-live">This season <span class="method">Live · recorded before kickoff, graded after</span></h2>
-<p class="sub">Every number here comes from predictions saved before each game started and never changed afterward. Bets are graded at the line where they were first flagged (the middle of the sportsbooks), with 1 unit risked per bet at −110.</p>
+<p class="sub">Every number here comes from predictions saved before each game started and never changed afterward. Bets are graded at the line where they were first flagged (the middle of the sportsbooks), with 1 unit risked per bet at −110. It's a paper record kept automatically, not a ledger of real wagers: the prices you get may be better or worse.</p>
 <div class="score2" id="scorecards"></div>
 <div class="chartgrid" style="margin-top:12px"><div class="chart"><h4>Bets: profit in units <span class="when">1 unit per bet at −110</span></h4><div class="bar" id="ufilters" style="margin:0 0 6px"></div><div id="units"></div></div>
 <div class="chart"><h4>Predicted vs actual margin <span class="when">every graded game, points</span></h4><div id="scatter"></div></div></div>
@@ -540,8 +545,8 @@ REPORT_BODY = NAV("r", "Performance") + r"""
 <div id="livemore"></div>
 <div class="tbl" style="margin-top:10px"><table><thead><tr><th>Week</th><th>Bets</th><th>Units</th><th>ATS, all games</th><th>O/U, all games</th><th class="hide-sm">Margin miss <span class="when">model / market, same games</span></th></tr></thead><tbody id="weekly"></tbody></table></div>
 
-<h2 id="s-backtest">Backtest <span class="method">Historical · rebuilt from past results and lines</span></h2>
-<p class="sub">Walk-forward: each week is predicted using only data available before it, then graded against that week's lines. It approximates the live rules but can't replay everything (weather alerts, or the exact lines available on the day; QB changes are replayed from past box scores), and these same seasons were used to choose the 7-point rule, so treat it as an upper bound. "Miss" = average points off (lower is better).</p>
+<h2 id="s-backtest">Backtest <span class="method">Research · not a betting record</span></h2>
+<p class="sub">This is research, not a record of bets anyone placed or could have placed: it grades against CollegeFootballData's recorded opening and closing lines at −110, and those numbers weren't necessarily on offer at every book at that price. Walk-forward: each week is predicted using only data available before it, then graded against that week's lines. It approximates the live rules but can't replay everything (weather alerts, or the exact lines available on the day; QB changes are replayed from past box scores), and these same seasons were used to choose the 7-point rule, so treat it as an upper bound. "Miss" = average points off (lower is better).</p>
 <details class="help"><summary>What each column means</summary><ul>
 <li><b>Bets ATS vs open</b>: games where the model and the opening spread were 7+ points apart, graded against that opening line (when the model's bets are meant to be placed).</li>
 <li><b>Bets ATS vs close</b>: the same rule against the closing line, the sharpest line of the week.</li>
@@ -594,10 +599,10 @@ REPORT_BODY = NAV("r", "Performance") + r"""
 <details class="help"><summary>Model version and changelog</summary><div id="changelog"></div></details>
 
 <h2 id="s-recent">Every graded game <span class="method">Live</span></h2>
-<p class="sub">Scores are away–home. Picks are against the last line tracked before kickoff; <span class="pill p-good">Bet</span> marks flagged bets, graded at the line when they were first flagged. "Units" is the running total for bets (1 unit each at −110). CLV = points gained versus that last line (positive is good).</p>
+<p class="sub">Scores are away–home. Leans are against the last line tracked before kickoff; <span class="pill p-good">Bet</span> marks flagged bets, graded at the line when they were first flagged. "Units" is the running total for bets (1 unit each at −110). CLV = points gained versus that last line (positive is good).</p>
 <div class="bar" id="hfilters"></div>
 <p class="sub">Every bet and blocked flag is also written, once and never edited, to a <a class="lnk" href="decisions.csv">decision log (CSV)</a> with the time, line, best book, price, probability and reasons.</p>
-<div class="tbl"><table><thead><tr><th>Game</th><th>Final</th><th class="hide-sm">Projected</th><th>Spread pick</th><th>Total pick</th><th class="hide-sm">CLV</th><th class="hide-sm">Units</th></tr></thead><tbody id="hist"></tbody></table></div>
+<div class="tbl"><table><thead><tr><th>Game</th><th>Final</th><th class="hide-sm">Projected</th><th>Spread lean</th><th>Total lean</th><th class="hide-sm">CLV</th><th class="hide-sm">Units</th></tr></thead><tbody id="hist"></tbody></table></div>
 
 <h2 id="s-health">Data health and settings</h2>
 <div id="health"></div>
@@ -613,9 +618,11 @@ document.getElementById('ptitle').textContent=D.week==null?`${D.season} projecti
 document.getElementById('sub').innerHTML=`${D.season} season. ${freshTxt()}.`+(linesAge!=null&&linesAge>12?` <span class="pill p-warn">Lines may be stale</span>`:'');
 const L=D.report.live||{};
 // A flag can only become a bet from a fresh sportsbook quote (not the backup line, not a stale snapshot)
-const noQuote=(g,k)=>{const m=g.market||{};if(m[k+'_src']==='cfbd'||!(m.books||[]).length||!m.last_ts)return true;
- return (new Date(D.generated)-new Date(m.last_ts))/36e5>36;};
-const quoteWhy=(g,k)=>noQuote(g,k)?[(g.market||{})[k+'_src']==='cfbd'?'backup line only: no live sportsbook quote':'no fresh sportsbook quote']:[];
+// Each market has its own quote: a fresh total never makes an old spread count (and the reverse)
+const pulled=(g,k)=>{const m=g.market||{};return (k+'_books') in m&&!m[k+'_books'];};
+const noQuote=(g,k)=>{const m=g.market||{};if(m[k+'_src']==='cfbd'||!(m.books||[]).length||pulled(g,k))return true;const ts=m[k+'_ts']||m.last_ts;
+ return !ts||(new Date(D.generated)-new Date(ts))/36e5>36;};
+const quoteWhy=(g,k)=>noQuote(g,k)?[(g.market||{})[k+'_src']==='cfbd'?'backup line only: no live sportsbook quote':pulled(g,k)?'no book is offering this line right now':'no fresh sportsbook quote']:[];
 const isLowTotal=g=>(g.low_conf||[]).length||(g.total_caution||[]).length||noQuote(g,'total');
 const isLowSpread=g=>(g.low_conf||[]).length||(g.spread_caution||[]).length||noQuote(g,'spread');
 // Edges are shown cut (not rounded) to one decimal, so a 6.96 never shows as a qualifying 7.0
@@ -641,7 +648,7 @@ const nF=G.filter(g=>!g.started).reduce((n,g)=>n+(!g.spread_bet&&g.spread_flag&&
 const withPct=r=>!r||(r.w+r.l+r.p)===0?'—':`${rec(r)}<span class="when">${pct(r.pct)}${(r.w+r.l)<50?` · only ${r.w+r.l} bets`:''}</span>`;
 document.getElementById('cards').innerHTML=[
 ['Bets this week',`${nW}${!nW?'<span class="when">none yet</span>':nMv?`<span class="when">${nW-nMv} still 7+ today · ${nMv} line moved (still graded)</span>`:'<span class="when">all still 7+ today</span>'}`],['Flags',`${nF}<span class="when">check the news</span>`],['Season bets ATS',withPct(L.ats)],['Season bets O/U',withPct(L.ou)],
-['All picks ATS',withPct(L.ats_all)],['All picks O/U',withPct(L.ou_all)]].map(([l,v])=>`<div class="card"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
+['All leans ATS',withPct(L.ats_all)],['All leans O/U',withPct(L.ou_all)]].map(([l,v])=>`<div class="card"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
 const day=s=>new Date(s).toLocaleDateString('en-US',{timeZone:'America/Chicago',weekday:'long',month:'short',day:'numeric'});
 const F=[['all','All games'],['soon','Next 24 hours'],['bets','Bets'],['edges','All flags'],['P4','Power 4'],['G5','Group of 5']];
 let cur='all',hideLow=false,q='';
@@ -666,7 +673,7 @@ function keep(g){
  if(cur==='G5')return g.home_tier==='G5'||g.away_tier==='G5';
  return true;}
 // Plain-English reasons for a caution
-const RS=(g,x)=>{const r=REASON(x);if(r!=='QB change: see details')return r;const t=qbTeams(g);return t.length?`QB change: ${t.join(', ')}`:r;};
+const RS=(g,x)=>{const r=REASON(x);if(r!=='QB change: see details')return r;const t=qbTeams(g);return t.length?`QB change (unverified): ${t.join(', ')}`:r;};
 const qbTeams=g=>[...new Set((g.notes||[]).filter(n=>n.includes('started last game')||n.includes('expected starter')).map(n=>n.split(':')[0]))];
 const REASON=x=>x.startsWith('big disagreement')?'Model and line 10+ pts apart: check injury/QB news':x.startsWith('8+ pts')?'8+ pts apart: worth a quick news check':x.startsWith('wind/rain')?"Wind/rain forecast: the model doesn't use weather":x==='QB change'?'QB change: see details':x==='manual adjustment'?'Manual adjustment':x==='FCS opponent'?'FCS opponent':x==='early season'?'Early season':x;
 // Everything the row needs about the two picks (spread, total) in one place
@@ -694,7 +701,7 @@ function pickData(g){
  return {sp,tp,sSt,tSt,sRes:'',tRes:'',why,lineS:m.spread,lineT:m.total,closing:false};}
 function pickLine(kind,p,status,result,g){
  if(!p)return `<div class="ln muted">${kind==='Spread'?'No spread line':'No total line'}</div>`;
- if(p.none)return `<div class="ln muted">${kind==='Spread'?'Spread':'Total'}: no pick</div>`;
+ if(p.none)return `<div class="ln muted">${kind==='Spread'?'Spread':'Total'}: no lean</div>`;
  const txt=kind==='Spread'?`${esc(p.team)} ${sl(p.line)}`:`${p.side} ${p.line}`;
  const tag=status==='bet'?'<span class="pill p-good">Bet</span> ':status==='moved'?`<span class="pill p-mv" title="Recorded at this line; today's edge is under 7 points">${g?mvWhat(g,kind==='Spread'?'spread':'total'):'Line moved'}</span> `:status==='caution'?'<span class="pill p-warn">Flag</span> ':'';
  const weak=!status&&p.edge<2;
@@ -713,7 +720,7 @@ function moveCell(g){const m=g.market||{};if(m.open_spread==null||m.spread==null
 function icons(g){const w=g.weather||{};let s='';
  if(!g.completed&&!w.dome&&(w.wind>=15||w.precip>=0.1))s+=` <span class="pill p-warn" title="Wind/rain forecast">${w.wind>=15?Math.round(w.wind)+' mph':''}${w.wind>=15&&w.precip>=0.1?' · ':''}${w.precip>=0.1?'rain':''}</span>`;
  const n=g.notes||[],qn=n.filter(x=>x.includes('expected starter')||x.includes('started last game'));
- if(qn.length)s+=` <span class="pill p-bad" title="${esc(qn.join('; '))}">QB change</span>`;
+ if(qn.length)s+=` <span class="pill p-bad" title="Unverified: inferred from last game's box score, not a confirmed starter. ${esc(qn.join('; '))}">QB change?</span>`;
  if(n.length>qn.length)s+=' <span class="pill p-bad" title="Manual adjustment">manual adj</span>';
  if([...(g.low_conf||[]),...(g.spread_caution||[]),...(g.total_caution||[])].some(x=>x.startsWith('big disagreement')))s+=' <span class="pill p-warn" title="Model and market 10+ points apart: check injury/QB news">check news</span>';return s;}
 // 10th to 90th percentile of the simulated home margin, from the 3-point histogram bins (-45..+45)
@@ -769,7 +776,8 @@ function detail(g){
  const hs=(m.history||[]);
  const sparks=spark(hs.map(x=>({t:x.ts,v:x.spread})),g.model_spread,`${esc(g.home)} spread`,v=>v===0?'PK':(v>0?'+':'−')+Math.abs(v))+
   spark(hs.map(x=>({t:x.ts,v:x.total})),g.model_total,'Total',v=>String(Math.round(v*10)/10));
- const notes=[m.last_ts?`Odds as of ${ctTime(m.last_ts)} CT${(new Date(D.generated)-new Date(m.last_ts))/36e5>=1?` (${Math.round((new Date(D.generated)-new Date(m.last_ts))/36e5)} h before this update)`:''}`:(m.spread!=null?'Backup line from CollegeFootballData (no sportsbook snapshot): shown, never bet':'No line yet'),
+ const qt=k=>m[k+'_ts']?`${k==='spread'?'Spread':'Total'} quoted ${ctTime(m[k+'_ts'])} CT (${ago(m[k+'_ts'])}${m[k+'_books']!=null?`, ${m[k+'_books']} book${m[k+'_books']===1?'':'s'} now`:''})`:'';
+ const notes=[m.spread_ts||m.total_ts?[qt('spread'),qt('total')].filter(Boolean).join(' · '):m.last_ts?`Odds as of ${ctTime(m.last_ts)} CT (${ago(m.last_ts)})`:(m.spread!=null?'Backup line from CollegeFootballData (no sportsbook snapshot): shown, never bet':'No line yet'),
   wtxt?null:'No weather forecast yet'].filter(Boolean);
  const flagRow=(f,kind)=>{if(!f)return '';const home=f.side==='home';const txt=kind==='spread'?`${esc(home?g.home:g.away)} ${sl(home?f.line:-f.line)}`:`${f.side==='over'?'Over':'Under'} ${fmt(f.line)}`;
   const b=f.best?` · best then ${kind==='spread'?sl(f.best.line):f.best.line}${f.best.price!=null?` (${am(f.best.price)})`:''} at ${esc(f.best.book)}`:'';
@@ -781,8 +789,10 @@ function detail(g){
   <h4 style="margin-top:12px">Probabilities</h4>
   <div class="kv"><span>${esc(g.away)} wins</span><span>${winPct(1-g.p_home_win)}</span></div>
   <div class="kv"><span>${esc(g.home)} wins</span><span>${winPct(g.p_home_win)}</span></div>
-  ${g.p_side_cover!=null?`<div class="kv"><span>${esc(g.spread_side==='home'?g.home:g.away)} covers</span><span>${pct(g.p_side_cover)}</span></div>`:''}${pushS}
-  ${g.p_side_total!=null?`<div class="kv"><span>${g.total_side==='over'?'Over':'Under'} hits</span><span>${pct(g.p_side_total)}</span></div>`:''}${pushT}
+  ${g.p_side_cover!=null?`<div class="kv"><span>${esc(g.spread_side==='home'?g.home:g.away)} covers</span><span>${pct(g.p_side_cover)}${g.p_side_cover_raw!=null?` <span class="when" style="display:inline" title="The model's own chance before calibration; the published number keeps only the share of the model's confidence that held up against past lines">model alone ${pct(g.p_side_cover_raw)}</span>`:''}</span></div>`:''}${pushS}
+  ${g.p_side_cover!=null&&beOdds(g.p_side_cover,g.p_push_spread)?`<div class="kv"><span>Breaks even at</span><span>${beOdds(g.p_side_cover,g.p_push_spread)} <span class="when" style="display:inline">worst price still worth it</span></span></div>`:''}
+  ${g.p_side_total!=null?`<div class="kv"><span>${g.total_side==='over'?'Over':'Under'} hits</span><span>${pct(g.p_side_total)}${g.p_side_total_raw!=null?` <span class="when" style="display:inline" title="The model's own chance before calibration">model alone ${pct(g.p_side_total_raw)}</span>`:''}</span></div>`:''}${pushT}
+  ${g.p_side_total!=null&&beOdds(g.p_side_total,g.p_push_total)?`<div class="kv"><span>Breaks even at</span><span>${beOdds(g.p_side_total,g.p_push_total)} <span class="when" style="display:inline">worst price still worth it</span></span></div>`:''}
   <h4 style="margin-top:12px">Most likely final scores</h4>${likely}</div>
  <div><h4>Simulated margins (${esc(g.home)} − ${esc(g.away)})</h4><div class="hist">${bars}</div>
   <div class="kv sub"><span>−45</span><span>0</span><span>+45</span></div>
@@ -793,7 +803,7 @@ function detail(g){
   <div class="kv"><span>Def EPA/play allowed (away · home)</span><span>${epa(R.away_def)} · ${epa(R.home_def)}</span></div>
   <div class="kv"><span>Expected plays (away · home)</span><span>${fmt(R.away_pace)} · ${fmt(R.home_pace)}</span></div>
   ${wtxt?`<div class="kv"><span>Weather</span><span>${wtxt}</span></div>`:''}
-  ${(g.notes||[]).length?`<div class="notes"><b>Notes:</b> ${esc(g.notes.join('; '))}</div>`:''}
+  ${(g.notes||[]).length?`<div class="notes"><b>Notes:</b> ${esc(g.notes.join('; '))}${(g.notes||[]).some(n=>n.includes('started last game'))?'. <span class="when" style="display:inline">QB notes come from the last game\'s box score; they are not confirmed starters for this game.</span>':''}</div>`:''}
   ${(g.auto_adj||[]).length?`<div class="notes"><b>Automatic correction:</b> ${esc(g.auto_adj.join('; '))}. The model underrates the service academies' option offenses; this is learned from past out-of-sample misses and doesn't block bets.</div>`:''}
   ${notes.length?`<div class="notes">${notes.map(esc).join(' · ')}</div>`:''}</div>
  <div><h4>Lines by book <span class="when" style="display:inline">${sTeam}'s line and price, best first · total</span></h4>${books}
@@ -910,7 +920,7 @@ document.getElementById('live').innerHTML=L.graded?[
  card('Games graded',L.graded),card('Avg miss, team score',f1(L.team_mae)),
  card('Margin miss <span class="when" style="display:inline">model / market</span>',`${f1(L.matched_margin_mae??L.margin_mae)} <span class="sub">/ ${f1(L.matched_mkt_margin_mae??L.mkt_margin_mae)}</span>${L.matched_n?`<span class="when">${L.matched_n} games with a line</span>`:''}`),
  card('Total miss <span class="when" style="display:inline">model / market</span>',`${f1(L.matched_total_mae??L.total_mae)} <span class="sub">/ ${f1(L.matched_mkt_total_mae)}</span>`),
- card('All picks ATS',rpc(L.ats_all)),card('All picks O/U',rpc(L.ou_all)),
+ card('All leans ATS',rpc(L.ats_all)),card('All leans O/U',rpc(L.ou_all)),
  card('Win probability <span class="when" style="display:inline">Brier</span>',L.brier==null?'—':`${L.brier.toFixed(3)}${L.brier_market!=null?`<span class="when">line-implied ${L.brier_market.toFixed(3)} · ${L.brier_n} games</span>`:`<span class="when">${L.brier_n} games · lower is better</span>`}`)].join('')
  :card('Games graded','0')+'<p class="sub" style="grid-column:1/-1">Results appear here once games the model projected before kickoff are final.</p>';
 // Spread and total scorecards: record, profit, risk and closing-line value, next to what the backtest led us to expect
@@ -944,6 +954,12 @@ document.getElementById('live').innerHTML=L.graded?[
  const sg=L.segments||[];if(sg.length)parts.push(`<div class="chart"><h4>Bets by game type</h4>${sg.map(x=>kv(x.label,(x.w+x.l+x.p)?`${x.w}–${x.l}${x.p?'–'+x.p:''} · ${x.units>=0?'+':'−'}${Math.abs(x.units).toFixed(2)}u`:'—')).join('')}${L.same_game?`<div class="when" style="margin-top:6px">${L.same_game} game(s) had both a spread and a total bet; their results tend to move together.</div>`:''}</div>`);
  const vd=L.value_decay||{},bp=L.best_price;
  if(vd.n||bp)parts.push(`<div class="chart"><h4>Getting the number</h4>${vd.n?kv('Bets whose number got worse after flagging',`${vd.moved} of ${vd.n}`)+kv('Typical time until it did',vd.median_hours!=null?`${vd.median_hours} hours`:'—')+kv('Moved within a day',`${vd.within_24h}`):''}${bp?kv('Profit at the best book’s line and price',`${bp.units>=0?'+':'−'}${Math.abs(bp.units).toFixed(2)} units (${bp.n} bets)`):''}<div class="when" style="margin-top:6px">"Got worse" = the line moved half a point or more toward the model's side, so anyone betting later got a worse number (good for a bet already placed). If that usually happens within a day, bet soon after the flag.</div></div>`);
+ const PA=L.paired;
+ if(PA&&(PA.rows||[]).length){const sv=x=>x==null?'—':`<span class="${x>0?'up':x<0?'down':''}">${x>0?'+':x<0?'−':''}${Math.abs(x).toFixed(2)}</span>`;
+  parts.push(`<div class="chart" style="grid-column:1/-1"><h4>Model vs market on the same games <span class="when">FBS games · projection frozen at kickoff vs the last line before kickoff</span></h4><div class="tbl"><table><thead><tr><th>Games</th><th>n</th><th>Model closer by <span class="when">pts/game</span></th><th class="hide-sm">±</th><th>Model side covered</th></tr></thead><tbody>${PA.rows.map(x=>`<tr${x.label==='All games'?' style="font-weight:600"':''}><td>${esc(x.label)}</td><td>${x.n}</td><td>${sv(x.adv)}</td><td class="hide-sm">${x.se!=null?'±'+(1.96*x.se).toFixed(2):'—'}</td><td>${pct(x.side_cover)}</td></tr>`).join('')}</tbody></table></div><div class="when" style="margin-top:6px">"Model closer by" = the line's miss on the final margin minus the model's (positive = the model was closer; ± is the 95% range). The last line before kickoff is the sharpest number there is, so a small negative is normal (about −0.4 a game in 2017–2025); the check is whether any one kind of game is far worse than that, which would point to a blind spot rather than bad luck.${PA.timing?` Timing, same ${PA.timing.n} games: model misses by ${f1(PA.timing.model)}, the first line we recorded by ${f1(PA.timing.first)}, the last line by ${f1(PA.timing.last)}.`:''}${PA.bets?` Recorded bets, average miss: ${['spread','total'].filter(k=>PA.bets[k]).map(k=>{const x=PA.bets[k];return `${k}s (${x.n}): model ${f1(x.model)}, line when flagged ${f1(x.flagged)}, last line ${f1(x.last)}`;}).join('; ')}.`:''}</div></div>`);}
+ const CH=L.challenger;
+ if(CH&&CH.n){const rr=r=>r&&(r.w+r.l+r.p)?`${rec(r)} <span class="when" style="display:inline">${pct(r.pct)}</span>`:'—';
+  parts.push(`<div class="chart"><h4>Challenger: separate totals model <span class="when">recorded, never bet</span></h4>${kv('Games',CH.n)}${kv('Total miss: live model / challenger',`${f1(CH.mae_live)} / ${f1(CH.mae_challenger)}${CH.mae_market!=null?` <span class="when" style="display:inline">last line ${f1(CH.mae_market)}</span>`:''}`)}${kv('Lean (projected minus actual)',`${s1(CH.lean_live)} / ${s1(CH.lean_challenger)}`)}${kv('7+ gaps vs the last line: live / challenger',`${rr(CH.rec_live)} · ${rr(CH.rec_challenger)}`)}<div class="when" style="margin-top:6px">In the backtest this model forecast totals more accurately but picked worse over/under bets, so it isn't used. It's tracked here on games it never saw, so a switch would rest on evidence gathered after the decision.</div></div>`);}
  document.getElementById('livemore').innerHTML=parts.length?`<div class="chartgrid" style="margin-top:12px">${parts.join('')}</div>`:'';})();
 const mm=(a,b)=>`${f1(a)} <span class="when">/ ${f1(b)}</span>`;
 const bt=(B.seasons||[]).map(s=>`<tr><td class="nw">${s.season}${s.holdout?' <span class="pill p-acc" title="Never used for tuning">holdout</span>':''}</td><td>${s.games}</td><td class="nw">${mm(s.margin_mae,s.mkt_margin_mae)}</td><td class="hide-sm">${f1(s.total_mae)}</td><td>${rp(s.ats_open)}</td><td>${rp(s.ats)}</td><td>${rp(s.ou_open)}</td><td class="hide-sm">${rp(s.ou)}</td><td class="hide-sm">${rp(s.ats_all)}</td></tr>`);
@@ -1104,7 +1120,7 @@ const st=R.state||{};// Charts and weekly table from the graded games
  const units=bw*100/110-bl;
  const blk=(lab,big,txt)=>`<div class="gblock"><div class="l">${lab}</div><div class="big2">${big}</div><div class="gtxt">${txt}</div></div>`;
  const b1=L.graded?blk('This season',nb?`${bw}–${bl}${bp?`–${bp}`:''} <span class="when" style="display:inline">bets · ${units>=0?'+':'−'}${Math.abs(units).toFixed(2)} units</span>`:'No bets yet',
-   `${L.graded} games graded. Picks on every game: ${rec(L.ats_all)} against the spread, ${rec(L.ou_all)} on totals. `+(L.clv_n?`Bets beat the last line before kickoff ${pct(L.clv_beat_pct)} of the time (${L.clv_n} bets), the best early sign of a real edge. `:'')+(()=>{const w=wil({w:bw,l:bl});if(!w)return '';const r=`${Math.round(w[0]*100)}–${Math.round(w[1]*100)}%`;return w[0]>0.524?`Bets are winning more than break-even even at the low end of their range (${r}).`:w[1]<0.524?`Bets are below break-even even at the high end of their range (${r}).`:`${bw+bl} bets is too few to tell skill from luck yet (true rate anywhere from ${r}).`;})()):blk('This season','—','No games graded yet.');
+   `${L.graded} games graded. Model leans on every game: ${rec(L.ats_all)} against the spread, ${rec(L.ou_all)} on totals. `+(L.clv_n?`Bets beat the last line before kickoff ${pct(L.clv_beat_pct)} of the time (${L.clv_n} bets), the best early sign of a real edge. `:'')+(()=>{const w=wil({w:bw,l:bl});if(!w)return '';const r=`${Math.round(w[0]*100)}–${Math.round(w[1]*100)}%`;return w[0]>0.524?`Bets are winning more than break-even even at the low end of their range (${r}).`:w[1]<0.524?`Bets are below break-even even at the high end of their range (${r}).`:`${bw+bl} bets is too few to tell skill from luck yet (true rate anywhere from ${r}).`;})()):blk('This season','—','No games graded yet.');
  const b2=H.margin_mae!=null&&H.mkt_margin_mae!=null?blk('Model vs market',`${f1(H.margin_mae)} <span class="when" style="display:inline">vs ${f1(H.mkt_margin_mae)} pts</span>`,
    `Average miss on the final margin in ${H.season}, a season the model never trained on, vs the closing line. The line is still more accurate overall: it sees injury and depth-chart news the model can't.`):'';
  const w1=o.ats_open&&wil(o.ats_open),w2=o.ou_open&&wil(o.ou_open);
@@ -1134,14 +1150,15 @@ const st=R.state||{};// Charts and weekly table from the graded games
   ${row('Odds feed',`${h.odds_events} events, ${h.odds_rows} book lines this run${h.unmatched_odds?` · ${h.unmatched_odds} couldn't be matched to a game`:''}`,h.slate_games>0&&!h.odds_events)}
   ${row('Teams and games',`${h.rated_teams} FBS teams rated · ${h.completed_games} of ${h.schedule_games} season games final`)}
   ${row('Graded this season',`${h.graded} games · ${h.bets_graded} bets`)}
-  ${row('Lines that can\'t become bets',`${h.backup_lines||0} games on the backup line only · ${h.stale_quotes||0} with quotes over 36 h old`,(h.backup_lines||0)+(h.stale_quotes||0)>0)}
+  ${row('Lines that can\'t become bets',`${h.backup_lines||0} games on the backup line only · ${h.stale_quotes||0} with a spread or total quote over 36 h old or pulled by every book`,(h.backup_lines||0)+(h.stale_quotes||0)>0)}
   ${row('Odds-matching notes',(h.oddities||[]).length?(h.oddities||[]).map(esc).join('<br>'):'none',(h.oddities||[]).length>0)}
   ${row('Automatic corrections',h.academy&&h.academy.n?`Service academies ${h.academy.margin>=0?'+':'−'}${Math.abs(h.academy.margin).toFixed(1)} pts margin, ${h.academy.total>=0?'+':'−'}${Math.abs(h.academy.total).toFixed(1)} total (from ${h.academy.n} out-of-sample games)`:'none')}
   ${row('Model fit',h.fit_id?`fingerprint ${esc(h.fit_id)} (saved with every prediction and archived daily)`:'—')}
  </tbody></table></div><p class="sub">Before publishing, every run checks that each projection is a real number in a sensible range and that team ratings exist; if not, it stops and keeps the last good version of the site.</p>`;})();
 // What the model is, and what changed when
 document.getElementById('changelog').innerHTML=`<ul>
- <li><b>Current model (v${(D.health||{}).model_version||5})</b>: opponent-adjusted team ratings (points, efficiency, pace) with preseason priors from returning production, QB quality and transfers; a points conversion; probabilities from a normal curve sized by past out-of-sample misses, and a score simulation for likely scores and push chances. Sportsbook lines are never inputs.</li>
+ <li><b>Current model (v${(D.health||{}).model_version||5})</b>: opponent-adjusted team ratings (points, efficiency, pace) with preseason priors from returning production, QB quality and transfers; a points conversion; probabilities from a normal curve sized by past out-of-sample misses, with spread pushes from how often games really end on each margin (3, 7, 10...); a score simulation for likely scores. Sportsbook lines are never inputs.</li>
+ <li><b>Oct 28, 2026</b>: each market's quote is checked on its own (a fresh total can no longer make an old spread look current); one probability function for every cover, push, best-book and expected-value number, with key-number push chances; fixed a slip that let a likely push inflate the published cover chance by up to about 2 points (it never changed a bet); every probability comes from one whole-number distribution per market, checked to fit together at every line; the backtest refits the points conversion every week, as the live model does; decision-log entries get an id and the policy that made them; model-vs-market table and a shadow totals challenger on this page; "Model lean" instead of "Pick". Projections and bet rules unchanged.</li>
  <li><b>Bet rules</b>: a 7+ point gap with the line on the spread or total, no blocking caution (QB change, manual adjustment, FCS team, early season, wind/rain, or a 10+ point gap). Bets keep the line they were first flagged at.</li>
  <li><b>Oct 27, 2026</b>: new look and a How-it-works page; early-season gaps (weeks 1–3) become bets from 2027 (in 2023–2026 they did at least as well as later ones, in both markets); the backtest applies the service-academy correction, as the live projections do; drift checks (leans and home field) on this page; line snapshots and predictions saved in small weekly files so the repository stays small; automatic retries when a data provider hiccups; profit ranges wait for 20+ bets over 8+ weeks. Projections unchanged.</li>
  <li><b>Oct 23, 2026 (later)</b>: new keep rule for model inputs (the gain must be real, must not cost bets against opening lines, and must hold up on the newest season; the current inputs pass, so projections are unchanged); QB changes replayed in the backtest's caution table; Sunday line snapshots to catch opening lines; edge column shows today's edge for moved bets; moved lines say whether they went for or against the bet. Bet rules unchanged.</li>
@@ -1279,6 +1296,7 @@ function teamCard(t){
   <div class="kv"><span>Offense</span><span>${s1(t.off_pts)} pts/game <span class="when">#${t.off_pts_rank??t.off_rank}</span></span></div><div class="kv"><span>Defense</span><span>${s1(t.def_pts)} pts/game <span class="when">#${t.def_pts_rank??t.def_rank}</span></span></div>
   <div class="kv"><span>Offense EPA/play</span><span>${epa(t.off)} <span class="when">#${t.off_rank}</span></span></div><div class="kv"><span>Defense EPA/play allowed</span><span>${epa(t.deff)} <span class="when">#${t.def_rank}</span></span></div>
   <div class="kv"><span>Plays per game</span><span>${f1(t.pace)}</span></div>${t.prev_rank!=null?`<div class="kv"><span>Last week</span><span>#${t.prev_rank} · ${s1(t.prev_power)}</span></div>`:''}
+  ${(()=>{const M=window.MODEL||{},lam=M.lam||3,n=gamesPlayed(t.team),sh=lam/(n+lam);return `<div class="kv" title="Each game counts as one game of evidence against a preseason prior worth ${lam} games"><span>Still from the preseason prior</span><span>${pct(sh)} <span class="when" style="display:inline">${n} game${n===1?'':'s'} played${ratingPM(t.team)?` · ±${ratingPM(t.team).toFixed(1)} pts (80%)`:''}</span></span></div>`;})()}
   ${rhist(t)}
   <div style="margin-top:10px"><a class="lnk" href="matchup.html#${encodeURIComponent(t.team)}||0">Compare ${esc(t.team)} with any team →</a></div></div></div>`;}
 const SORTS={sos:(a,b)=>(SOS[b.team]??-99)-(SOS[a.team]??-99),power:(a,b)=>a.rank-b.rank,pw:(a,b)=>(b.pw??-1)-(a.pw??-1),off:(a,b)=>(b.off_pts??b.off)-(a.off_pts??a.off),deff:(a,b)=>(b.def_pts??-b.deff)-(a.def_pts??-a.deff),pace:(a,b)=>b.pace-a.pace};
@@ -1409,6 +1427,14 @@ function go(){
   <h4 class="mh">Why</h4>
   <div class="eq"><span><b>${by(mn)}</b><span class="when">on a neutral field</span></span>${neutral?'':`<span class="op">+</span><span><b>${Math.abs(hf).toFixed(1)} for ${esc(hf>=0?a:b)}</b><span class="when">home field</span></span>`}${adj?`<span class="op">+</span><span><b>${Math.abs(adj).toFixed(1)} for ${esc(adj>0?a:b)}</b><span class="when">what-if</span></span>`:''}<span class="op">=</span><span><b>${by(ma)}</b><span class="when">projected margin</span></span></div>
   <div class="sub">Power ratings ${s1v(pw(a))} vs ${s1v(pw(b))} compare each team with an average opponent; the matchup number also accounts for how these two offenses and defenses meet, and their pace.</div>
+  ${(()=>{const K=MD.key_margin;if(!K||!K.length)return '';
+    // margin distribution: normal curve around the projection, reweighted by how often games end on each margin
+    const J=[],P=[];let tot=0;for(let j=-90;j<=90;j++){const k=Math.abs(j),w=k<K.length?K[k]:1,p=(Phi((j+0.5-ma)/sd)-Phi((j-0.5-ma)/sd))*w;J.push(j);P.push(p);tot+=p;}
+    const base=Math.round(spr*2)/2,ls=[...new Set([base-1,base-0.5,base,base+0.5,base+1].filter(x=>x>=0))];
+    const fs=ma>=0?a:b,fm=j=>ma>=0?j:-j;  // the favorite and its margin
+    const rows=ls.map(x=>{let w=0,u=0;J.forEach((j,i)=>{const v=fm(j)-x;if(v>0)w+=P[i];else if(v===0)u+=P[i];});w/=tot;u/=tot;
+     return `<tr${x===base?' class="on"':''}><td>${esc(fs)} ${x===0?'PK':'−'+x}</td><td>${pc(w)}</td><td>${u>=0.005?pc(u):'—'}</td><td>${pc(1-w-u)}</td></tr>`;}).join('');
+    return `<h4 class="mh">Chance to cover <span class="when" style="display:inline">model alone, no calibration; counts how often games end on 3, 7, 10…</span></h4><div class="tbl"><table class="mtbl vtbl"><thead><tr><th>Line</th><th>${esc(fs)} covers</th><th>Push</th><th>${esc(fs===a?b:a)} covers</th></tr></thead><tbody>${rows}</tbody></table></div><div class="when" style="margin-top:4px">These are the model's raw chances; the weekly projections publish calibrated ones, which are much closer to 50% because past edges against real lines were smaller than the model thought.</div>`;})()}
   <h4 class="mh">Every venue</h4>
   <div class="tbl"><table class="mtbl vtbl"><thead><tr><th>Venue</th><th>Margin</th><th>Win chance</th><th>Total</th></tr></thead><tbody>${at}</tbody></table></div>
   <h4 class="mh">Side by side</h4>
@@ -1458,7 +1484,7 @@ METHOD_BODY = NAV("x", "How the model works") + r"""
 <p>One correction is added: Army, Navy and Air Force run option offenses that the ratings underrate, so their projections get <span id="m-acad">a correction</span> learned from earlier seasons' misses.</p>
 
 <h2 id="probs">Probabilities</h2>
-<p>Win, cover and over chances come from a normal curve around the projection, sized by how far off past out-of-sample projections have been (about <span id="m-msd">16</span> points on the margin and <span id="m-tsd">16</span> on the total). Against the sportsbooks the model's raw confidence is too high, so cover chances keep only the share that held up in the backtest: <span id="m-shr">about a quarter</span>. A score simulation supplies the most likely final scores and the chance of a push.</p>
+<p>Win, cover and over chances come from a normal curve around the projection, sized by how far off past out-of-sample projections have been (about <span id="m-msd">16</span> points on the margin and <span id="m-tsd">16</span> on the total). Against the sportsbooks the model's raw confidence is too high, so cover chances keep only the share that held up in the backtest: <span id="m-shr">about a quarter</span>. Spread pushes use how often games really end on each margin: about 2.6 times the smooth curve on 3 and 2.3 times on 7, and never on 0. The same function prices every line, so the published chance, the expected value and the best book always agree. A score simulation supplies the most likely final scores.</p>
 
 <h2 id="bets">Bet rules</h2>
 <ul>
@@ -1470,7 +1496,7 @@ METHOD_BODY = NAV("x", "How the model works") + r"""
 <p id="m-rules" class="sub"></p>
 
 <h2 id="tests">How it's tested</h2>
-<p><b>Walk-forward backtest.</b> Every past week is predicted using only what was known before it: ratings from earlier games and a conversion fit on earlier seasons. Those predictions are graded against the lines of the time. <span id="m-bt"></span></p>
+<p><b>Walk-forward backtest.</b> Every past week is predicted using only what was known before it: ratings from earlier games and a points conversion refit each week on earlier games, the same clock the live model runs on. A self-test rewrites one week's results and checks that no earlier projection moves. Those predictions are graded against the lines of the time. <span id="m-bt"></span></p>
 <p><b>Keeping or dropping an input.</b> A new input is kept only if all three hold: the accuracy gain is real (its 95% range, resampling whole weeks, stays above zero), it doesn't cost bets against opening lines, and it doesn't make the newest complete season clearly worse. More than 40 ideas have been tested; the Performance page lists them and why they were dropped.</p>
 <p><b>Live record.</b> Every projection is frozen at kickoff and graded when the game is final. Every bet and blocked flag is written once to a decision log that is never edited.</p>
 
@@ -1484,12 +1510,17 @@ METHOD_BODY = NAV("x", "How the model works") + r"""
 <h2 id="terms">Terms</h2>
 <dl>
 <dt>Spread, ATS</dt><dd>The points the favorite gives. "Against the spread" means the bet is graded after adding the spread.</dd>
+<dt>Spread signs</dt><dd>A minus sign marks the favorite: "Texas −7" means Texas must win by more than 7; "Florida +7" means Florida covers by losing by fewer than 7 (or winning). Stored lines are from the home team's view, so −7 means the home team is favored by 7.</dd>
+<dt>Model lean, bet, flag</dt><dd>A lean is the model's side in every game. A bet is a lean with a 7+ point edge, no caution and a fresh sportsbook quote; it's recorded and graded. A flag has the edge but is held back by a caution. A recorded bet whose edge later drops under 7 shows as "Line moved" or "Model moved".</dd>
+<dt>Calibrated chance</dt><dd>The model's own chance scaled back toward 50% by how much of its confidence held up against past lines. "Model alone" is the chance before that.</dd>
+<dt>Breaks even at</dt><dd>The worst price at which a bet with that calibrated chance still has positive expected value.</dd>
 <dt>Total, O/U</dt><dd>The combined points; a bet on the over or the under.</dd>
 <dt>Edge</dt><dd>Points between the model's number and the line.</dd>
 <dt>Opening and closing lines</dt><dd>The first and last lines before kickoff. Closing lines are the sharpest, so beating them is the best sign of a real edge.</dd>
 <dt>Closing-line value (CLV)</dt><dd>How many points better a bet's line was than the closing line.</dd>
 <dt>Expected value (EV)</dt><dd>Average profit per unit risked, from the calibrated cover chance and the price.</dd>
-<dt>Push</dt><dd>A result landing exactly on the line; the stake is returned.</dd>
+<dt>Push</dt><dd>A result landing exactly on the line; the stake is returned. Common on 3 and 7.</dd>
+<dt>QB change</dt><dd>An alert that a team's last game was started by someone other than its regular quarterback, read from the box score. It is not a confirmed starter for the next game, so it blocks a bet until the news is checked.</dd>
 <dt>Brier score</dt><dd>Accuracy of probabilities: 0 is perfect, 0.25 is a coin flip.</dd>
 <dt>Units</dt><dd>Profit counting each bet as 1 unit risked at −110.</dd>
 </dl>

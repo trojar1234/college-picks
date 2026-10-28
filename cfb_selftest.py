@@ -75,9 +75,97 @@ def test_prices_and_eligibility():
     check(predict.bet_eligible(fresh, "spread", now), "a fresh sportsbook quote can become a bet")
     check(not predict.bet_eligible(backup, "spread", now), "a backup CollegeFootballData line can't become a bet")
     check(not predict.bet_eligible(stale, "spread", now), "a quote more than 36 hours old can't become a bet")
+    # adverse cases: one market's quote must never make the other look current
+    mixed = dict(market=dict(spread=-3.0, total=52.5, spread_src="odds", total_src="odds", books=[dict(book="A")],
+                             last_ts="2026-10-20T08:00:00+00:00", spread_ts="2026-10-17T08:00:00+00:00",
+                             total_ts="2026-10-20T08:00:00+00:00", spread_books=1, total_books=1))
+    check(not predict.bet_eligible(mixed, "spread", now), "an expired spread can't ride on a fresh total's timestamp")
+    check(predict.bet_eligible(mixed, "total", now), "the fresh total is still eligible")
+    pulled = dict(market=dict(mixed["market"], spread_ts="2026-10-20T08:00:00+00:00", spread_books=0))
+    check(not predict.bet_eligible(pulled, "spread", now), "a spread no book offers in the newest snapshot can't become a bet")
+    games = pd.DataFrame([dict(game_id=9, start=pd.Timestamp("2026-10-21 16:00", tz="UTC"))])
+    hist = pd.DataFrame([dict(ts=pd.Timestamp("2026-10-17 08:00", tz="UTC"), game_id=9, book="A", home_spread=-3.0, total=52.5),
+                         dict(ts=pd.Timestamp("2026-10-20 08:00", tz="UTC"), game_id=9, book="A", home_spread=np.nan, total=53.5)])
+    mv = lines.market_view(hist, games)[9]
+    check(mv["spread_ts"].startswith("2026-10-17") and mv["total_ts"].startswith("2026-10-20"),
+          "each market carries the time of its own last quote")
+    check(mv["spread_books"] == 0 and mv["total_books"] == 1, "each market counts its own books in the newest snapshot")
+    check(not predict.bet_eligible(dict(market=dict(mv, spread_src="odds", total_src="odds")), "spread", now)
+          and predict.bet_eligible(dict(market=dict(mv, spread_src="odds", total_src="odds")), "total", now),
+          "end to end: pulled spread ineligible, fresh total eligible")
+    # the key-number margin distribution and the probabilities built on it
+    key = [0.0, 0.94, 0.78, 2.61, 0.98, 0.68, 0.91, 2.26, 0.82, 0.41, 1.36,  # learned weights, margins 0-21
+           0.75, 0.47, 0.62, 1.4, 0.58, 0.54, 1.33, 0.94, 0.67, 0.68, 1.57]
+    j, pm = lines.margin_pmf(-2.0, 15.7, key)
+    check(abs(pm.sum() - 1) < 1e-9 and pm[j == 0][0] == 0.0, "margin distribution sums to 1 and has no ties")
+    check(pm[j == 3][0] > 2 * pm[j == 4][0] and pm[j == 7][0] > 2 * pm[j == 8][0], "3 and 7 are much likelier than 4 and 8")
+    w3, u3 = lines._cover_prob("spread", "home", -3.0, -2.0, 15.7, 1.0, key=key)
+    w25, u25 = lines._cover_prob("spread", "home", -2.5, -2.0, 15.7, 1.0, ref=-3.0, key=key)
+    w35, _ = lines._cover_prob("spread", "home", -3.5, -2.0, 15.7, 1.0, ref=-3.0, key=key)
+    check(u3 > 0.045 and u25 == 0, "a whole-number 3 carries a real push chance; a half point none")
+    check(abs(w25 - (w3 + u3)) < 1e-9 and abs(w35 - w3) < 1e-9, "the hook turns pushes into wins, nothing else")
+    for sh in (1.0, 0.24):  # no edge -> win and loss equally likely, so no positive value at -110
+        pw, pp = lines._cover_prob("spread", "home", -7.0, -7.0, 15.7, sh, key=key)
+        check(abs(pw - (1 - pw - pp)) < 1e-9 and lines.ev(pw, pp, -110) < 0,
+              f"no edge on a key number is never a positive bet (calibration {sh})")
+    pa, _ = lines._cover_prob("spread", "away", 7.0, -14.0, 15.7, 0.24, key=key)
+    ph, _ = lines._cover_prob("spread", "home", -7.0, -14.0, 15.7, 0.24, key=key)
+    check(ph > 0.5 > pa, "a 7-point edge favors the model's side, calibrated or not")
+    # The probabilities fit together at every line a book could hang, on both sides, calibrated or not:
+    # win + push + loss = 1, more points never lowers the chance of winning, half a point off a whole
+    # number turns exactly that number's pushes into wins (3, 7, 10, 14, ...), and one side's win is the
+    # other side's loss.
+    bad = []
+    for ms in (-24.0, -10.5, -3.0, 0.0, 2.5, 7.0, 17.0):           # model spread (home view)
+        for R in (ms - 7.5, ms - 3.0, ms, ms + 3.5, ms + 9.0):      # consensus line (home view)
+            for sh in (1.0, 0.25):
+                for side, ref in (("home", R), ("away", -R)):
+                    Ls = [ref + 0.5 * i for i in range(-14, 15)]
+                    pr = {L: lines._cover_prob("spread", side, L, ms, 15.7, sh, ref=ref, key=key) for L in Ls}
+                    for L in Ls:
+                        w, u = pr[L]
+                        if not (0 <= w and 0 <= u and w + u <= 1 + 1e-12):
+                            bad.append(("range", ms, R, sh, side, L))
+                        if L + 0.5 in pr and (pr[L + 0.5][0] < w - 1e-12 or sum(pr[L + 0.5]) < w + u - 1e-12):
+                            bad.append(("monotone", ms, R, sh, side, L))
+                        if float(L).is_integer() and L + 0.5 in pr and L - 0.5 in pr:
+                            if abs(pr[L + 0.5][0] - (w + u)) > 1e-9 or abs(pr[L - 0.5][0] - w) > 1e-9 or pr[L + 0.5][1] or pr[L - 0.5][1]:
+                                bad.append(("hook", ms, R, sh, side, L))
+                    if side == "home":
+                        for L in Ls:
+                            wa, ua = lines._cover_prob("spread", "away", -L, ms, 15.7, sh, ref=-R, key=key)
+                            if abs(pr[L][0] + pr[L][1] + wa - 1) > 1e-9 or abs(ua - pr[L][1]) > 1e-12:
+                                bad.append(("sides", ms, R, sh, L))
+    for mt in (41.0, 55.5, 68.0):  # totals: same checks (over gets more room as the line rises)
+        for R in (mt - 8.0, mt, mt + 6.5):
+            for sh in (1.0, 0.18):
+                Ls = [R + 0.5 * i for i in range(-14, 15)]
+                po = {L: lines._cover_prob("total", "over", L, mt, 16.0, sh, ref=R) for L in Ls}
+                for L in Ls:
+                    w, u = po[L]
+                    wu, uu = lines._cover_prob("total", "under", L, mt, 16.0, sh, ref=R)
+                    if not (0 <= w and w + u <= 1 + 1e-12) or abs(w + u + wu - 1) > 1e-9 or abs(uu - u) > 1e-12:
+                        bad.append(("total", mt, R, sh, L))
+                    if L + 0.5 in po and po[L + 0.5][0] > w + 1e-12:
+                        bad.append(("total monotone", mt, R, sh, L))
+    check(not bad, f"probabilities fit together at every line (sum to 1, monotone, hooks, both sides){': ' + str(bad[:3]) if bad else ''}")
+    j, pm = lines.margin_pmf(0.0, 15.7, key)
+    pu = {k: pm[j == k][0] + pm[j == -k][0] for k in range(1, 16)}
+    check(pu[3] > pu[2] and pu[3] > pu[4] and pu[7] > pu[6] and pu[7] > pu[8] and pu[10] > pu[9] and pu[14] > pu[13] and pu[14] > pu[15],
+          "games end on 3, 7, 10 and 14 more often than the margins next to them")
     # the 7-point edge is inclusive and exact on half-point lines
     check(abs(-6.5 - (-13.5)) >= C.SPREAD_EDGE and abs(44.5 - 51.5) >= C.TOTAL_EDGE, "an exact 7.0 gap qualifies")
     check(not (abs(44.5 - 51.4) >= C.TOTAL_EDGE), "a 6.9 gap doesn't")
+
+
+def test_cfbd_spellings():
+    """CFBD has used camelCase (v2) and snake_case (v1) names; both must give the same lines."""
+    import cfb_data as Dt
+    camel = [dict(id=1, lines=[dict(provider="consensus", spread=-3.5, spreadOpen=-2.5, overUnder=51.5, overUnderOpen=50.0)])]
+    snake = [dict(id=1, lines=[dict(provider="consensus", spread=-3.5, spread_open=-2.5, over_under=51.5, over_under_open=50.0)])]
+    a, b = Dt.lines_table(camel).iloc[0], Dt.lines_table(snake).iloc[0]
+    check(a.cfbd_spread_open == b.cfbd_spread_open == -2.5, "opening spread read from either spelling")
+    check(a.cfbd_total == b.cfbd_total == 51.5 and a.cfbd_total_open == b.cfbd_total_open == 50.0, "totals read from either spelling")
 
 
 def test_odds_matching():
@@ -140,6 +228,34 @@ def test_keep_rule():
     # game 1: model home by 15 vs line home -5 -> home bet, wins by 10 -> covers; total 55 vs 45 -> over, 50 -> wins
     # game 2: same bets, home loses by 10 -> spread loss; total 50 -> over wins
     check(u["w"] == 3 and u["l"] == 1, "bet check grades spreads and totals against opening lines correctly")
+
+
+def test_no_leakage():
+    """The backtest never sees the future: changing one week's results must leave every earlier
+    projection exactly as it was (the weekly points-conversion refit is where a leak could hide)."""
+    import cfb_model as model
+    rng = np.random.default_rng(3)
+    n = 3 * 6 * 60  # 3 seasons, 6 weeks, 60 games
+    P = rng.normal(70, 6, (n, 2)); Q = rng.normal(0, 0.1, (n, 2)); S_ = rng.normal(0.42, 0.04, (n, 2))
+    bt = pd.DataFrame(dict(season=np.repeat([2022, 2023, 2024], n // 3), wk=np.tile(np.repeat(np.arange(1, 7), 60), 3),
+                           game_id=np.arange(n), home=[f"H{i}" for i in range(n)], away=[f"A{i}" for i in range(n)],
+                           home_tier="P4", away_tier="P4", h=1.0,
+                           p_h=P[:, 0], p_a=P[:, 1], q_h=Q[:, 0], q_a=Q[:, 1], s_h=S_[:, 0], s_a=S_[:, 1]))
+    bt["home_pts"] = (28 + 0.25 * (bt.p_h - 70) + 60 * bt.q_h + rng.normal(0, 10, n)).round()
+    bt["away_pts"] = (25 + 0.25 * (bt.p_a - 70) + 60 * bt.q_a + rng.normal(0, 10, n)).round()
+    a = model.walk_forward(bt, 2023)
+    bt2 = bt.copy()
+    hit = (bt2.season == 2024) & (bt2.wk == 4)
+    bt2.loc[hit, "home_pts"] = bt2.loc[hit, "home_pts"] + 21  # rewrite week 4's results
+    b = model.walk_forward(bt2, 2023)
+    key = ["game_id"]
+    m = a.merge(b, on=key, suffixes=("", "_2"))
+    early = (m.season < 2024) | (m.wk <= 4)
+    check(len(m) == len(a) and np.allclose(m.loc[early, "pred_h"], m.loc[early, "pred_h_2"])
+          and np.allclose(m.loc[early, "pred_a"], m.loc[early, "pred_a_2"]),
+          "backtest: changing week 4's results leaves every projection up to week 4 unchanged")
+    check(not np.allclose(m.loc[~early, "pred_h"], m.loc[~early, "pred_h_2"]),
+          "backtest: later weeks do learn from week 4 (the test can see a change)")
 
 
 def test_storage():
@@ -205,8 +321,12 @@ def test_published():
     if dec.exists():
         try:
             d = pd.read_csv(dec)
-            check({"ts", "game_id", "market", "status"} <= set(d.columns), "decision log has its columns")
-            check(not d.duplicated(["game_id", "market", "status"]).any(), "decision log has no repeated entries")
+            check({"decision_id", "ts", "game_id", "market", "status", "policy", "supersedes"} <= set(d.columns),
+                  "decision log has its columns (id, policy, supersedes)")
+            check(not d.duplicated(["game_id", "market", "status", "policy"]).any(), "decision log has no repeated entries")
+            check(d.decision_id.notna().all() and not d.decision_id.duplicated().any(), "every decision has its own id")
+            sup = d.supersedes.dropna().astype(str)
+            check(sup[sup != ""].isin(set(d.decision_id.astype(str))).all(), "every superseded decision is in the log")
         except Exception as e:
             check(False, f"decision log readable ({e})")
     for g in D["games"]:
@@ -256,9 +376,11 @@ if __name__ == "__main__":
     test_grading()
     test_best_line()
     test_prices_and_eligibility()
+    test_cfbd_spellings()
     test_odds_matching()
     test_record_keeping()
     test_keep_rule()
+    test_no_leakage()
     test_storage()
     test_published()
     if FAIL:

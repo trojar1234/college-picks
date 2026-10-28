@@ -160,7 +160,15 @@ def market_view(hist, games):
         # Consensus = median of the books, rounded to the half point books actually use.
         snaps = (np.floor(snaps * 2 + 0.5) / 2)
         latest = pre[pre.ts == pre.ts.max()]
-        out[int(gid)] = dict(
+        # Each market's own freshness: when it was last quoted and by how many books in the newest
+        # snapshot. A book can pull a spread (say, on injury news) while still offering the total, so
+        # one market's quote must never make the other look current.
+        fresh = {}
+        for k, col in (("spread", "home_spread"), ("total", "total")):
+            q = pre[pre[col].notna()]
+            fresh[f"{k}_ts"] = q.ts.max().isoformat() if len(q) else None
+            fresh[f"{k}_books"] = int(latest[col].notna().sum())
+        out[int(gid)] = dict(**fresh,
             open_spread=_f(snaps.spread.dropna().iloc[0]) if snaps.spread.notna().any() else None,
             open_total=_f(snaps.total.dropna().iloc[0]) if snaps.total.notna().any() else None,
             spread=_f(snaps.spread.dropna().iloc[-1]) if snaps.spread.notna().any() else None,
@@ -199,19 +207,70 @@ def _edge(kind, side, line, model):
     return (model - line) if side == "over" else (line - model)
 
 
-def _cover_prob(kind, side, line, model, sd, shrink, ref=None):
+KEY_RANGE = 90  # winning margins considered: -90..90
+TOTAL_RANGE = 160  # final totals considered: 0..160
+
+
+def _discrete(center, sd, lo, hi):
+    """Chance of each whole number lo..hi under a normal curve (each number takes the half point either side)."""
+    j = np.arange(lo, hi + 1)
+    c = np.array([_phi(x) for x in (np.arange(lo - 0.5, hi + 1.0) - center) / sd])
+    return j, np.diff(c)
+
+
+def margin_pmf(margin, sd, key):
+    """Chance of each final home margin (-90..90): a normal curve around the model's margin with the
+    out-of-sample error size, reweighted by how often games end by each margin (key numbers: 3, 7, 10,
+    14, 17, 21 happen far more often than a smooth curve says; ties never happen). `key` holds those
+    weights by margin size, learned from earlier seasons' out-of-sample results (cfb_model.key_numbers).
+    Without weights it is the plain normal curve on whole numbers."""
+    j, p = _discrete(margin, sd, -KEY_RANGE, KEY_RANGE)
+    if key:
+        k = np.abs(j)
+        p = p * np.array([key[i] if i < len(key) else 1.0 for i in k])
+    return j, p / p.sum()
+
+
+def total_pmf(total, sd):
+    """Chance of each final total (0..160): the normal curve on whole numbers. Totals have no strong key
+    numbers; out of sample this predicted total pushes as well as anything tested (the simulation did worse)."""
+    j, p = _discrete(total, sd, 0, TOTAL_RANGE)
+    return j, p / p.sum()
+
+
+def _side_wp(kind, side, line, model, sd, key):
+    """Win and push chances for one side at one line, from the whole-number outcome distribution."""
+    if kind == "spread":
+        j, p = margin_pmf(-model, sd, key)  # model is the home spread, so the home margin is -model
+        m = j + line if side == "home" else line - j  # the side's margin against the line
+    else:
+        j, p = total_pmf(model, sd)
+        m = j - line if side == "over" else line - j
+    return float(p[m > 0].sum()), float(p[m == 0].sum())
+
+
+def _cover_prob(kind, side, line, model, sd, shrink, ref=None, key=None):
     """Chance the side wins at this line, and the chance of a push on a whole number.
     The level is calibrated (shrunk toward 50%, as the model's edges are) at the reference line;
-    moving between lines uses the full outcome distribution, because the value of an extra half
-    point depends on how often games land there, not on the model's edge."""
+    moving between lines uses the whole-number outcome distribution, because the value of an extra half
+    point depends on how often games land there, not on the model's edge. Spreads use the key-number
+    distribution (pushes on 3 and 7 are 3 times as common as a smooth curve says); totals the normal
+    curve on whole numbers. So with one reference line, the chances at every line fit together exactly:
+    win + push + loss = 1, more points never hurt, half a point off a whole number turns exactly its
+    pushes into wins, and one side's win is the other's loss (cfb_selftest checks all of it).
+    One function for every spread and total probability: the projections, the best book and the
+    expected value all come from here. (A version that also moved the calibrated level onto the
+    key-number distribution scored slightly worse on win/loss out of sample, so the level stays normal.)"""
     ref = line if ref is None else ref
-    zr, z = _edge(kind, side, ref, model) / sd, _edge(kind, side, line, model) / sd
-    push = (math.exp(-0.5 * z * z) / (math.sqrt(2 * math.pi) * sd)) if float(line).is_integer() else 0.0
-    p = 0.5 + shrink * (_phi(zr) - 0.5) + (_phi(z) - _phi(zr)) - push / 2
+    zr = _edge(kind, side, ref, model) / sd
+    level = 0.5 + shrink * (_phi(zr) - 0.5)  # calibrated chance at the reference line, push counted half
+    w, push = _side_wp(kind, side, line, model, sd, key)
+    w0, u0 = (w, push) if line == ref else _side_wp(kind, side, ref, model, sd, key)
+    p = level + (w + push / 2) - (w0 + u0 / 2) - push / 2
     return min(max(p, 0.0), 1.0 - push), push
 
 
-def best_line(books, kind, side, model=None, sd=16.0, shrink=1.0):
+def best_line(books, kind, side, model=None, sd=16.0, shrink=1.0, key=None):
     """The single book that pays best for one side. With the model's number, books are ranked by
     expected value (line and price together, so half a point at -125 doesn't beat -110 automatically);
     without it, by the most points with price as the tiebreak."""
@@ -235,7 +294,7 @@ def best_line(books, kind, side, model=None, sd=16.0, shrink=1.0):
             val = -line if side == "over" else line
         price = None if price is None or price != price else int(price)
         if model is not None:
-            pw, pp = _cover_prob(kind, side, line, model, sd, shrink, ref)
+            pw, pp = _cover_prob(kind, side, line, model, sd, shrink, ref, key)
             key = (ev(pw, pp, price), val)
         else:
             pw = pp = None

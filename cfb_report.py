@@ -502,7 +502,9 @@ def live(store, season, margin_sd=None, total_sd=None):
                            home_tier=p.get("home_tier"), away_tier=p.get("away_tier"),
                            fs=p.get("first_spread_flag"), ft=p.get("first_total_flag"),
                            fs_ts=(p.get("first_spread_flag") or {}).get("ts"),
-                           ft_ts=(p.get("first_total_flag") or {}).get("ts")) for p in rows])
+                           ft_ts=(p.get("first_total_flag") or {}).get("ts"),
+                           qb="QB change" in (p.get("low_conf") or []), ch_total=p.get("challenger_total"),
+                           open_spread=(p.get("market") or {}).get("open_spread")) for p in rows])
     col = lambda c: r[c] if c in r else pd.Series([None] * len(r))
     out = dict(
         graded=len(r),
@@ -624,6 +626,8 @@ def live(store, season, margin_sd=None, total_sd=None):
                 cs = w.close_spread[m].astype(float)
                 msd = float(((w.home_pts - w.away_pts)[m] + cs).std()) if m.sum() >= 100 else margin_sd
                 out["brier_market"] = _brier(_phi(-cs / msd), y[m])
+    out["paired"] = paired(r)
+    out["challenger"] = challenger(r)
     # Published cover chances vs what happened (every game, the model's side vs the last line)
     for k, pc, res_c in (("spread", "p_side_cover", "ats_all"), ("total", "p_side_total", "ou_all")):
         if res_c in r:
@@ -631,6 +635,103 @@ def live(store, season, margin_sd=None, total_sd=None):
             if len(x):
                 out[f"published_{k}"] = dict(avg_p=round(float(x[pc].mean()), 3), actual=round(float((x[res_c] == "win").mean()), 3),
                                              n=int(len(x)), brier=_brier(x[pc], (x[res_c] == "win").astype(float)))
+    return out
+
+
+def paired(r):
+    """Model vs market on exactly the same games: the market's miss minus the model's miss on the final
+    margin (positive = the model was closer), using the projection frozen at kickoff and the last line
+    before kickoff, so both had the same information cutoff. Broken down by where the model disagreed,
+    to show whether a weak stretch is concentrated (one kind of game) or broad (ordinary variance)."""
+    need = ("close_spread", "model_spread", "home_pts", "away_pts")
+    if not all(c in r for c in need):
+        return None
+    x = r[r.close_spread.notna() & r.model_spread.notna() & ~r.home_tier.eq("FCS") & ~r.away_tier.eq("FCS")].copy()
+    if len(x) < 20:
+        return None
+    am = (x.home_pts - x.away_pts).astype(float)
+    cs, ms = x.close_spread.astype(float), x.model_spread.astype(float)
+    x["adv"] = (am + cs).abs() - (am + ms).abs()
+    e = cs - ms  # >0: the model liked the home side against the line
+    side_line = np.where(e > 0, cs, -cs)
+    cover = np.where(e > 0, am + cs, -(am + cs))
+    x["cov"] = np.where(cover > 0, 1.0, np.where(cover < 0, 0.0, np.nan))
+    gap = e.abs()
+
+    def row(label, m):
+        g = x[m]
+        if not len(g):
+            return None
+        a = g.adv
+        c = g["cov"].dropna()
+        return dict(label=label, n=int(len(g)), adv=round(float(a.mean()), 2),
+                    se=round(float(a.std() / np.sqrt(len(g))), 2) if len(g) > 1 else None,
+                    side_cover=round(float(c.mean()), 3) if len(c) else None)
+    groups = [
+        ("All games", np.ones(len(x), bool)),
+        ("Model side at home", e > 0), ("Model side on the road", e < 0),
+        ("Model side favored", side_line < 0), ("Model side the underdog", side_line > 0),
+        ("Gap under 3", gap < 3), ("Gap 3 to 7", (gap >= 3) & (gap < 7)), ("Gap 7 or more", gap >= 7),
+        ("Line 17 or more", cs.abs() >= 17), ("QB change flagged", x.qb.astype(bool)),
+        ("Weeks 1-6", x.wk <= 6), ("Week 7 on", x.wk >= 7),
+    ]
+    rows = [r_ for r_ in (row(lab, np.asarray(m)) for lab, m in groups) if r_]
+    out = dict(rows=rows)
+    # Recorded bets: the model's miss next to the line's miss when the bet was flagged (the market at the
+    # same moment, before later news) and the last line before kickoff
+    bets = {}
+    for k, fc, rc in (("spread", "fs", "ats"), ("total", "ft", "ou")):
+        e = []
+        for _, g in r.iterrows():
+            f = g.get(fc)
+            if not isinstance(g.get(rc), str):  # graded bets only
+                continue
+            res = g.get("close_spread" if k == "spread" else "close_total")
+            if not isinstance(f, dict) or f.get("line") is None or f.get("model") is None or res is None or res != res:
+                continue
+            if k == "spread":
+                act = float(g.home_pts - g.away_pts)
+                e.append((abs(act + f["model"]), abs(act + f["line"]), abs(act + float(res))))
+            else:
+                act = float(g.home_pts + g.away_pts)
+                e.append((abs(act - f["model"]), abs(act - f["line"]), abs(act - float(res))))
+        if e:
+            a_ = np.array(e)
+            bets[k] = dict(n=len(e), model=round(float(a_[:, 0].mean()), 2), flagged=round(float(a_[:, 1].mean()), 2),
+                           last=round(float(a_[:, 2].mean()), 2))
+    if "open_spread" in x and x.open_spread.notna().sum() >= 20:  # timing: first recorded line vs last line
+        y = x[x.open_spread.notna()]
+        amy = (y.home_pts - y.away_pts).astype(float)
+        out["timing"] = dict(n=int(len(y)), model=round(float((amy + y.model_spread.astype(float)).abs().mean()), 2),
+                             first=round(float((amy + y.open_spread.astype(float)).abs().mean()), 2),
+                             last=round(float((amy + y.close_spread.astype(float)).abs().mean()), 2))
+    if bets:
+        out["bets"] = bets
+    return out
+
+
+def challenger(r):
+    """Shadow record for the separate totals model (never bet): accuracy on the same games as the live
+    totals, and what a 7-point rule would have done against the last line before kickoff for each."""
+    if "ch_total" not in r or r.ch_total.isna().all():
+        return None
+    x = r[r.ch_total.notna() & r.model_total.notna()].copy()
+    if not len(x):
+        return None
+    at = (x.home_pts + x.away_pts).astype(float)
+    out = dict(n=int(len(x)), mae_live=round(float((at - x.model_total.astype(float)).abs().mean()), 2),
+               mae_challenger=round(float((at - x.ch_total.astype(float)).abs().mean()), 2),
+               lean_live=round(float((x.model_total.astype(float) - at).mean()), 2),
+               lean_challenger=round(float((x.ch_total.astype(float) - at).mean()), 2))
+    if "close_total" in x:
+        y = x[x.close_total.notna()]
+        aty = (y.home_pts + y.away_pts).astype(float)
+        out["mae_market"] = round(float((aty - y.close_total.astype(float)).abs().mean()), 2) if len(y) else None
+        for k, col in (("live", "model_total"), ("challenger", "ch_total")):
+            g = y[(y[col].astype(float) - y.close_total.astype(float)).abs() >= C.TOTAL_EDGE]
+            v = np.where(g[col].astype(float) > g.close_total.astype(float), 1, -1) * ((g.home_pts + g.away_pts).astype(float) - g.close_total.astype(float))
+            res = pd.Series(np.where(v > 0, "win", np.where(v < 0, "loss", "push")), dtype=str)
+            out[f"rec_{k}"] = _rec(res)
     return out
 
 
@@ -678,6 +779,8 @@ def flag_clv(store, decisions, season):
         return {}
     out = {}
     d = decisions[decisions.status == "flag"]
+    # A later policy can log a fresh flag on the same game; measure from the first one.
+    d = d.sort_values("ts").drop_duplicates(["game_id", "market"], keep="first")
     for kind in ("spread", "total"):
         vals = []
         for r in d[d.market == kind].itertuples():

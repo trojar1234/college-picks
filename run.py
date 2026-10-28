@@ -31,17 +31,48 @@ MODEL_VERSION = 5  # bump when the model's structure changes, to force re-tuning
 
 
 DECISIONS = C.DATA / "decisions.csv"
-DEC_COLS = ["ts", "game_id", "game", "kickoff", "market", "status", "side", "line", "model", "edge",
-            "p", "ev", "best_book", "best_line", "best_price", "line_source", "quote_ts", "reasons", "fit_id"]
+DEC_COLS = ["decision_id", "ts", "game_id", "game", "kickoff", "market", "status", "side", "line", "model", "edge",
+            "p", "p_raw", "ev", "best_book", "best_line", "best_price", "line_source", "quote_ts", "reasons",
+            "policy", "fit_id", "supersedes"]
+# Every entry before Oct 28, 2026 was made under this betting policy (model version 5, 7-point gaps).
+LEGACY_POLICY = "5|spread 7.0|total 7.0"
 
 
-def log_decisions(preds, store, old_flags, ts, fit_id):
+def _decision_id(r):
+    return hashlib.sha1("|".join(str(r.get(k, "")) for k in ("game_id", "market", "status", "policy", "ts")).encode()).hexdigest()[:12]
+
+
+def _read_decisions():
+    """The decision log, upgraded in place once to the current columns (identity and policy added;
+    every original value is kept exactly)."""
+    if not DECISIONS.exists():
+        return []
+    with DECISIONS.open() as f:
+        rd = csv.DictReader(f)
+        rows, cols = list(rd), rd.fieldnames or []
+    if cols != DEC_COLS:
+        for r in rows:
+            r.setdefault("policy", LEGACY_POLICY)
+            r["policy"] = r.get("policy") or LEGACY_POLICY
+            r["decision_id"] = r.get("decision_id") or _decision_id(r)
+        with DECISIONS.open("w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=DEC_COLS, extrasaction="ignore", restval="")
+            w.writeheader()
+            w.writerows(rows)
+    return rows
+
+
+def log_decisions(preds, store, old_flags, ts, fit_id, policy):
     """Append-only record of every candidate (bets and flags a caution blocked), written the first time
-    each game/market reaches that status. Never edited afterward."""
-    seen = set()
-    if DECISIONS.exists():
-        with DECISIONS.open() as f:
-            seen = {(r["game_id"], r["market"], r["status"]) for r in csv.DictReader(f)}
+    each game/market reaches that status under a betting policy. Never edited afterward. Each entry has
+    its own id, the policy that made it (model version and gap thresholds), the model fit (fit_id) and
+    the time of the quote it used; if a new policy makes a fresh decision on the same game and market,
+    the new entry names the one it supersedes."""
+    old = _read_decisions()
+    seen = {(r["game_id"], r["market"], r["status"], r["policy"]) for r in old}
+    latest = {}
+    for r in old:
+        latest[(r["game_id"], r["market"], r["status"])] = r["decision_id"]
     rows = []
     for p in preds:
         gid = str(p["game_id"])
@@ -55,16 +86,20 @@ def log_decisions(preds, store, old_flags, ts, fit_id):
             if not reasons and not predict.bet_eligible(p, kind, ts):
                 reasons = ["no fresh sportsbook quote"]
             status = "bet" if is_bet else ("flag" if reasons else None)
-            if status is None or (gid, kind, status) in seen:
+            if status is None or (gid, kind, status, policy) in seen:
                 continue
             b = p.get(f"best_{kind}") or {}
-            rows.append(dict(ts=ts.isoformat(), game_id=gid, game=f"{p['away']} @ {p['home']}", kickoff=p["start"],
-                             market=kind, status=status, side=p.get(f"{kind}_side"), line=m.get(kind),
-                             model=p.get(f"model_{kind}"), edge=p.get(f"{kind}_edge"),
-                             p=p.get("p_side_cover" if kind == "spread" else "p_side_total"), ev=p.get(f"ev_{kind}"),
-                             best_book=b.get("book"), best_line=b.get("line"), best_price=b.get("price"),
-                             line_source=m.get(f"{kind}_src"), quote_ts=m.get("last_ts"), reasons="; ".join(reasons),
-                             fit_id=fit_id))
+            pk = "p_side_cover" if kind == "spread" else "p_side_total"
+            r = dict(ts=ts.isoformat(), game_id=gid, game=f"{p['away']} @ {p['home']}", kickoff=p["start"],
+                     market=kind, status=status, side=p.get(f"{kind}_side"), line=m.get(kind),
+                     model=p.get(f"model_{kind}"), edge=p.get(f"{kind}_edge"), p=p.get(pk), p_raw=p.get(pk + "_raw"),
+                     ev=p.get(f"ev_{kind}"), best_book=b.get("book"), best_line=b.get("line"), best_price=b.get("price"),
+                     line_source=m.get(f"{kind}_src"), quote_ts=m.get(f"{kind}_ts") or m.get("last_ts"),
+                     reasons="; ".join(reasons), policy=policy, fit_id=fit_id,
+                     supersedes=latest.get((gid, kind, status), ""))
+            r["decision_id"] = _decision_id(r)
+            rows.append(r)
+            seen.add((gid, kind, status, policy))
     if rows:
         new = not DECISIONS.exists()
         with DECISIONS.open("a", newline="") as f:
@@ -191,12 +226,13 @@ def main(mode):
     # Fingerprint of the fitted model (coefficients, error sizes, corrections) and the code version,
     # saved with every prediction so any number can be traced to the exact fit that made it.
     fit_id = hashlib.sha1(json.dumps({k: state.get(k) for k in ("conv", "groups", "lam", "sim_sd", "rho", "margin_sd",
-                                                                   "total_sd", "academy", "features")},
+                                                                   "total_sd", "academy", "features", "key_margin")},
                                      sort_keys=True, default=str).encode()).hexdigest()[:10]
     (C.DATA / "states").mkdir(exist_ok=True)
     (C.DATA / "states" / f"{season}-{now.strftime('%m-%d')}.json").write_text(
         json.dumps(dict(fit_id=fit_id, saved=now.isoformat(), **{k: state.get(k) for k in (
-            "conv", "groups", "lam", "sim_sd", "rho", "margin_sd", "total_sd", "academy", "features", "plays_per_drive")}),
+            "conv", "groups", "lam", "sim_sd", "rho", "margin_sd", "total_sd", "academy", "features", "plays_per_drive",
+            "key_margin")}),
             default=str))
 
     # Lines
@@ -222,6 +258,15 @@ def main(mode):
     for srow in bt_rep.get("seasons", []):
         srow["holdout"] = srow["season"] == holdout
     shrink = (bt_rep.get("shrink_spread", 1.0), bt_rep.get("shrink_total", 1.0))
+    # Keep each day's backtest summary, so a change in method (or data) never silently rewrites history
+    try:
+        (C.DATA / "backtests").mkdir(exist_ok=True)
+        (C.DATA / "backtests" / f"{season}-{now.strftime('%m-%d')}.json").write_text(json.dumps(dict(
+            fit_id=fit_id, saved=now.isoformat(), model_version=MODEL_VERSION,
+            **{k: bt_rep.get(k) for k in ("overall", "nested", "seasons", "shrink_spread", "shrink_total", "cautions")}),
+            default=str))
+    except Exception as e:  # a record, never a reason to fail the run
+        print("Backtest archive skipped:", e)
 
     # Predictions for this week's games that haven't kicked off
     slate, wk = predict.current_slate(games, now)
@@ -277,7 +322,7 @@ def main(mode):
     # Decisions are stamped when the odds they used were fetched (the model fit takes minutes)
     old_flags = {k: (bool(v.get("first_spread_flag")), bool(v.get("first_total_flag"))) for k, v in store.items()}
     store = predict.update_store(store, preds, fetched, version)
-    log_decisions(preds, store, old_flags, fetched, fit_id)
+    log_decisions(preds, store, old_flags, fetched, fit_id, version)
     store = predict.grade(store, games, mview, SEASONS[season]["lines"])
     predict.save_store(store)
 
@@ -334,7 +379,8 @@ def main(mode):
         schedule_games=int(len(games)), completed_games=int(games.completed.sum()),
         graded=len(graded_season),
         backup_lines=sum(1 for p in preds if "cfbd" in ((p.get("market") or {}).get("spread_src"), (p.get("market") or {}).get("total_src"))),
-        stale_quotes=sum(1 for p in preds if (p.get("market") or {}).get("last_ts") and fetched - pd.Timestamp(p["market"]["last_ts"]) > pd.Timedelta(hours=C.BET_MAX_QUOTE_AGE_H)),
+        stale_quotes=sum(1 for p in preds if any((p.get("market") or {}).get(f"{k}_src") == "odds"
+                                                 and not predict.bet_eligible(p, k, fetched) for k in ("spread", "total"))),
         oddities=(snap.attrs.get("oddities") or [])[:10], academy=state.get("academy") or {}, fit_id=fit_id,
         cautions=dict(early_season_blocks_spreads=getattr(C, "EARLY_SEASON_BLOCKS_SPREADS", True),
                       early_season_blocks_totals=getattr(C, "EARLY_SEASON_BLOCKS_TOTALS", True),
@@ -342,6 +388,19 @@ def main(mode):
         bets_graded=sum(1 for p in graded_season for k in ("ats", "ou") if (p["result"] or {}).get(k)),
     )
     print("Health:", health)
+    # Partial-download guard: within a season, completed games and rated teams only ever grow. A big
+    # drop means a provider sent an incomplete response; stop before anything is published.
+    try:
+        t = (C.SITE / "data.js").read_text()
+        last = json.loads(t[t.index("=") + 1:].strip().rstrip(";"))
+    except Exception:
+        last = {}
+    lh = last.get("health") or {}
+    if last.get("season") == season and lh:
+        for k, tol in (("completed_games", 3), ("rated_teams", 3)):
+            if (lh.get(k) or 0) - health[k] > tol:
+                raise SystemExit(f"Refusing to publish: {k.replace('_', ' ')} fell from {lh.get(k)} to {health[k]} "
+                                 "since the last update (an incomplete download?). The last good site stays up.")
     # Team colors and short names for the site (labels only)
     hexok = lambda c: isinstance(c, str) and len(c) == 7 and c.startswith("#")
     team_meta = {t.get("school"): dict(c=t.get("color") if hexok(t.get("color")) else None,
