@@ -233,7 +233,7 @@ h2[id],.summary[id]{scroll-margin-top:110px}
  .top,.secnav,.bar,#swap,.venue,.skip,.banner,#filters,.legend,a.lnk,.theme{display:none!important}.tbl{overflow:visible}details.help{display:none}body{font-size:12px}}
 </style></head><body>
 <a class="skip" href="#content">Skip to content</a><header class="top"><div class="in"><a class="brand" href="index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="3" width="22" height="18" rx="3" fill="var(--turf)"/><path d="M8 3v18M12 3v18M16 3v18" stroke="var(--bg)" stroke-width="1.6"/></svg>CFB Model</a><nav aria-label="Pages"><a href="index.html">Projections</a><a href="matchup.html">Matchup</a><a href="ratings.html" class="on" aria-current="page"><span class="navl">Team ratings</span><span class="navs">Ratings</span></a><a href="report.html"><span class="navl">Performance</span><span class="navs">Results</span></a><a href="method.html"><span class="navl">How it works</span><span class="navs">Method</span></a></nav><button class="theme" id="theme" type="button">Auto</button></div></header><div class="wrap"><main id="content" tabindex="-1"><div class="phead"><h1 id="ptitle">Team ratings</h1><div class="sub" id="sub"></div></div>
-<script src="model.js?v=20261028140153"></script>
+<script src="model.js?v=20261028194041"></script>
 <details class="help"><summary>How to read this page</summary>
 <ul>
 <li><b>Rating</b> is how many points better than an average FBS team each team would be on a neutral field, using the same ratings and formula as the game projections. The gap between two teams' ratings is roughly the neutral-field spread; the Matchup page gives the exact number.</li>
@@ -252,7 +252,7 @@ h2[id],.summary[id]{scroll-margin-top:110px}
 
 <p class="note" id="foot"></p>
 </main></div>
-<script src="data.js?v=20261028140153"></script>
+<script src="data.js?v=20261028194041"></script>
 <script>
 const D=window.DATA;
 if(!D){document.querySelector('.wrap').insertAdjacentHTML('afterbegin','<div class="summary"><b>Data unavailable.</b> The latest update did not publish its data file. It should be back after the next scheduled run.</div>');throw new Error('data.js missing');}
@@ -286,7 +286,11 @@ const teamRecord=t=>{let w=0,l=0;for(const r of (D.schedule||[])){if(!r[7]||r[5]
 const ratedThrough=()=>{const w=Math.max(0,...(D.schedule||[]).filter(r=>r[7]).map(r=>r[0]));return w?`ratings through ${wkName(w)} games`:'preseason ratings';};
 const am=x=>x==null?'':(x>0?'+':'−')+Math.abs(Math.round(x));
 // Freshness, shown on every page: when the model last ran and when the newest lines were fetched
-const freshTxt=()=>{const f=t=>new Date(t).toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',hour:'numeric',minute:'2-digit'});return `Model updated ${f(D.generated)}`+(D.lines_updated?`, lines ${f(D.lines_updated)}`:'')+' (Central time)';};
+// How long ago, from the moment the page is viewed
+const ago=t=>{if(!t)return '';const h=(Date.now()-new Date(t))/36e5;return h<1/60?'just now':h<1?`${Math.round(h*60)} min ago`:h<48?`${Math.round(h)} h ago`:`${Math.round(h/24)} days ago`;};
+const freshTxt=()=>{const f=t=>new Date(t).toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',hour:'numeric',minute:'2-digit'});return `Model updated ${f(D.generated)} CT (${ago(D.generated)})`+(D.lines_updated?`, lines ${f(D.lines_updated)} (${ago(D.lines_updated)})`:'');};
+// The worst American price at which a bet with win chance p (and push chance u) still breaks even
+const beOdds=(p,u)=>{if(p==null||!(p>0))return null;const b=(1-p-(u||0))/p;if(!(b>0))return null;return b>=1?`+${Math.round(100*b)}`:`−${Math.round(100/b)}`;};
 const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 // Team color bar (colors from CollegeFootballData; grey when unknown)
@@ -410,6 +414,7 @@ function teamCard(t){
   <div class="kv"><span>Offense</span><span>${s1(t.off_pts)} pts/game <span class="when">#${t.off_pts_rank??t.off_rank}</span></span></div><div class="kv"><span>Defense</span><span>${s1(t.def_pts)} pts/game <span class="when">#${t.def_pts_rank??t.def_rank}</span></span></div>
   <div class="kv"><span>Offense EPA/play</span><span>${epa(t.off)} <span class="when">#${t.off_rank}</span></span></div><div class="kv"><span>Defense EPA/play allowed</span><span>${epa(t.deff)} <span class="when">#${t.def_rank}</span></span></div>
   <div class="kv"><span>Plays per game</span><span>${f1(t.pace)}</span></div>${t.prev_rank!=null?`<div class="kv"><span>Last week</span><span>#${t.prev_rank} · ${s1(t.prev_power)}</span></div>`:''}
+  ${(()=>{const M=window.MODEL||{},lam=M.lam||3,n=gamesPlayed(t.team),sh=lam/(n+lam);return `<div class="kv" title="Each game counts as one game of evidence against a preseason prior worth ${lam} games"><span>Still from the preseason prior</span><span>${pct(sh)} <span class="when" style="display:inline">${n} game${n===1?'':'s'} played${ratingPM(t.team)?` · ±${ratingPM(t.team).toFixed(1)} pts (80%)`:''}</span></span></div>`;})()}
   ${rhist(t)}
   <div style="margin-top:10px"><a class="lnk" href="matchup.html#${encodeURIComponent(t.team)}||0">Compare ${esc(t.team)} with any team →</a></div></div></div>`;}
 const SORTS={sos:(a,b)=>(SOS[b.team]??-99)-(SOS[a.team]??-99),power:(a,b)=>a.rank-b.rank,pw:(a,b)=>(b.pw??-1)-(a.pw??-1),off:(a,b)=>(b.off_pts??b.off)-(a.off_pts??a.off),deff:(a,b)=>(b.def_pts??-b.deff)-(a.def_pts??-a.deff),pace:(a,b)=>b.pace-a.pace};
