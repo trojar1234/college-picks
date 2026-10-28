@@ -23,6 +23,18 @@ on:
     - cron: "7 0,2,4 * * 0"
     - cron: "7 18,22 * * 0"
     - cron: "7 2 * * 1"
+      - cron: "7 18,22 * * 0"
+    - cron: "7 2 * * 1"
+  # A code change runs a full update straight away (and its self-test), so uploading new files is enough
+  push:
+    paths:
+      - "*.py"
+      - "requirements.txt"
+      - "overrides.csv"
+      - ".github/workflows/update.yml"
+  workflow_dispatch:
+    inputs:
+      mode:
   workflow_dispatch:
     inputs:
       mode:
