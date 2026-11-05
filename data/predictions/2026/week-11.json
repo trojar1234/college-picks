@@ -1,0 +1,354 @@
+{
+ "401866458": {
+  "auto_adj": [],
+  "away": "Western Michigan",
+  "away_mean": 29.490536601359068,
+  "away_med": 30,
+  "away_tier": "G5",
+  "challenger_total": 51.6,
+  "exp_away": 29.5,
+  "exp_home": 22.0,
+  "first_model": {
+   "spread": 7.5,
+   "total": 51.5,
+   "ts": "2026-11-05T01:05:44.618749+00:00"
+  },
+  "fit_id": "d40d6f1a95",
+  "game_id": 401866458,
+  "hist": [
+   63,
+   56,
+   97,
+   152,
+   206,
+   269,
+   307,
+   399,
+   610,
+   734,
+   826,
+   847,
+   899,
+   779,
+   774,
+   327,
+   755,
+   611,
+   413,
+   249,
+   181,
+   150,
+   103,
+   89,
+   53,
+   28,
+   11,
+   8,
+   3,
+   1
+  ],
+  "home": "Akron",
+  "home_mean": 22.02774727097519,
+  "home_med": 21,
+  "home_tier": "G5",
+  "likely": [
+   [
+    17,
+    24,
+    0.0093
+   ],
+   [
+    24,
+    27,
+    0.0075
+   ],
+   [
+    24,
+    31,
+    0.0075
+   ],
+   [
+    17,
+    31,
+    0.0072
+   ],
+   [
+    20,
+    27,
+    0.0071
+   ]
+  ],
+  "low_conf": [],
+  "margin": -7.4627893303838775,
+  "market": {
+   "spread_src": null,
+   "total_src": null
+  },
+  "model_spread": 7.5,
+  "model_total": 51.5,
+  "neutral": false,
+  "notes": [],
+  "p_home_win": 0.31771548240548086,
+  "range80": [
+   -27.6,
+   12.7
+  ],
+  "ratings": {
+   "away_def": 0.12573862237661798,
+   "away_off": -0.11003143376992613,
+   "away_pace": 53.08561720851548,
+   "home_def": 0.24581820526107845,
+   "home_off": -0.19363389145022372,
+   "home_pace": 64.10891466596844
+  },
+  "soft_notes": {},
+  "spread_caution": [],
+  "start": "2026-11-11T00:00:00+00:00",
+  "total_caution": [],
+  "total_mean": 51.51828387233426,
+  "updated": "2026-11-05T01:05:44.618749+00:00",
+  "version": "5|spread 7.0|total 7.0",
+  "weather": {
+   "precip": 0.0,
+   "temp": 49.8,
+   "wind": 6.5
+  },
+  "wk": 11
+ },
+ "401866459": {
+  "auto_adj": [],
+  "away": "Kent State",
+  "away_mean": 18.31818850852752,
+  "away_med": 17,
+  "away_tier": "G5",
+  "challenger_total": 44.7,
+  "exp_away": 18.3,
+  "exp_home": 24.6,
+  "first_model": {
+   "spread": -6.3,
+   "total": 42.9,
+   "ts": "2026-11-05T01:05:44.618749+00:00"
+  },
+  "fit_id": "d40d6f1a95",
+  "game_id": 401866459,
+  "hist": [
+   0,
+   2,
+   4,
+   15,
+   24,
+   27,
+   41,
+   62,
+   100,
+   202,
+   317,
+   430,
+   602,
+   603,
+   674,
+   280,
+   1162,
+   1218,
+   925,
+   821,
+   609,
+   460,
+   392,
+   354,
+   272,
+   176,
+   100,
+   48,
+   37,
+   43
+  ],
+  "home": "Bowling Green",
+  "home_mean": 24.603901166876817,
+  "home_med": 24,
+  "home_tier": "G5",
+  "likely": [
+   [
+    24,
+    17,
+    0.0128
+   ],
+   [
+    24,
+    10,
+    0.0114
+   ],
+   [
+    17,
+    14,
+    0.0094
+   ],
+   [
+    20,
+    17,
+    0.0088
+   ],
+   [
+    17,
+    10,
+    0.0083
+   ]
+  ],
+  "low_conf": [],
+  "margin": 6.285712658349297,
+  "market": {
+   "spread_src": null,
+   "total_src": null
+  },
+  "model_spread": -6.3,
+  "model_total": 42.9,
+  "neutral": false,
+  "notes": [],
+  "p_home_win": 0.6551710112953155,
+  "range80": [
+   -13.9,
+   26.5
+  ],
+  "ratings": {
+   "away_def": 0.1594245431317331,
+   "away_off": -0.2872971007602777,
+   "away_pace": 51.09292019233212,
+   "home_def": 0.17384291286588682,
+   "home_off": -0.2611791225587644,
+   "home_pace": 51.39514332238721
+  },
+  "soft_notes": {},
+  "spread_caution": [],
+  "start": "2026-11-11T00:00:00+00:00",
+  "total_caution": [],
+  "total_mean": 42.92208967540434,
+  "updated": "2026-11-05T01:05:44.618749+00:00",
+  "version": "5|spread 7.0|total 7.0",
+  "weather": {
+   "precip": 0.0,
+   "temp": 51.5,
+   "wind": 8.233333333333333
+  },
+  "wk": 11
+ },
+ "401866460": {
+  "auto_adj": [],
+  "away": "Ohio",
+  "away_mean": 26.514342943654313,
+  "away_med": 27,
+  "away_tier": "G5",
+  "challenger_total": 53.2,
+  "exp_away": 26.5,
+  "exp_home": 27.1,
+  "first_model": {
+   "spread": -0.6,
+   "total": 53.6,
+   "ts": "2026-11-05T01:05:44.618749+00:00"
+  },
+  "fit_id": "d40d6f1a95",
+  "game_id": 401866460,
+  "hist": [
+   16,
+   13,
+   22,
+   47,
+   94,
+   122,
+   149,
+   182,
+   300,
+   412,
+   549,
+   655,
+   728,
+   764,
+   782,
+   294,
+   975,
+   916,
+   742,
+   541,
+   437,
+   320,
+   295,
+   233,
+   157,
+   101,
+   54,
+   48,
+   22,
+   30
+  ],
+  "home": "Miami (OH)",
+  "home_mean": 27.074477588893128,
+  "home_med": 28,
+  "home_tier": "G5",
+  "likely": [
+   [
+    24,
+    27,
+    0.008
+   ],
+   [
+    31,
+    24,
+    0.0075
+   ],
+   [
+    24,
+    17,
+    0.0073
+   ],
+   [
+    24,
+    31,
+    0.0072
+   ],
+   [
+    17,
+    24,
+    0.0067
+   ]
+  ],
+  "low_conf": [
+   "QB change"
+  ],
+  "margin": 0.560134645238815,
+  "market": {
+   "spread_src": null,
+   "total_src": null
+  },
+  "model_spread": -0.6,
+  "model_total": 53.6,
+  "neutral": false,
+  "notes": [
+   "Miami (OH): Caleb Heavner started last game instead of David McComb (2.8 yds/att worse career)"
+  ],
+  "p_home_win": 0.5141930779818796,
+  "range80": [
+   -19.6,
+   20.7
+  ],
+  "ratings": {
+   "away_def": 0.10831756402653032,
+   "away_off": -0.0730254839338916,
+   "away_pace": 60.780398794285574,
+   "home_def": 0.11603924922574142,
+   "home_off": -0.10292091493505519,
+   "home_pace": 57.02192561762887
+  },
+  "soft_notes": {},
+  "spread_caution": [],
+  "start": "2026-11-11T01:00:00+00:00",
+  "total_caution": [],
+  "total_mean": 53.588820532547444,
+  "updated": "2026-11-05T01:05:44.618749+00:00",
+  "version": "5|spread 7.0|total 7.0",
+  "weather": {
+   "precip": 0.0,
+   "temp": 47.9,
+   "wind": 6.833333333333333
+  },
+  "wk": 11
+ }
+}
