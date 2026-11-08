@@ -1,7 +1,7 @@
 {
  "version": 5,
  "keep_rule": 2,
- "run": "2026-10-23T15:08:29.575256+00:00",
+ "run": "2026-11-08T18:48:12.323727+00:00",
  "available": [
   "pbp",
   "players",
@@ -27,30 +27,30 @@
   2024
  ],
  "baseline": {
-  "margin": 13.021,
-  "total": 13.251,
+  "margin": 12.994,
+  "total": 13.26,
   "n": 6828
  },
  "combined": {
-  "margin": 12.941,
-  "total": 13.247,
+  "margin": 12.916,
+  "total": 13.256,
   "n": 6828
  },
  "bets_baseline": {
-  "units": 28.5,
-  "w": 126,
-  "l": 86
+  "units": 26.4,
+  "w": 128,
+  "l": 90
  },
  "holdout": {
   "season": 2025,
   "baseline": {
-   "margin": 12.357,
-   "total": 12.905,
+   "margin": 12.367,
+   "total": 12.924,
    "n": 934
   },
   "selected": {
-   "margin": 12.294,
-   "total": 12.875,
+   "margin": 12.312,
+   "total": 12.893,
    "n": 934
   }
  },
@@ -58,36 +58,36 @@
   {
    "feature": "Player-level preseason data: QB quality (transfers included) and defensive returning production counting transfers",
    "group": "players",
-   "margin": 12.97,
-   "total": 13.247,
-   "gain_margin": 0.051,
-   "gain_total": 0.003,
+   "margin": 12.942,
+   "total": 13.256,
+   "gain_margin": 0.052,
+   "gain_total": 0.004,
    "range_margin": [
-    0.028,
-    0.075
+    0.029,
+    0.077
    ],
    "range_total": [
-    -0.038,
-    0.033
+    -0.036,
+    0.034
    ],
    "bets": {
-    "units": 23.6,
-    "w": 114,
-    "l": 80,
-    "change": -4.9,
-    "noise": 7.9
+    "units": 26.8,
+    "w": 112,
+    "l": 75,
+    "change": 0.5,
+    "noise": 8.4
    },
    "bets_ref": {
-    "units": 28.5,
-    "w": 126,
-    "l": 86
+    "units": 26.4,
+    "w": 128,
+    "l": 90
    },
    "confirm": {
     "season": 2025,
-    "gain_margin": 0.06,
-    "gain_total": 0.017,
-    "bets_change": 2.5,
-    "noise": 7.1
+    "gain_margin": 0.057,
+    "gain_total": 0.016,
+    "bets_change": 2.4,
+    "noise": 7.6
    },
    "confirm_ok": true,
    "kept": false,
@@ -96,36 +96,36 @@
   {
    "feature": "Same, plus offensive returning production counting transfers (player EPA)",
    "group": "players_off",
-   "margin": 12.941,
-   "total": 13.247,
-   "gain_margin": 0.079,
+   "margin": 12.916,
+   "total": 13.256,
+   "gain_margin": 0.078,
    "gain_total": 0.004,
    "range_margin": [
-    0.053,
-    0.107
+    0.05,
+    0.106
    ],
    "range_total": [
-    -0.028,
+    -0.027,
     0.032
    ],
    "bets": {
-    "units": 29.1,
-    "w": 109,
-    "l": 70,
-    "change": 0.5,
-    "noise": 8.1
+    "units": 30.5,
+    "w": 104,
+    "l": 64,
+    "change": 4.2,
+    "noise": 7.6
    },
    "bets_ref": {
-    "units": 28.5,
-    "w": 126,
-    "l": 86
+    "units": 26.4,
+    "w": 128,
+    "l": 90
    },
    "confirm": {
     "season": 2025,
-    "gain_margin": 0.063,
+    "gain_margin": 0.055,
     "gain_total": 0.031,
-    "bets_change": 9.4,
-    "noise": 9.0
+    "bets_change": 2.6,
+    "noise": 6.6
    },
    "confirm_ok": true,
    "kept": true,
@@ -139,36 +139,36 @@
   {
    "feature": "Play-by-play: non-garbage points per drive, finishing drives, field position",
    "group": "pbp",
-   "margin": 12.948,
-   "total": 13.239,
-   "gain_margin": -0.007,
-   "gain_total": 0.008,
+   "margin": 12.924,
+   "total": 13.252,
+   "gain_margin": -0.008,
+   "gain_total": 0.004,
    "range_margin": [
-    -0.026,
-    0.013
+    -0.023,
+    0.008
    ],
    "range_total": [
-    -0.005,
-    0.022
+    -0.009,
+    0.018
    ],
    "bets": {
-    "units": 26.6,
-    "w": 103,
-    "l": 67,
-    "change": -2.5,
-    "noise": 4.3
+    "units": 27.2,
+    "w": 97,
+    "l": 61,
+    "change": -3.4,
+    "noise": 5.5
    },
    "bets_ref": {
-    "units": 29.1,
-    "w": 109,
-    "l": 70
+    "units": 30.5,
+    "w": 104,
+    "l": 64
    },
    "confirm": {
     "season": 2025,
-    "gain_margin": 0.015,
-    "gain_total": 0.004,
-    "bets_change": -0.3,
-    "noise": 4.7
+    "gain_margin": 0.007,
+    "gain_total": 0.011,
+    "bets_change": -2.1,
+    "noise": 3.1
    },
    "confirm_ok": true,
    "kept": false,
