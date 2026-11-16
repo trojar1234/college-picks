@@ -261,14 +261,15 @@ h2[id],.summary[id]{scroll-margin-top:110px}
 <ul>
 <li>A <b>bet</b> is a gap of <span id="m-th">7</span> or more points between the model and the middle of the sportsbooks' lines, on the spread or the total, with no caution.</li>
 <li>A <b>flag</b> is the same gap with a caution: a quarterback change, a manual adjustment, an FCS team, wind or rain, or a gap of 10 or more points (usually news the model can't see).</li>
+<li>A bet is only taken near the open: within about a day of the game's first quote of the week, and never when the gap exists only because the line moved away from the model afterward. It also needs an expected value of at least 2% at the best available book's line and price, from the calibrated chance. Gaps that miss show as flags with the reason.</li>
 <li>A bet needs a live sportsbook quote from the last 36 hours, and keeps the line it was first recorded at. It's graded there at −110 (1 unit), the conservative choice, even though the site points to the best price available.</li>
-<li>The edge is against early lines. Lines the model disagrees with tend to move toward it before kickoff, so bets are worth placing soon after they appear.</li>
+<li>The edge, where there is one, is against early lines: lines the model disagrees with tend to move about a point toward it before kickoff, and against closing lines the same gaps lose. That is why bets are only taken near the open, and why closing-line value (how much better the bet's number was than the close) is the first thing to watch on the Performance page.</li>
 </ul>
 <p id="m-rules" class="sub"></p>
 
 <h2 id="tests">How it's tested</h2>
 <p><b>Walk-forward backtest.</b> Every past week is predicted using only what was known before it: ratings from earlier games and a points conversion refit each week on earlier games, the same clock the live model runs on. A self-test rewrites one week's results and checks that no earlier projection moves. Those predictions are graded against the lines of the time. <span id="m-bt"></span></p>
-<p><b>Keeping or dropping an input.</b> A new input is kept only if all three hold: the accuracy gain is real (its 95% range, resampling whole weeks, stays above zero), it doesn't cost bets against opening lines, and it doesn't make the newest complete season clearly worse. More than 40 ideas have been tested; the Performance page lists them and why they were dropped.</p>
+<p><b>Keeping or dropping an input.</b> A new input is kept only if the accuracy gain is real (its 95% range, resampling whole weeks, stays above zero) and it doesn't make the newest complete season less accurate. Until Nov 2026 an input also had to "not cost bets" against opening lines; that test was dropped because a few hundred bets can't tell a real change from luck. More than 40 ideas have been tested; the Performance page lists them and why they were dropped.</p>
 <p><b>Live record.</b> Every projection is frozen at kickoff and graded when the game is final. Every bet and blocked flag is written once to a decision log that is never edited.</p>
 
 <h2 id="limits">What it can't see</h2>
@@ -300,7 +301,7 @@ h2[id],.summary[id]{scroll-margin-top:110px}
 
 <p class="note" id="foot"></p>
 </main></div>
-<script src="data.js?v=20261116093141"></script>
+<script src="data.js?v=20261116195819"></script>
 <script>
 const D=window.DATA;
 if(!D){document.querySelector('.wrap').insertAdjacentHTML('afterbegin','<div class="summary"><b>Data unavailable.</b> The latest update did not publish its data file. It should be back after the next scheduled run.</div>');throw new Error('data.js missing');}

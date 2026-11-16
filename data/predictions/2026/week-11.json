@@ -4885,6 +4885,21 @@
    "home_off": -0.00024173999329817983,
    "home_pace": 61.37231582280904
   },
+  "result": {
+   "ats_all": "loss",
+   "away_pts": 17.0,
+   "close_spread": -2.5,
+   "close_total": 48.5,
+   "close_ts": "2026-11-15T06:19:02.608243+00:00",
+   "err_away": 9.0,
+   "err_home": 1.2999999999999972,
+   "err_margin": -7.7,
+   "err_total": 10.299999999999997,
+   "home_pts": 24.0,
+   "mkt_err_margin": -4.5,
+   "mkt_err_total": 7.5,
+   "ou_all": "loss"
+  },
   "soft_notes": {},
   "spread_caution": [],
   "spread_edge": 3.2,

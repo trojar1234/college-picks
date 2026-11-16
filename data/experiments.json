@@ -1,11 +1,12 @@
 {
- "version": 5,
- "keep_rule": 2,
- "run": "2026-11-08T18:48:12.323727+00:00",
+ "version": 6,
+ "keep_rule": 3,
+ "run": "2026-11-16T19:58:19.667452+00:00",
  "available": [
   "pbp",
   "players",
-  "players_off"
+  "players_off",
+  "totals"
  ],
  "status": {
   "qb_alerts": "ok",
@@ -14,7 +15,8 @@
  },
  "chosen": {
   "groups": [
-   "score"
+   "score",
+   "totals"
   ],
   "players": [
    "qb",
@@ -33,13 +35,13 @@
  },
  "combined": {
   "margin": 12.916,
-  "total": 13.256,
+  "total": 13.192,
   "n": 6828
  },
  "bets_baseline": {
-  "units": 26.4,
-  "w": 128,
-  "l": 90
+  "units": 13.1,
+  "w": 219,
+  "l": 186
  },
  "holdout": {
   "season": 2025,
@@ -50,7 +52,7 @@
   },
   "selected": {
    "margin": 12.312,
-   "total": 12.893,
+   "total": 12.634,
    "n": 934
   }
  },
@@ -71,16 +73,16 @@
     0.034
    ],
    "bets": {
-    "units": 26.8,
-    "w": 112,
-    "l": 75,
-    "change": 0.5,
-    "noise": 8.4
+    "units": 13.1,
+    "w": 208,
+    "l": 176,
+    "change": 0.0,
+    "noise": 12.4
    },
    "bets_ref": {
-    "units": 26.4,
-    "w": 128,
-    "l": 90
+    "units": 13.1,
+    "w": 219,
+    "l": 186
    },
    "confirm": {
     "season": 2025,
@@ -109,16 +111,16 @@
     0.032
    ],
    "bets": {
-    "units": 30.5,
-    "w": 104,
-    "l": 64,
-    "change": 4.2,
-    "noise": 7.6
+    "units": 18.4,
+    "w": 205,
+    "l": 168,
+    "change": 5.3,
+    "noise": 13.9
    },
    "bets_ref": {
-    "units": 26.4,
-    "w": 128,
-    "l": 90
+    "units": 13.1,
+    "w": 219,
+    "l": 186
    },
    "confirm": {
     "season": 2025,
@@ -134,7 +136,40 @@
   {
    "feature": "Separate totals model: game-level fit with matchup type (Power 4 vs Power 4, FCS), recalibrated on past out-of-sample totals",
    "group": "totals",
-   "skipped": "switched off: more accurate totals, but its over/under bets did worse against opening lines"
+   "margin": 12.916,
+   "total": 13.192,
+   "gain_margin": -0.0,
+   "gain_total": 0.064,
+   "range_margin": [
+    -0.0,
+    0.0
+   ],
+   "range_total": [
+    0.014,
+    0.111
+   ],
+   "bets": {
+    "units": 4.3,
+    "w": 184,
+    "l": 163,
+    "change": -14.1,
+    "noise": 9.7
+   },
+   "bets_ref": {
+    "units": 18.4,
+    "w": 205,
+    "l": 168
+   },
+   "confirm": {
+    "season": 2025,
+    "gain_margin": 0.0,
+    "gain_total": 0.259,
+    "bets_change": -11.3,
+    "noise": 6.4
+   },
+   "confirm_ok": true,
+   "kept": true,
+   "ok": true
   },
   {
    "feature": "Play-by-play: non-garbage points per drive, finishing drives, field position",
@@ -152,16 +187,16 @@
     0.018
    ],
    "bets": {
-    "units": 27.2,
-    "w": 97,
-    "l": 61,
-    "change": -3.4,
-    "noise": 5.5
+    "units": 18.2,
+    "w": 196,
+    "l": 160,
+    "change": -0.2,
+    "noise": 7.4
    },
    "bets_ref": {
-    "units": 30.5,
-    "w": 104,
-    "l": 64
+    "units": 18.4,
+    "w": 205,
+    "l": 168
    },
    "confirm": {
     "season": 2025,
