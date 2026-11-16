@@ -119,9 +119,32 @@ def _ncdf(x):
     return 0.5 * (1 + math.erf(x / math.sqrt(2)))
 
 
-def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_row=None):
+def entry_cautions(kind, mkt, model, line, threshold, now):
+    """Reasons a gap can't become a NEW bet because of when or how it appeared (cfb_config.BET_WINDOW_H,
+    BLOCK_MOVED_AWAY). The backtest only measured gaps at the opening line, so that is where bets are taken."""
+    out = []
+    if now is None or line is None:
+        return out
+    win = getattr(C, "BET_WINDOW_H", None)
+    ets, el = mkt.get(f"entry_{kind}_ts"), mkt.get(f"entry_{kind}")
+    if win and ets and pd.Timestamp(now) - pd.Timestamp(ets) > pd.Timedelta(hours=win):
+        out.append(f"past the entry window: bets are only taken within {win:g} hours of the first quote")
+    if getattr(C, "BLOCK_MOVED_AWAY", True) and el is not None:
+        g0, g1 = abs(el - model), abs(line - model)
+        if g0 < threshold <= g1 and g1 - g0 >= 0.5:
+            out.append(f"the line moved away from the model after it opened (the gap was {g0:.1f} at the first quote)")
+    return out
+
+
+def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_row=None, now=None,
+                 recorded=(False, False), shrink_big=None):
     """One game's projection. The spread and total are the expected points (the numbers the backtest
-    validated); the score simulation supplies the shape of the outcome distribution."""
+    validated); the score simulation supplies the shape of the outcome distribution.
+
+    now: when the lines were fetched (enables the entry-window and expected-value rules for new bets).
+    recorded: (spread, total) whether a bet is already recorded for this game by this policy; a recorded
+    bet keeps its line and is never re-judged by the entry rules.
+    shrink_big: calibration factors measured on big gaps only (cfb_config.SHRINK_BIG_GAP)."""
     f = model.game_feats(R, r.home, r.away, r.neutral)
     conv = np.array(state["conv"])
     groups = state.get("groups", [])
@@ -253,7 +276,8 @@ def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_r
         out["spread_side"] = side
         out["spread_flag"] = abs(e) >= C.SPREAD_EDGE
         out["p_side_cover_raw"] = round(lines._cover_prob("spread", side, sl, model_spread, msd, 1.0, key=key)[0], 3)
-        out["p_side_cover"] = round(lines._cover_prob("spread", side, sl, model_spread, msd, shrink[0], key=key)[0], 3)
+        sh_s = _shrink_for(abs(e), shrink, shrink_big, 0)
+        out["p_side_cover"] = round(lines._cover_prob("spread", side, sl, model_spread, msd, sh_s, key=key)[0], 3)
     if total is not None:
         e = model_total - total
         side = "over" if e > 0 else "under"
@@ -262,18 +286,40 @@ def predict_game(r, state, R, mkt, wx, ovr, tiers, gp, shrink=(1.0, 1.0), gctx_r
         out["total_side"] = side
         out["total_flag"] = abs(e) >= C.TOTAL_EDGE
         out["p_side_total_raw"] = round(lines._cover_prob("total", side, total, model_total, tsd, 1.0)[0], 3)
-        out["p_side_total"] = round(lines._cover_prob("total", side, total, model_total, tsd, shrink[1])[0], 3)
+        sh_t = _shrink_for(abs(e), shrink, shrink_big, 1)
+        out["p_side_total"] = round(lines._cover_prob("total", side, total, model_total, tsd, sh_t)[0], 3)
     # Expected value per unit risked at -110 for the model's side, and the best single book by
     # expected value (line and price together), using the same calibrated probabilities.
     if spread is not None and out.get("spread_side"):
         out["ev_spread"] = round(lines.ev(out["p_side_cover"], out["p_push_spread"], None), 3)
         out["best_spread"] = lines.best_line(mkt.get("books") or [], "spread", out["spread_side"],
-                                             model=model_spread, sd=msd, shrink=shrink[0], key=key)
+                                             model=model_spread, sd=msd, shrink=sh_s, key=key)
     if total is not None and out.get("total_side"):
         out["ev_total"] = round(lines.ev(out["p_side_total"], out["p_push_total"], None), 3)
         out["best_total"] = lines.best_line(mkt.get("books") or [], "total", out["total_side"],
-                                            model=model_total, sd=tsd, shrink=shrink[1])
+                                            model=model_total, sd=tsd, shrink=sh_t)
+    # Entry rules for NEW bets (added Nov 2026): taken near the open, not created by the line moving away,
+    # and worth the price. Each one shows as a flag with its reason. Already-recorded bets are left alone.
+    min_ev = getattr(C, "MIN_EV", None)
+    for i, (kind, caut, thr, mdl) in enumerate((("spread", spread_caution, C.SPREAD_EDGE, model_spread),
+                                               ("total", total_caution, C.TOTAL_EDGE, model_total))):
+        if now is None or not out.get(f"{kind}_flag") or recorded[i]:
+            continue
+        caut += entry_cautions(kind, mkt, mdl, mkt.get(kind), thr, now)
+        if min_ev is not None:
+            ev = (out.get(f"best_{kind}") or {}).get("ev")
+            ev = out.get(f"ev_{kind}") if ev is None else ev
+            if ev is None or ev < min_ev:
+                caut.append(f"expected value under {min_ev:.0%} at the best available price")
     return out
+
+
+def _shrink_for(gap, shrink, shrink_big, i):
+    """The calibration factor for one market: the big-gap factor when the gap is big enough."""
+    big = getattr(C, "SHRINK_BIG_GAP", None)
+    if shrink_big and big is not None and gap >= big and shrink_big[i] is not None:
+        return shrink_big[i]
+    return shrink[i]
 
 
 def bet_eligible(p, kind, now):

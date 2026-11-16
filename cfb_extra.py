@@ -125,6 +125,8 @@ def qb_deltas(all_games, qb):
     starters = qb.sort_values("att", ascending=False).drop_duplicates(["game_id", "team"])
     starters = starters[starters.att >= 5]
     career = defaultdict(lambda: [0.0, 0.0])  # qb -> [att, adj]
+    starts = defaultdict(int)  # (season, team, qb) -> games started this season
+    fresh_n = getattr(C, "QB_FRESH_STARTS", None)
     season_att = defaultdict(lambda: defaultdict(float))  # (season, team) -> qb -> att
     last_starter = {}
     qb_by_game = {k: g for k, g in qb.groupby("game_id")}
@@ -142,7 +144,12 @@ def qb_deltas(all_games, qb):
             exp = last_starter.get((r.season, team))
             sa = season_att[(r.season, team)]
             reg = max(sa, key=sa.get) if sa else None
-            row[f"qbd_{side}"] = 0.0 if (exp is None or reg is None or exp == reg) else quality(exp) - quality(reg)
+            changed = not (exp is None or reg is None or exp == reg)
+            # Only a fresh change counts: once the stand-in has started QB_FRESH_STARTS games this season
+            # he is the quarterback and the ratings have seen him.
+            if changed and fresh_n and starts[(r.season, team, exp)] >= fresh_n:
+                changed = False
+            row[f"qbd_{side}"] = quality(exp) - quality(reg) if changed else 0.0
             row[f"qb_exp_{side}"] = names.get(exp, exp)
             row[f"qb_reg_{side}"] = names.get(reg, reg)
         out.append(row)
@@ -156,6 +163,7 @@ def qb_deltas(all_games, qb):
                 s = start_by_game.get((r.game_id, team))
                 if s is not None:
                     last_starter[(r.season, team)] = s
+                    starts[(r.season, team, s)] += 1
     return pd.DataFrame(out)
 
 

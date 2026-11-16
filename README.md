@@ -23,10 +23,22 @@ and display prices.
   spread or the total, with no blocking caution.
 - **Cautions** (shown as flags, not bets): QB change, manual adjustment, FCS team, wind/rain (totals),
   or a 10+ point gap (usually missing news). An 8–10 point bet gets a "check the news" note.
-- **Early season** (weeks 1–3) no longer blocks bets, starting with the 2027 season. In the 2023–2026
-  walk-forward, early-season gaps with no other caution did at least as well as later bets in both
-  markets (spreads 31–20 vs open and 35–25 vs close; totals 24–8 and 16–13). The switches are in
-  `cfb_config.py` (`EARLY_SEASON_BLOCKS_SPREADS`, `EARLY_SEASON_BLOCKS_TOTALS`) if you want the old rule.
+- **Early season** (weeks 1–3) blocks bets again (Nov 2026). In those weeks the model's average miss is
+  0.9 to 1.6 points worse than the closing line's, against 0.2 to 0.4 from week 7 on, and with the
+  2021–2022 opening lines read, early spread gaps went 134–127. The switches are in `cfb_config.py`
+  (`EARLY_SEASON_BLOCKS_SPREADS`, `EARLY_SEASON_BLOCKS_TOTALS`).
+- **Near the open only** (Nov 2026). A gap becomes a bet only within `BET_WINDOW_H` (30) hours of the
+  game's first quote of its own week, and never when the gap exists only because the line has since moved
+  away from the model. The backtest only ever measured gaps at opening lines; against closing lines the
+  same gaps lose.
+- **Worth the price** (Nov 2026). A bet needs an expected value of at least `MIN_EV` (2%) at the best
+  available book's real line and price, from the calibrated chance. If a whole market shows no bets, its
+  calibrated chance on a 7-point gap is under break-even. Right now that is the case for spreads: with
+  five seasons of opening lines, 7+ spread gaps went 224–213. Set `MIN_EV = None` to switch the floor off.
+- **QB change** blocks a bet only while the change is fresh: after `QB_FRESH_STARTS` (3) starts this
+  season the new quarterback no longer counts.
+- Set `MY_BOOKS` in `cfb_config.py` to the books you can use and every line, best price, bet and grade
+  uses only those.
 - A bet keeps the line it was first flagged at and is graded there (1 unit at −110). If the line
   later moves so the gap is under 7, it shows as **LINE MOVED**: still graded, but not a bet at
   today's number.
@@ -145,6 +157,29 @@ are an expired or mistyped API key, or a change at one of the data providers. Th
 **Data health** section shows what the latest run had to work with.
 
 ## Changelog
+
+- **Nov 16, 2026** (from an audit of the code and data; every number below is from the walk-forward):
+  - `cfb_data.lines_table` now reads the opening line from any book when the consensus row has none.
+    2021 and 2022 (about 1,700 games of Bovada openers) were being skipped. With them, every 7+ gap
+    against opening lines went 224–213 on spreads (was 143–102 on 2023–2025 alone).
+  - Inputs are kept or dropped on accuracy alone (`cfb_model.BET_CHECK = False`, keep rule 3). The
+    "doesn't cost bets" test rested on about 200 bets and penalised agreeing with the market.
+  - That brings in the separate totals model (`TOTALS_MODEL = True`): total miss 13.26 → 13.19 on
+    2017–2024 and 12.92 → 12.63 on 2025; actual totals now move 0.95 points per projected point
+    (was 0.80). Its 7+ gaps against opening lines went 136–109 over 2021–2026, between 52% and 62% every
+    season. The backtest refits the margin conversion weekly with the totals model too.
+  - New bet entry rules: near the open only, not after the line moved away, 2%+ expected value at a real
+    price (see Bet rules). The policy string saved with each bet now includes them, and model version is 6.
+  - Big gaps are calibrated on big gaps (`SHRINK_BIG_GAP`).
+  - The QB-change caution covers fresh changes only (it was blocking about 40% of November games).
+  - Weeks 1–3 block bets again.
+  - The Performance report gains the weight the model deserves next to the line (`market_weight`) and
+    the closing-line value of past 7+ gaps (`clv_open`), both saved in `data/backtests/`.
+  - The page's "past seasons" sentence now leads with the fairer numbers and the closing-line record.
+  - Tested and not adopted: re-centering totals on this season's scoring each week (less accurate at
+    every setting, 2018–2025). Home field was left alone: on results it is accurate (model 4.28, actual
+    4.32 points on average); it only runs above the market's.
+  - The first run after this upload re-tunes and re-tests (a few minutes longer than usual).
 
 - **Oct 28, 2026** (from a third-party audit, each item checked against the code and data first):
   quote freshness is checked per market; CollegeFootballData's snake_case line fields are read; one

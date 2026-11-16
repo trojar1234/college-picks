@@ -268,6 +268,55 @@ def backtest(wf, SEASONS, qb=None):
     shrink_spread = ss if n_open > 500 else spread_shrink("cfbd_spread")[0]
     st, n_open_t = total_shrink("cfbd_total_open")
     shrink_total = st if n_open_t > 500 else total_shrink("cfbd_total")[0]
+    # The same factors measured only on games with a big gap (cfb_config.SHRINK_BIG_GAP): one factor for
+    # every game understates big total gaps and overstates big spread gaps. Needs 300+ such games.
+    big = getattr(C, "SHRINK_BIG_GAP", None)
+    shrink_spread_big = shrink_total_big = None
+    if big is not None:
+        x = d.dropna(subset=["cfbd_spread_open"])
+        x = x[((x.am + x.cfbd_spread_open) != 0) & ((x.pm + x.cfbd_spread_open).abs() >= big)]
+        if len(x) >= 300:
+            shrink_spread_big = round(shrink(_phi((x.pm + x.cfbd_spread_open) / x.sd_m), (x.am + x.cfbd_spread_open) > 0), 3)
+        x = d.dropna(subset=["cfbd_total_open"])
+        x = x[(x["at"] != x.cfbd_total_open) & ((x.pt - x.cfbd_total_open).abs() >= big)]
+        if len(x) >= 300:
+            shrink_total_big = round(shrink(_phi((x.pt - x.cfbd_total_open) / x.sd_t), x["at"] > x.cfbd_total_open), 3)
+
+    # Second stage, in points: how much weight the model's number deserves next to the line.
+    # result - line = w * (model - line). w near 0 = the line already knows what the model knows.
+    def weight(act, mod, line):
+        x = d.dropna(subset=[line])
+        g, y = (x[mod] - x[line]).to_numpy(float), (x[act] - x[line]).to_numpy(float)
+        if len(x) < 500 or not (g * g).sum():
+            return None
+        w = float((g * y).sum() / (g * g).sum())
+        r = y - w * g
+        return dict(w=round(w, 3), se=round(float(np.sqrt((r * r).sum() / (len(x) - 1) / (g * g).sum())), 3), n=int(len(x)))
+    dd = d.assign(om=-d.cfbd_spread_open, cm=-d.cfbd_spread)
+    d["om"], d["cm"] = dd.om, dd.cm
+    market_weight = dict(spread_open=weight("am", "pm", "om"), spread_close=weight("am", "pm", "cm"),
+                         total_open=weight("at", "pt", "cfbd_total_open"), total_close=weight("at", "pt", "cfbd_total"))
+
+    # Closing-line value of the 7+ point gaps against opening lines: how far the line then moved toward
+    # the model's side, and how often. This converges far faster than wins and losses.
+    def clv(kind):
+        if kind == "spread":
+            x = d.dropna(subset=["cfbd_spread_open", "cfbd_spread"])
+            e = x.pm + x.cfbd_spread_open
+            mv = np.sign(e) * (x.cfbd_spread_open - x.cfbd_spread)
+            k = e.abs() >= C.SPREAD_EDGE
+        else:
+            x = d.dropna(subset=["cfbd_total_open", "cfbd_total"])
+            e = x.pt - x.cfbd_total_open
+            mv = np.sign(e) * (x.cfbd_total - x.cfbd_total_open)
+            k = e.abs() >= C.TOTAL_EDGE
+        def one(m):
+            return dict(n=int(len(m)), pts=round(float(m.mean()), 2) if len(m) else None,
+                        beat=round(float((m > 0).mean()), 3) if len(m) else None,
+                        worse=round(float((m < 0).mean()), 3) if len(m) else None)
+        return dict(all=one(mv[k]), seasons=[dict(season=int(s), **one(mv[k & (x.season == s)]))
+                                            for s in sorted(x.season[k].unique())])
+    clv_open = dict(spread=clv("spread"), total=clv("total"))
 
     # --- Reporting extras (none of these change any rule) ---
     # Record by gap size, against the opening line (when bets are placed) and the closing line
@@ -402,6 +451,8 @@ def backtest(wf, SEASONS, qb=None):
         edge_buckets=edge_buckets, cautions=cautions, nested=nested, boot=boot, win_prob=win_prob,
         shrink_spread=round(shrink_spread, 3),
         shrink_total=round(shrink_total, 3),
+        shrink_spread_big=shrink_spread_big, shrink_total_big=shrink_total_big,
+        market_weight=market_weight, clv_open=clv_open,
         seasons=by_season,
         overall=dict(
             games=len(d),

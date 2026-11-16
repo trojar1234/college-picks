@@ -144,10 +144,18 @@ def append(rows):
     return load_history()
 
 
-def market_view(hist, games):
+def market_view(hist, games, anchors=None):
     """Per game: opening and current consensus (median across books), books' latest lines,
-    and the closing line (last snapshot before kickoff)."""
+    and the closing line (last snapshot before kickoff).
+
+    anchors: optional {game_id: time}. The "entry" line of each market is its first quote at or after
+    that time (the first quote of the game's own betting week, once both teams' previous games are
+    over), which is the line a bet must be taken near (cfb_config.BET_WINDOW_H). Without an anchor it
+    is simply the first quote."""
     out = {}
+    mine = list(getattr(C, "MY_BOOKS", None) or [])
+    if mine and not hist.empty:  # only the books the user can bet at (cfb_config.MY_BOOKS)
+        hist = hist[hist.book.isin(mine)]
     if hist.empty:
         return out
     starts = games.set_index("game_id").start.to_dict()
@@ -168,6 +176,12 @@ def market_view(hist, games):
             q = pre[pre[col].notna()]
             fresh[f"{k}_ts"] = q.ts.max().isoformat() if len(q) else None
             fresh[f"{k}_books"] = int(latest[col].notna().sum())
+        anchor = (anchors or {}).get(gid, (anchors or {}).get(int(gid)))
+        es = snaps if anchor is None or anchor != anchor else snaps[snaps.index >= anchor]
+        for k in ("spread", "total"):
+            q = es[k].dropna()
+            fresh[f"entry_{k}"] = _f(q.iloc[0]) if len(q) else None
+            fresh[f"entry_{k}_ts"] = q.index[0].isoformat() if len(q) else None
         out[int(gid)] = dict(**fresh,
             open_spread=_f(snaps.spread.dropna().iloc[0]) if snaps.spread.notna().any() else None,
             open_total=_f(snaps.total.dropna().iloc[0]) if snaps.total.notna().any() else None,

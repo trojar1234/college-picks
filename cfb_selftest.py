@@ -289,6 +289,53 @@ def test_storage():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def test_entry_rules():
+    """Nov 2026 rules: bets only near the open, never after the line moved away; the 2021-2022 opening
+    lines are read; only a fresh QB change counts; the entry line is the first quote after the anchor."""
+    import cfb_data as Dt
+    import cfb_extra as extra
+    now = pd.Timestamp("2026-10-20 18:00", tz="UTC")
+    win = getattr(C, "BET_WINDOW_H", None)
+    if win:
+        m = dict(entry_spread=-3.0, entry_spread_ts=(now - pd.Timedelta(hours=win - 1)).isoformat())
+        check(not predict.entry_cautions("spread", m, -10.5, -3.0, 7.0, now), "a gap within the entry window can become a bet")
+        m["entry_spread_ts"] = (now - pd.Timedelta(hours=win + 1)).isoformat()
+        check(any("entry window" in x for x in predict.entry_cautions("spread", m, -10.5, -3.0, 7.0, now)),
+              "a gap first quoted before the entry window can't become a bet")
+    if getattr(C, "BLOCK_MOVED_AWAY", True):
+        m = dict(entry_total=50.0, entry_total_ts=now.isoformat())
+        check(any("moved away" in x for x in predict.entry_cautions("total", m, 55.0, 47.5, 7.0, now)),
+              "a gap created by the line moving away from the model can't become a bet")
+        check(not predict.entry_cautions("total", m, 58.0, 51.0, 7.0, now), "a gap that was already there at the open still can")
+    # Opening line: taken from any book when the preferred (consensus) row has none
+    raw = [dict(id=1, lines=[dict(provider="consensus", spread=-4.0, overUnder=50.0),
+                             dict(provider="Bovada", spread=-4.5, spreadOpen=-2.5, overUnder=50.5, overUnderOpen=48.0)])]
+    a = Dt.lines_table(raw).iloc[0]
+    check(a.cfbd_spread == -4.0 and a.cfbd_spread_open == -2.5 and a.cfbd_total_open == 48.0,
+          "the opening line is read from another book when the consensus row has none")
+    # Entry line = first quote at or after the anchor (a look-ahead number before it doesn't count)
+    g = pd.DataFrame(dict(game_id=[9], start=[pd.Timestamp("2026-10-24 19:00", tz="UTC")]))
+    h = pd.DataFrame(dict(ts=pd.to_datetime(["2026-10-15 12:00", "2026-10-18 17:00", "2026-10-20 17:00"], utc=True),
+                          game_id=9, book="A", home_spread=[-1.0, -3.0, -4.0], total=[50.0, 51.0, 52.0],
+                          home_price=-110, away_price=-110, over_price=-110, under_price=-110))
+    mv = lines.market_view(h, g, {9: pd.Timestamp("2026-10-18 05:00", tz="UTC")})[9]
+    check(mv["open_spread"] == -1.0 and mv["entry_spread"] == -3.0 and mv["entry_spread_ts"].startswith("2026-10-18"),
+          "the entry line is the first quote after both teams' previous games, not an earlier look-ahead number")
+    # QB change: only fresh. QB1 starts two games, then QB2 takes over.
+    n = getattr(C, "QB_FRESH_STARTS", None)
+    if n:
+        k = n + 4
+        ag = pd.DataFrame(dict(game_id=range(1, k + 1), season=2026, home="A", away=[f"O{i}" for i in range(k)],
+                               start=pd.date_range("2026-09-05", periods=k, freq="7D", tz="UTC"), completed=True))
+        rows = []
+        for gid in range(1, k + 1):
+            rows.append(dict(game_id=gid, team="A", qb="q1" if gid <= 2 else "q2", qb_name="One" if gid <= 2 else "Two",
+                             att=30, adj=300.0 if gid <= 2 else 150.0))
+        qd = extra.qb_deltas(ag, pd.DataFrame(rows)).set_index("game_id")
+        check(qd.loc[4, "qbd_h"] != 0, "a quarterback change is flagged the week after it happens")
+        check(qd.loc[3 + n, "qbd_h"] == 0, f"after {n} starts the new quarterback no longer counts as a change")
+
+
 def test_published():
     site = C.SITE
     def load(name, var):
@@ -381,6 +428,7 @@ if __name__ == "__main__":
     test_record_keeping()
     test_keep_rule()
     test_no_leakage()
+    test_entry_rules()
     test_storage()
     test_published()
     if FAIL:

@@ -27,7 +27,7 @@ import cfb_site as site
 
 STATE = C.DATA / "model_state.json"
 EXPERIMENTS = C.DATA / "experiments.json"
-MODEL_VERSION = 5  # bump when the model's structure changes, to force re-tuning and re-testing
+MODEL_VERSION = 6  # bump when the model's structure changes, to force re-tuning and re-testing
 
 
 DECISIONS = C.DATA / "decisions.csv"
@@ -242,7 +242,23 @@ def main(mode):
     fetched = now if os.environ.get("CFB_NOW") else max(now, pd.Timestamp(datetime.now(timezone.utc)))
     snap, unmatched = lines.snapshot_rows(odds, games, fetched)
     hist = lines.append(snap)
-    mview = lines.market_view(hist, games)
+    # Each game's "entry" line is its first quote once both teams' previous games are over (and no more
+    # than 6.5 days before kickoff), so a look-ahead number posted before last week's results doesn't count
+    # as the open. New bets must be taken near that quote (cfb_config.BET_WINDOW_H).
+    tg = pd.concat([games[["start", "home"]].rename(columns={"home": "team"}),
+                    games[["start", "away"]].rename(columns={"away": "team"})]).dropna(subset=["start"]).sort_values("start")
+    by_team = {t: g.start.to_numpy() for t, g in tg.groupby("team")}
+    anchors = {}
+    for r in games[~games.completed].itertuples():
+        if r.start != r.start:
+            continue
+        a = r.start - pd.Timedelta(days=6.5)
+        for t in (r.home, r.away):
+            prev = [s for s in by_team.get(t, []) if pd.Timestamp(s) < r.start]
+            if prev:
+                a = max(a, pd.Timestamp(prev[-1]) + pd.Timedelta(hours=5))
+        anchors[int(r.game_id)] = a
+    mview = lines.market_view(hist, games, anchors)
     cfbd_ln = SEASONS[season]["lines"].set_index("game_id") if len(SEASONS[season]["lines"]) else None
 
     # Backtest report first: its calibration tells us how far to trust cover probabilities.
@@ -258,12 +274,14 @@ def main(mode):
     for srow in bt_rep.get("seasons", []):
         srow["holdout"] = srow["season"] == holdout
     shrink = (bt_rep.get("shrink_spread", 1.0), bt_rep.get("shrink_total", 1.0))
+    shrink_big = (bt_rep.get("shrink_spread_big"), bt_rep.get("shrink_total_big"))
     # Keep each day's backtest summary, so a change in method (or data) never silently rewrites history
     try:
         (C.DATA / "backtests").mkdir(exist_ok=True)
         (C.DATA / "backtests" / f"{season}-{now.strftime('%m-%d')}.json").write_text(json.dumps(dict(
             fit_id=fit_id, saved=now.isoformat(), model_version=MODEL_VERSION,
-            **{k: bt_rep.get(k) for k in ("overall", "nested", "seasons", "shrink_spread", "shrink_total", "cautions")}),
+            **{k: bt_rep.get(k) for k in ("overall", "nested", "seasons", "shrink_spread", "shrink_total", "cautions",
+                                          "shrink_spread_big", "shrink_total_big", "market_weight", "clv_open")}),
             default=str))
     except Exception as e:  # a record, never a reason to fail the run
         print("Backtest archive skipped:", e)
@@ -280,6 +298,16 @@ def main(mode):
     gp = int(np.median([played.get(t, 0) for t in fbs_teams])) if fbs_teams else 0
     gidx = qb_ctx.set_index("game_id") if len(qb_ctx) else None
     preds = []
+    # The betting policy: model version, gap thresholds and the entry rules. A bet only counts if the same
+    # policy made the final pre-kickoff prediction, so changing a rule never leaves stale bets behind.
+    version = (f"{MODEL_VERSION}|spread {C.SPREAD_EDGE}|total {C.TOTAL_EDGE}"
+               f"|window {getattr(C, 'BET_WINDOW_H', None)}|ev {getattr(C, 'MIN_EV', None)}")
+    store = predict.load_store()
+
+    def _recorded(gid):  # is a bet already on record for this game, made by this policy?
+        old = store.get(str(gid), {})
+        return tuple(bool(old.get(f"first_{k}_flag")) and old[f"first_{k}_flag"].get("version") == version
+                     and old.get("version") == version for k in ("spread", "total"))
     for r in slate.itertuples():
         if r.start <= fetched + pd.Timedelta(minutes=5):
             continue  # kicked off (or about to): its line may already be live
@@ -299,7 +327,8 @@ def main(mode):
             if m.get("open_total") is None:
                 m["open_total"] = lines._f(cfbd_ln.loc[r.game_id, "cfbd_total_open"])
         grow = gidx.loc[r.game_id].to_dict() if gidx is not None and r.game_id in gidx.index else {}
-        pg = predict.predict_game(r, state, R, m, wx.get(r.game_id), ovr, tiers, gp, shrink, grow)
+        pg = predict.predict_game(r, state, R, m, wx.get(r.game_id), ovr, tiers, gp, shrink, grow,
+                                  now=fetched, recorded=_recorded(r.game_id), shrink_big=shrink_big)
         pg["fit_id"] = fit_id
         preds.append(pg)
 
@@ -317,10 +346,11 @@ def main(mode):
     if not tiers or not any(v != "FCS" for v in tiers.values()):
         raise SystemExit("Refusing to publish: no team ratings")
 
-    store = predict.load_store()
-    version = f"{MODEL_VERSION}|spread {C.SPREAD_EDGE}|total {C.TOTAL_EDGE}"
     # Decisions are stamped when the odds they used were fetched (the model fit takes minutes)
-    old_flags = {k: (bool(v.get("first_spread_flag")), bool(v.get("first_total_flag"))) for k, v in store.items()}
+    # "Already a bet" means recorded by THIS policy: a flag left by an earlier policy must not stop a fresh
+    # decision from being logged (the new entry names the one it supersedes).
+    old_flags = {k: tuple(bool(v.get(f"first_{kind}_flag")) and v[f"first_{kind}_flag"].get("version") == version
+                          for kind in ("spread", "total")) for k, v in store.items()}
     store = predict.update_store(store, preds, fetched, version)
     log_decisions(preds, store, old_flags, fetched, fit_id, version)
     store = predict.grade(store, games, mview, SEASONS[season]["lines"])
@@ -384,7 +414,10 @@ def main(mode):
         oddities=(snap.attrs.get("oddities") or [])[:10], academy=state.get("academy") or {}, fit_id=fit_id,
         cautions=dict(early_season_blocks_spreads=getattr(C, "EARLY_SEASON_BLOCKS_SPREADS", True),
                       early_season_blocks_totals=getattr(C, "EARLY_SEASON_BLOCKS_TOTALS", True),
-                      fcs_blocks_spreads=getattr(C, "FCS_BLOCKS_SPREADS", True)),
+                      fcs_blocks_spreads=getattr(C, "FCS_BLOCKS_SPREADS", True),
+                      bet_window_h=getattr(C, "BET_WINDOW_H", None), min_ev=getattr(C, "MIN_EV", None),
+                      block_moved_away=getattr(C, "BLOCK_MOVED_AWAY", True),
+                      qb_fresh_starts=getattr(C, "QB_FRESH_STARTS", None)),
         bets_graded=sum(1 for p in graded_season for k in ("ats", "ou") if (p["result"] or {}).get(k)),
     )
     print("Health:", health)

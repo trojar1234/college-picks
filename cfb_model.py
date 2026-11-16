@@ -267,17 +267,16 @@ def walk_forward(bt, eval_from, groups=()):
         if s < eval_from:
             continue
         cur = bt[bt.season == s]
-        if use_tot:
-            p = predict_bt(cur, conv, groups, tm)
-        else:  # refit each week, as the live model does
-            sf_tr, sf_cur = side_frame(train), side_frame(cur)
-            sf_cur["wk"] = sf_cur.game_id.map(cur.drop_duplicates("game_id").set_index("game_id").wk)
-            ps = []
-            for w in sorted(cur.wk.unique()):
-                tr = pd.concat([sf_tr, sf_cur[sf_cur.wk < w].drop(columns="wk")], ignore_index=True)
-                c = fit_conv(tr[tr.pts.notna()], groups)  # unplayed or cancelled games carry no information
-                ps.append(predict_bt(cur[cur.wk == w], c, groups))
-            p = pd.concat(ps)
+        # Refit the points conversion each week, as the live model does. With the totals model the margin
+        # still comes from this conversion (the total from the season's totals fit), so it is refit too.
+        sf_tr, sf_cur = side_frame(train), side_frame(cur)
+        sf_cur["wk"] = sf_cur.game_id.map(cur.drop_duplicates("game_id").set_index("game_id").wk)
+        ps = []
+        for w in sorted(cur.wk.unique()):
+            tr = pd.concat([sf_tr, sf_cur[sf_cur.wk < w].drop(columns="wk")], ignore_index=True)
+            c = fit_conv(tr[tr.pts.notna()], groups)  # unplayed or cancelled games carry no information
+            ps.append(predict_bt(cur[cur.wk == w], c, groups, tm))
+        p = pd.concat(ps)
         # The live projections correct the service academies (see academy_adjust); the backtest applies the
         # same correction, estimated only from earlier seasons' misses, so its record matches the live system.
         p["pred_h_raw"], p["pred_a_raw"] = p.pred_h.to_numpy(), p.pred_a.to_numpy()
@@ -352,7 +351,14 @@ def tune(SEASONS, grid, tune_seasons, groups=None, players=None, use=()):
 # and the other measure must not get worse by more than 0.01. In the walk-forward, 24 pure-noise
 # inputs never improved accuracy at all, so a gain whose range clears zero is not chance.
 MIN_GAIN = 0.01
-KEEP_RULE = 2   # 1 = fixed 0.05-point bar (before Oct 23, 2026); 2 = real-gain test, bet check, confirmation season
+KEEP_RULE = 3   # 1 = fixed 0.05-point bar (before Oct 23, 2026); 2 = real-gain test, bet check, confirmation season;
+                # 3 = real-gain test and confirmation season on accuracy alone (Nov 2026)
+# The bet check (units on 7+ point gaps against opening lines must not drop) is off. It rested on about
+# 200 bets whose chance wobble is 3 to 8 units, so it mostly measured luck, and it punished inputs for
+# agreeing with the market: a more accurate model flags fewer big gaps. With the 2021-2022 opening lines
+# read (cfb_data.lines_table) those gaps were not profitable in the first place. The bet numbers are still
+# computed and shown for information. Set True to restore the old rule.
+BET_CHECK = False
 CONFIRM_TOL = 0.02  # points of extra error allowed on the confirmation season (it's one season, so noisier)
 BET_TOL = 1.0   # minimum slack (units) on the bet check; the actual slack is the larger of this and the chance wobble
 
@@ -429,7 +435,8 @@ def _better(wf_new, wf_ref, seasons, lines=None):
     real = (dm >= MIN_GAIN and rm[0] > 0) or (dt >= MIN_GAIN and rt[0] > 0)
     bn, br = open_units(wf_new, lines, seasons), open_units(wf_ref, lines, seasons)
     du, sd = _bet_change(wf_new, wf_ref, lines, seasons)
-    bets_ok = du is None or du >= -max(BET_TOL, sd)   # rejected only if bets drop by more than chance alone would explain
+    # with BET_CHECK on: rejected only if bets drop by more than chance alone would explain
+    bets_ok = (not BET_CHECK) or du is None or du >= -max(BET_TOL, sd)
     if bn is not None and du is not None:
         bn = dict(bn, change=round(du, 1), noise=round(sd, 1))
     return (real and dm > -0.01 and dt > -0.01 and bets_ok, round(dm, 3), round(dt, 3),
@@ -450,7 +457,7 @@ def _confirm(wf_new, wf_ref, season, lines):
     dm, _ = _paired(wf_new, wf_ref, [season], "margin")
     dt, _ = _paired(wf_new, wf_ref, [season], "total")
     du, sd = _bet_change(wf_new, wf_ref, lines, [season])
-    bad = dm < -CONFIRM_TOL or dt < -CONFIRM_TOL or (du is not None and du < -max(BET_TOL, sd))
+    bad = dm < -CONFIRM_TOL or dt < -CONFIRM_TOL or (BET_CHECK and du is not None and du < -max(BET_TOL, sd))
     return not bad, dict(season=season, gain_margin=round(dm, 3), gain_total=round(dt, 3),
                          bets_change=None if du is None else round(du, 1), noise=None if sd is None else round(sd, 1))
 
