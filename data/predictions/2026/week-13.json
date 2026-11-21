@@ -1,8 +1,282 @@
 {
+ "401856759": {
+  "auto_adj": [],
+  "away": "Florida",
+  "away_mean": 30.548564935690813,
+  "away_med": 31,
+  "away_tier": "P4",
+  "best_spread": null,
+  "best_total": null,
+  "ev_spread": -0.042,
+  "ev_total": 0.0,
+  "exp_away": 30.5,
+  "exp_home": 25.0,
+  "first_model": {
+   "spread": 5.5,
+   "total": 55.6,
+   "ts": "2026-11-21T21:36:18.760197+00:00"
+  },
+  "fit_id": "90fac10f03",
+  "game_id": 401856759,
+  "hist": [
+   46,
+   43,
+   84,
+   127,
+   187,
+   256,
+   296,
+   358,
+   491,
+   589,
+   768,
+   729,
+   892,
+   743,
+   754,
+   321,
+   849,
+   684,
+   487,
+   377,
+   239,
+   217,
+   166,
+   109,
+   83,
+   57,
+   26,
+   11,
+   4,
+   7
+  ],
+  "home": "Florida State",
+  "home_mean": 25.047536174439543,
+  "home_med": 24,
+  "home_tier": "P4",
+  "likely": [
+   [
+    24,
+    31,
+    0.0075
+   ],
+   [
+    24,
+    27,
+    0.0064
+   ],
+   [
+    20,
+    24,
+    0.0062
+   ],
+   [
+    31,
+    34,
+    0.0061
+   ],
+   [
+    17,
+    24,
+    0.006
+   ]
+  ],
+  "low_conf": [],
+  "margin": -5.50102876125127,
+  "market": {
+   "open_spread": 4.5,
+   "open_total": 52.5,
+   "spread": 4.5,
+   "spread_src": "cfbd",
+   "total": 52.5,
+   "total_src": "cfbd"
+  },
+  "model_spread": 5.5,
+  "model_total": 55.6,
+  "neutral": false,
+  "notes": [],
+  "p_home_cover": 0.4747824801437775,
+  "p_home_win": 0.3639361888378569,
+  "p_over": 0.5771757389621925,
+  "p_push_spread": 0.0,
+  "p_push_total": 0.0,
+  "p_side_cover": 0.502,
+  "p_side_cover_raw": 0.525,
+  "p_side_total": 0.524,
+  "p_side_total_raw": 0.577,
+  "range80": [
+   -25.8,
+   14.8
+  ],
+  "ratings": {
+   "away_def": -0.09261440097357546,
+   "away_off": 0.10005745357963403,
+   "away_pace": 61.75522875033747,
+   "home_def": 0.06799068918173513,
+   "home_off": 0.06478833952452244,
+   "home_pace": 59.622428434721115
+  },
+  "soft_notes": {},
+  "spread_caution": [],
+  "spread_edge": 1.0,
+  "spread_flag": false,
+  "spread_side": "away",
+  "start": "2026-11-27T20:30:00+00:00",
+  "total_caution": [],
+  "total_edge": 3.1,
+  "total_flag": false,
+  "total_mean": 55.596101110130355,
+  "total_side": "over",
+  "updated": "2026-11-21T21:36:18.760197+00:00",
+  "version": "6|spread 7.0|total 7.0|window 30|ev 0.02",
+  "weather": {
+   "precip": 0.0,
+   "temp": 65.9,
+   "wind": 4.633333333333334
+  },
+  "wk": 13
+ },
+ "401856762": {
+  "auto_adj": [],
+  "away": "Mississippi State",
+  "away_mean": 21.46480888018037,
+  "away_med": 21,
+  "away_tier": "P4",
+  "best_spread": null,
+  "best_total": null,
+  "ev_spread": -0.038,
+  "ev_total": -0.024,
+  "exp_away": 21.5,
+  "exp_home": 37.4,
+  "first_model": {
+   "spread": -16.0,
+   "total": 58.9,
+   "ts": "2026-11-21T21:36:18.760197+00:00"
+  },
+  "fit_id": "90fac10f03",
+  "game_id": 401856762,
+  "hist": [
+   0,
+   1,
+   0,
+   4,
+   3,
+   9,
+   13,
+   18,
+   47,
+   75,
+   126,
+   187,
+   267,
+   319,
+   374,
+   209,
+   665,
+   815,
+   807,
+   805,
+   764,
+   696,
+   653,
+   622,
+   669,
+   578,
+   416,
+   271,
+   172,
+   415
+  ],
+  "home": "Ole Miss",
+  "home_mean": 37.43123360151951,
+  "home_med": 37,
+  "home_tier": "P4",
+  "likely": [
+   [
+    34,
+    24,
+    0.0066
+   ],
+   [
+    45,
+    17,
+    0.0063
+   ],
+   [
+    41,
+    17,
+    0.006
+   ],
+   [
+    41,
+    20,
+    0.0058
+   ],
+   [
+    27,
+    17,
+    0.0057
+   ]
+  ],
+  "low_conf": [],
+  "margin": 15.966424721339138,
+  "market": {
+   "open_spread": -14.5,
+   "open_total": 56.5,
+   "spread": -14.5,
+   "spread_src": "cfbd",
+   "total": 57.5,
+   "total_src": "cfbd"
+  },
+  "model_spread": -16.0,
+  "model_total": 58.9,
+  "neutral": false,
+  "notes": [],
+  "p_home_cover": 0.5377947907966925,
+  "p_home_win": 0.8437346007228612,
+  "p_over": 0.5350287116453495,
+  "p_push_spread": 0.0,
+  "p_push_total": 0.0,
+  "p_side_cover": 0.504,
+  "p_side_cover_raw": 0.538,
+  "p_side_total": 0.511,
+  "p_side_total_raw": 0.535,
+  "range80": [
+   -4.3,
+   36.2
+  ],
+  "ratings": {
+   "away_def": 0.007983005806358214,
+   "away_off": 0.018258150601867244,
+   "away_pace": 57.58989390974585,
+   "home_def": -0.013145962612996786,
+   "home_off": 0.17976816284653688,
+   "home_pace": 64.74819066116916
+  },
+  "soft_notes": {},
+  "spread_caution": [],
+  "spread_edge": 1.5,
+  "spread_flag": false,
+  "spread_side": "home",
+  "start": "2026-11-27T17:00:00+00:00",
+  "total_caution": [],
+  "total_edge": 1.4,
+  "total_flag": false,
+  "total_mean": 58.89604248169988,
+  "total_side": "over",
+  "updated": "2026-11-21T21:36:18.760197+00:00",
+  "version": "6|spread 7.0|total 7.0|window 30|ev 0.02",
+  "weather": {
+   "precip": 0.0,
+   "temp": 48.5,
+   "wind": 7.633333333333333
+  },
+  "wk": 13
+ },
  "401856879": {
   "auto_adj": [],
   "away": "TCU",
-  "away_mean": 18.747434443410988,
+  "away_mean": 18.747434443410977,
   "away_med": 17,
   "away_tier": "P4",
   "best_spread": {
@@ -28,7 +302,7 @@
    "total": 46.7,
    "ts": "2026-11-21T06:58:04.976419+00:00"
   },
-  "fit_id": "d020911c6e",
+  "fit_id": "90fac10f03",
   "game_id": 401856879,
   "hist": [
    0,
@@ -63,7 +337,7 @@
    118
   ],
   "home": "Texas Tech",
-  "home_mean": 27.97873980551472,
+  "home_mean": 27.978739805514717,
   "home_med": 27,
   "home_tier": "P4",
   "likely": [
@@ -94,7 +368,7 @@
    ]
   ],
   "low_conf": [],
-  "margin": 9.231305362103733,
+  "margin": 9.23130536210374,
   "market": {
    "books": [
     {
@@ -156,7 +430,7 @@
   "neutral": false,
   "notes": [],
   "p_home_cover": 0.46723229357938406,
-  "p_home_win": 0.7203591294425424,
+  "p_home_win": 0.7203591294425425,
   "p_over": 0.4799662317079599,
   "p_push_spread": 0.0,
   "p_push_total": 0.0,
@@ -169,11 +443,11 @@
    29.5
   ],
   "ratings": {
-   "away_def": -0.057484683690373906,
-   "away_off": -0.041988800002787645,
-   "away_pace": 65.5086029814193,
-   "home_def": -0.09984184994859577,
-   "home_off": 0.00846089104710309,
+   "away_def": -0.057484683690373885,
+   "away_off": -0.041988800002787825,
+   "away_pace": 65.50860298141932,
+   "home_def": -0.0998418499485957,
+   "home_off": 0.008460891047103087,
    "home_pace": 65.66119106330667
   },
   "soft_notes": {
@@ -188,21 +462,699 @@
   "total_caution": [],
   "total_edge": 0.8,
   "total_flag": false,
-  "total_mean": 46.72617424892571,
+  "total_mean": 46.726174248925695,
   "total_side": "under",
-  "updated": "2026-11-21T06:58:04.976419+00:00",
+  "updated": "2026-11-21T21:36:18.760197+00:00",
   "version": "6|spread 7.0|total 7.0|window 30|ev 0.02",
   "weather": {
    "precip": 0.0,
-   "temp": 50.9,
-   "wind": 8.566666666666666
+   "temp": 49.8,
+   "wind": 9.166666666666666
+  },
+  "wk": 13
+ },
+ "401858536": {
+  "auto_adj": [],
+  "away": "Nebraska",
+  "away_mean": 19.46795303524452,
+  "away_med": 20,
+  "away_tier": "P4",
+  "best_spread": {
+   "book": "DraftKings",
+   "ev": -0.031,
+   "line": 6.5,
+   "p": 0.507,
+   "price": -110
+  },
+  "best_total": {
+   "book": "FanDuel",
+   "ev": 0.037,
+   "line": 38.5,
+   "p": 0.531,
+   "price": -105
+  },
+  "ev_spread": -0.032,
+  "ev_total": 0.014,
+  "exp_away": 19.5,
+  "exp_home": 23.0,
+  "first_model": {
+   "spread": -3.5,
+   "total": 42.5,
+   "ts": "2026-11-21T21:36:18.760197+00:00"
+  },
+  "fit_id": "90fac10f03",
+  "game_id": 401858536,
+  "hist": [
+   2,
+   5,
+   6,
+   17,
+   35,
+   58,
+   62,
+   105,
+   189,
+   289,
+   426,
+   563,
+   784,
+   755,
+   714,
+   295,
+   1108,
+   1105,
+   840,
+   661,
+   474,
+   392,
+   365,
+   295,
+   194,
+   124,
+   63,
+   39,
+   17,
+   18
+  ],
+  "home": "Iowa",
+  "home_mean": 22.992297137955156,
+  "home_med": 23,
+  "home_tier": "P4",
+  "likely": [
+   [
+    24,
+    17,
+    0.013
+   ],
+   [
+    17,
+    24,
+    0.0105
+   ],
+   [
+    17,
+    14,
+    0.0102
+   ],
+   [
+    20,
+    17,
+    0.0091
+   ],
+   [
+    17,
+    10,
+    0.0088
+   ]
+  ],
+  "low_conf": [],
+  "margin": 3.5243441027106357,
+  "market": {
+   "books": [
+    {
+     "away_price": -116.0,
+     "book": "FanDuel",
+     "home_price": -104.0,
+     "over_price": -105.0,
+     "spread": -6.5,
+     "total": 38.5,
+     "under_price": -115.0
+    },
+    {
+     "away_price": -110.0,
+     "book": "DraftKings",
+     "home_price": -110.0,
+     "over_price": -110.0,
+     "spread": -6.5,
+     "total": 38.5,
+     "under_price": -110.0
+    }
+   ],
+   "entry_spread": null,
+   "entry_spread_ts": null,
+   "entry_total": null,
+   "entry_total_ts": null,
+   "first_ts": "2026-11-18T21:53:37.953285+00:00",
+   "history": [
+    {
+     "spread": -5.5,
+     "total": 40.5,
+     "ts": "2026-11-18T21:53:37.953285+00:00"
+    },
+    {
+     "spread": -6.0,
+     "total": 39.5,
+     "ts": "2026-11-19T07:16:04.012227+00:00"
+    },
+    {
+     "spread": -6.0,
+     "total": 38.5,
+     "ts": "2026-11-19T22:08:03.165989+00:00"
+    },
+    {
+     "spread": -6.0,
+     "total": 38.5,
+     "ts": "2026-11-20T07:04:59.855068+00:00"
+    },
+    {
+     "spread": -6.5,
+     "total": 38.5,
+     "ts": "2026-11-20T21:47:40.599410+00:00"
+    },
+    {
+     "spread": -6.5,
+     "total": 38.5,
+     "ts": "2026-11-21T06:58:04.976419+00:00"
+    }
+   ],
+   "last_ts": "2026-11-21T06:58:04.976419+00:00",
+   "open_spread": -5.5,
+   "open_total": 40.5,
+   "spread": -6.5,
+   "spread_books": 2,
+   "spread_src": "odds",
+   "spread_ts": "2026-11-21T06:58:04.976419+00:00",
+   "total": 38.5,
+   "total_books": 2,
+   "total_src": "odds",
+   "total_ts": "2026-11-21T06:58:04.976419+00:00"
+  },
+  "model_spread": -3.5,
+  "model_total": 42.5,
+  "neutral": false,
+  "notes": [],
+  "p_home_cover": 0.4247488730169078,
+  "p_home_win": 0.5882033315746797,
+  "p_over": 0.5991670391379019,
+  "p_push_spread": 0.0,
+  "p_push_total": 0.0,
+  "p_side_cover": 0.507,
+  "p_side_cover_raw": 0.575,
+  "p_side_total": 0.531,
+  "p_side_total_raw": 0.599,
+  "range80": [
+   -16.7,
+   23.8
+  ],
+  "ratings": {
+   "away_def": -0.08833873528256275,
+   "away_off": 0.06415451946005926,
+   "away_pace": 57.496997356873095,
+   "home_def": -0.10355420955019734,
+   "home_off": 0.02927545521977402,
+   "home_pace": 50.80263394993138
+  },
+  "soft_notes": {
+   "spread": "thin market: only 2 books quoting",
+   "total": "thin market: only 2 books quoting"
+  },
+  "spread_caution": [],
+  "spread_edge": 3.0,
+  "spread_flag": false,
+  "spread_side": "away",
+  "start": "2026-11-27T17:00:00+00:00",
+  "total_caution": [],
+  "total_edge": 4.0,
+  "total_flag": false,
+  "total_mean": 42.460250173199675,
+  "total_side": "over",
+  "updated": "2026-11-21T21:36:18.760197+00:00",
+  "version": "6|spread 7.0|total 7.0|window 30|ev 0.02",
+  "weather": {
+   "precip": 0.0,
+   "temp": 37.0,
+   "wind": 12.1
+  },
+  "wk": 13
+ },
+ "401862838": {
+  "auto_adj": [],
+  "away": "Temple",
+  "away_mean": 20.872451070027047,
+  "away_med": 20,
+  "away_tier": "G5",
+  "exp_away": 20.9,
+  "exp_home": 41.0,
+  "first_model": {
+   "spread": -20.1,
+   "total": 61.9,
+   "ts": "2026-11-21T21:36:18.760197+00:00"
+  },
+  "fit_id": "90fac10f03",
+  "game_id": 401862838,
+  "hist": [
+   0,
+   0,
+   1,
+   0,
+   5,
+   6,
+   13,
+   10,
+   20,
+   47,
+   71,
+   110,
+   174,
+   215,
+   263,
+   165,
+   486,
+   636,
+   689,
+   748,
+   724,
+   632,
+   699,
+   750,
+   778,
+   662,
+   581,
+   409,
+   315,
+   791
+  ],
+  "home": "Memphis",
+  "home_mean": 40.99197193401425,
+  "home_med": 41,
+  "home_tier": "G5",
+  "likely": [
+   [
+    44,
+    17,
+    0.0064
+   ],
+   [
+    41,
+    17,
+    0.0062
+   ],
+   [
+    34,
+    17,
+    0.0058
+   ],
+   [
+    41,
+    24,
+    0.0055
+   ],
+   [
+    31,
+    17,
+    0.0052
+   ]
+  ],
+  "low_conf": [],
+  "margin": 20.119520863987205,
+  "market": {
+   "spread_src": null,
+   "total_src": null
+  },
+  "model_spread": -20.1,
+  "model_total": 61.9,
+  "neutral": false,
+  "notes": [],
+  "p_home_win": 0.8984239139492912,
+  "range80": [
+   -0.1,
+   40.4
+  ],
+  "ratings": {
+   "away_def": 0.21247696383656636,
+   "away_off": -0.11165107644987794,
+   "away_pace": 56.3446741762326,
+   "home_def": 0.12326205067040817,
+   "home_off": -0.01260183808790842,
+   "home_pace": 73.4453839112122
+  },
+  "soft_notes": {},
+  "spread_caution": [],
+  "start": "2026-11-27T20:30:00+00:00",
+  "total_caution": [],
+  "total_mean": 61.8644230040413,
+  "updated": "2026-11-21T21:36:18.760197+00:00",
+  "version": "6|spread 7.0|total 7.0|window 30|ev 0.02",
+  "weather": {
+   "precip": 0.0,
+   "temp": 52.0,
+   "wind": 8.0
+  },
+  "wk": 13
+ },
+ "401862840": {
+  "auto_adj": [],
+  "away": "Tulsa",
+  "away_mean": 25.944256526259316,
+  "away_med": 27,
+  "away_tier": "G5",
+  "exp_away": 25.9,
+  "exp_home": 29.6,
+  "first_model": {
+   "spread": -3.6,
+   "total": 55.5,
+   "ts": "2026-11-21T21:36:18.760197+00:00"
+  },
+  "fit_id": "90fac10f03",
+  "game_id": 401862840,
+  "hist": [
+   13,
+   11,
+   25,
+   34,
+   73,
+   85,
+   100,
+   173,
+   221,
+   354,
+   441,
+   550,
+   691,
+   679,
+   664,
+   324,
+   930,
+   937,
+   760,
+   642,
+   485,
+   425,
+   390,
+   306,
+   218,
+   177,
+   118,
+   61,
+   36,
+   77
+  ],
+  "home": "UTSA",
+  "home_mean": 29.576116601219418,
+  "home_med": 30,
+  "home_tier": "G5",
+  "likely": [
+   [
+    31,
+    24,
+    0.0068
+   ],
+   [
+    27,
+    24,
+    0.0063
+   ],
+   [
+    34,
+    27,
+    0.0063
+   ],
+   [
+    24,
+    31,
+    0.0061
+   ],
+   [
+    24,
+    27,
+    0.0059
+   ]
+  ],
+  "low_conf": [],
+  "margin": 3.6318600749601018,
+  "market": {
+   "spread_src": null,
+   "total_src": null
+  },
+  "model_spread": -3.6,
+  "model_total": 55.5,
+  "neutral": false,
+  "notes": [],
+  "p_home_win": 0.590847816205734,
+  "range80": [
+   -16.6,
+   23.9
+  ],
+  "ratings": {
+   "away_def": 0.019026831348594703,
+   "away_off": -0.08938071165642707,
+   "away_pace": 67.31578024987927,
+   "home_def": 0.08301525222172458,
+   "home_off": -0.05350561968290809,
+   "home_pace": 70.50145131338984
+  },
+  "soft_notes": {},
+  "spread_caution": [],
+  "start": "2026-11-27T17:00:00+00:00",
+  "total_caution": [],
+  "total_mean": 55.520373127478734,
+  "updated": "2026-11-21T21:36:18.760197+00:00",
+  "version": "6|spread 7.0|total 7.0|window 30|ev 0.02",
+  "weather": {
+   "dome": true
+  },
+  "wk": 13
+ },
+ "401864546": {
+  "auto_adj": [
+   "Service-academy correction for Air Force: margin -5.3 (home view), total -0.3"
+  ],
+  "away": "Air Force",
+  "away_mean": 20.599029524567648,
+  "away_med": 20,
+  "away_tier": "G5",
+  "exp_away": 20.6,
+  "exp_home": 27.3,
+  "first_model": {
+   "spread": -6.7,
+   "total": 47.9,
+   "ts": "2026-11-21T21:36:18.760197+00:00"
+  },
+  "fit_id": "90fac10f03",
+  "game_id": 401864546,
+  "hist": [
+   3,
+   4,
+   7,
+   12,
+   20,
+   36,
+   43,
+   76,
+   126,
+   211,
+   307,
+   434,
+   627,
+   602,
+   597,
+   269,
+   1033,
+   1059,
+   925,
+   763,
+   636,
+   469,
+   469,
+   405,
+   351,
+   219,
+   131,
+   72,
+   36,
+   58
+  ],
+  "home": "New Mexico",
+  "home_mean": 27.26785778822618,
+  "home_med": 27,
+  "home_tier": "G5",
+  "likely": [
+   [
+    24,
+    17,
+    0.0089
+   ],
+   [
+    31,
+    24,
+    0.0084
+   ],
+   [
+    27,
+    17,
+    0.008
+   ],
+   [
+    17,
+    24,
+    0.0077
+   ],
+   [
+    27,
+    24,
+    0.0076
+   ]
+  ],
+  "low_conf": [
+   "QB change"
+  ],
+  "margin": 6.668828263658533,
+  "market": {
+   "spread_src": null,
+   "total_src": null
+  },
+  "model_spread": -6.7,
+  "model_total": 47.9,
+  "neutral": false,
+  "notes": [
+   "Air Force: Evan Medders started last game instead of Liam Szarka (1.3 yds/att worse career)"
+  ],
+  "p_home_win": 0.6634232833971243,
+  "range80": [
+   -13.6,
+   26.9
+  ],
+  "ratings": {
+   "away_def": 0.16632368970767233,
+   "away_off": -0.0961186335532219,
+   "away_pace": 62.06213071894001,
+   "home_def": -0.03984380955482862,
+   "home_off": -0.10837611490660234,
+   "home_pace": 50.564493013468194
+  },
+  "soft_notes": {},
+  "spread_caution": [],
+  "start": "2026-11-27T21:30:00+00:00",
+  "total_caution": [],
+  "total_mean": 47.86688731279383,
+  "updated": "2026-11-21T21:36:18.760197+00:00",
+  "version": "6|spread 7.0|total 7.0|window 30|ev 0.02",
+  "weather": {
+   "precip": 0.0,
+   "temp": 51.8,
+   "wind": 5.466666666666666
+  },
+  "wk": 13
+ },
+ "401864549": {
+  "auto_adj": [],
+  "away": "North Dakota State",
+  "away_mean": 25.863386643678147,
+  "away_med": 26,
+  "away_tier": "G5",
+  "exp_away": 25.9,
+  "exp_home": 16.4,
+  "first_model": {
+   "spread": 9.5,
+   "total": 42.3,
+   "ts": "2026-11-21T21:36:18.760197+00:00"
+  },
+  "fit_id": "90fac10f03",
+  "game_id": 401864549,
+  "hist": [
+   78,
+   71,
+   108,
+   162,
+   257,
+   314,
+   346,
+   495,
+   689,
+   825,
+   891,
+   912,
+   1005,
+   683,
+   736,
+   286,
+   680,
+   547,
+   325,
+   210,
+   125,
+   87,
+   73,
+   48,
+   26,
+   12,
+   3,
+   4,
+   1,
+   1
+  ],
+  "home": "San Jos\u00e9 State",
+  "home_mean": 16.3875388515185,
+  "home_med": 16,
+  "home_tier": "G5",
+  "likely": [
+   [
+    17,
+    24,
+    0.0132
+   ],
+   [
+    10,
+    17,
+    0.0102
+   ],
+   [
+    14,
+    24,
+    0.0096
+   ],
+   [
+    10,
+    24,
+    0.0093
+   ],
+   [
+    17,
+    20,
+    0.0083
+   ]
+  ],
+  "low_conf": [],
+  "margin": -9.475847792159648,
+  "market": {
+   "spread_src": null,
+   "total_src": null
+  },
+  "model_spread": 9.5,
+  "model_total": 42.3,
+  "neutral": false,
+  "notes": [],
+  "p_home_win": 0.27446083383288555,
+  "range80": [
+   -29.7,
+   10.8
+  ],
+  "ratings": {
+   "away_def": -0.03429884523387518,
+   "away_off": -0.16106054650376564,
+   "away_pace": 68.77151937713113,
+   "home_def": 0.12882969546980405,
+   "home_off": -0.2144748234162446,
+   "home_pace": 57.65812849691675
+  },
+  "soft_notes": {},
+  "spread_caution": [],
+  "start": "2026-11-27T20:30:00+00:00",
+  "total_caution": [],
+  "total_mean": 42.25092549519665,
+  "updated": "2026-11-21T21:36:18.760197+00:00",
+  "version": "6|spread 7.0|total 7.0|window 30|ev 0.02",
+  "weather": {
+   "precip": 0.0,
+   "temp": 64.6,
+   "wind": 1.2333333333333334
   },
   "wk": 13
  },
  "401866470": {
   "auto_adj": [],
   "away": "Kent State",
-  "away_mean": 20.22273862034141,
+  "away_mean": 20.222738620341396,
   "away_med": 20,
   "away_tier": "G5",
   "best_spread": {
@@ -228,7 +1180,7 @@
    "total": 48.2,
    "ts": "2026-11-19T07:16:04.012227+00:00"
   },
-  "fit_id": "d020911c6e",
+  "fit_id": "90fac10f03",
   "game_id": 401866470,
   "hist": [
    2,
@@ -263,7 +1215,7 @@
    91
   ],
   "home": "Eastern Michigan",
-  "home_mean": 27.934586471110464,
+  "home_mean": 27.934586471110443,
   "home_med": 28,
   "home_tier": "G5",
   "likely": [
@@ -296,7 +1248,7 @@
   "low_conf": [
    "QB change"
   ],
-  "margin": 7.711847850769054,
+  "margin": 7.711847850769047,
   "market": {
    "books": [
     {
@@ -334,19 +1286,24 @@
      "spread": -5.5,
      "total": 45.5,
      "ts": "2026-11-21T06:58:04.976419+00:00"
+    },
+    {
+     "spread": -5.5,
+     "total": 45.5,
+     "ts": "2026-11-21T21:36:18.760197+00:00"
     }
    ],
-   "last_ts": "2026-11-21T06:58:04.976419+00:00",
+   "last_ts": "2026-11-21T21:36:18.760197+00:00",
    "open_spread": -5.5,
    "open_total": 45.5,
    "spread": -5.5,
    "spread_books": 1,
    "spread_src": "odds",
-   "spread_ts": "2026-11-21T06:58:04.976419+00:00",
+   "spread_ts": "2026-11-21T21:36:18.760197+00:00",
    "total": 45.5,
    "total_books": 1,
    "total_src": "odds",
-   "total_ts": "2026-11-21T06:58:04.976419+00:00"
+   "total_ts": "2026-11-21T21:36:18.760197+00:00"
   },
   "model_spread": -7.7,
   "model_total": 48.2,
@@ -355,7 +1312,7 @@
    "Eastern Michigan: Brogan McCaughey started last game instead of Noah Kim (1.6 yds/att worse career)"
   ],
   "p_home_cover": 0.5553368870110912,
-  "p_home_win": 0.6871536411296513,
+  "p_home_win": 0.687153641129651,
   "p_over": 0.5673196986659855,
   "p_push_spread": 0.0,
   "p_push_total": 0.0,
@@ -368,11 +1325,11 @@
    28.0
   ],
   "ratings": {
-   "away_def": 0.19054357187315815,
-   "away_off": -0.27945575473131445,
-   "away_pace": 56.93640038334023,
-   "home_def": 0.21143475270032794,
-   "home_off": -0.2077068725786354,
+   "away_def": 0.19054357187315807,
+   "away_off": -0.2794557547313146,
+   "away_pace": 56.93640038334021,
+   "home_def": 0.21143475270032797,
+   "home_off": -0.20770687257863552,
    "home_pace": 59.87440677855089
   },
   "soft_notes": {
@@ -387,14 +1344,14 @@
   "total_caution": [],
   "total_edge": 2.7,
   "total_flag": false,
-  "total_mean": 48.157325091451874,
+  "total_mean": 48.15732509145184,
   "total_side": "over",
-  "updated": "2026-11-21T06:58:04.976419+00:00",
+  "updated": "2026-11-21T21:36:18.760197+00:00",
   "version": "6|spread 7.0|total 7.0|window 30|ev 0.02",
   "weather": {
    "precip": 0.0,
-   "temp": 32.8,
-   "wind": 6.400000000000001
+   "temp": 32.5,
+   "wind": 6.800000000000001
   },
   "wk": 13
  },
@@ -427,7 +1384,7 @@
    "total": 51.2,
    "ts": "2026-11-19T07:16:04.012227+00:00"
   },
-  "fit_id": "d020911c6e",
+  "fit_id": "90fac10f03",
   "game_id": 401866471,
   "hist": [
    4,
@@ -462,7 +1419,7 @@
    67
   ],
   "home": "Western Michigan",
-  "home_mean": 28.369854061762048,
+  "home_mean": 28.369854061762034,
   "home_med": 28,
   "home_tier": "G5",
   "likely": [
@@ -493,7 +1450,7 @@
    ]
   ],
   "low_conf": [],
-  "margin": 5.843720944507481,
+  "margin": 5.843720944507467,
   "market": {
    "books": [
     {
@@ -531,26 +1488,31 @@
      "spread": -7.5,
      "total": 47.5,
      "ts": "2026-11-21T06:58:04.976419+00:00"
+    },
+    {
+     "spread": -7.5,
+     "total": 47.5,
+     "ts": "2026-11-21T21:36:18.760197+00:00"
     }
    ],
-   "last_ts": "2026-11-21T06:58:04.976419+00:00",
+   "last_ts": "2026-11-21T21:36:18.760197+00:00",
    "open_spread": -7.5,
    "open_total": 47.5,
    "spread": -7.5,
    "spread_books": 1,
    "spread_src": "odds",
-   "spread_ts": "2026-11-21T06:58:04.976419+00:00",
+   "spread_ts": "2026-11-21T21:36:18.760197+00:00",
    "total": 47.5,
    "total_books": 1,
    "total_src": "odds",
-   "total_ts": "2026-11-21T06:58:04.976419+00:00"
+   "total_ts": "2026-11-21T21:36:18.760197+00:00"
   },
   "model_spread": -5.8,
   "model_total": 50.9,
   "neutral": false,
   "notes": [],
   "p_home_cover": 0.45718415506841426,
-  "p_home_win": 0.6441721975400405,
+  "p_home_win": 0.6441721975400402,
   "p_over": 0.5845365446293093,
   "p_push_spread": 0.0,
   "p_push_total": 0.0,
@@ -563,10 +1525,10 @@
    26.1
   ],
   "ratings": {
-   "away_def": 0.11638014049428357,
-   "away_off": -0.09138463354672054,
+   "away_def": 0.11638014049428354,
+   "away_off": -0.09138463354672058,
    "away_pace": 58.07106328406077,
-   "home_def": 0.12033870526923075,
+   "home_def": 0.12033870526923073,
    "home_off": -0.11001401442571478,
    "home_pace": 61.48593281704122
   },
@@ -582,14 +1544,448 @@
   "total_caution": [],
   "total_edge": 3.4,
   "total_flag": false,
-  "total_mean": 50.895987179016615,
+  "total_mean": 50.8959871790166,
   "total_side": "over",
-  "updated": "2026-11-21T06:58:04.976419+00:00",
+  "updated": "2026-11-21T21:36:18.760197+00:00",
   "version": "6|spread 7.0|total 7.0|window 30|ev 0.02",
   "weather": {
    "precip": 0.0,
-   "temp": 31.2,
-   "wind": 7.233333333333333
+   "temp": 32.8,
+   "wind": 5.766666666666667
+  },
+  "wk": 13
+ },
+ "401866472": {
+  "auto_adj": [],
+  "away": "Buffalo",
+  "away_mean": 28.370571296606116,
+  "away_med": 28,
+  "away_tier": "G5",
+  "best_spread": {
+   "book": "FanDuel",
+   "ev": -0.017,
+   "line": 10.5,
+   "p": 0.515,
+   "price": -110
+  },
+  "best_total": {
+   "book": "FanDuel",
+   "ev": 0.07,
+   "line": 48.5,
+   "p": 0.551,
+   "price": -106
+  },
+  "ev_spread": -0.017,
+  "ev_total": 0.052,
+  "exp_away": 28.4,
+  "exp_home": 26.1,
+  "first_model": {
+   "spread": 2.3,
+   "total": 54.5,
+   "ts": "2026-11-21T21:36:18.760197+00:00"
+  },
+  "fit_id": "90fac10f03",
+  "game_id": 401866472,
+  "hist": [
+   35,
+   36,
+   54,
+   93,
+   128,
+   154,
+   246,
+   287,
+   411,
+   558,
+   636,
+   732,
+   863,
+   722,
+   725,
+   275,
+   841,
+   837,
+   599,
+   469,
+   340,
+   265,
+   208,
+   176,
+   114,
+   80,
+   50,
+   24,
+   13,
+   29
+  ],
+  "home": "Akron",
+  "home_mean": 26.102025870975964,
+  "home_med": 26,
+  "home_tier": "G5",
+  "likely": [
+   [
+    24,
+    31,
+    0.0078
+   ],
+   [
+    24,
+    17,
+    0.0068
+   ],
+   [
+    17,
+    24,
+    0.0063
+   ],
+   [
+    20,
+    27,
+    0.0063
+   ],
+   [
+    31,
+    27,
+    0.0063
+   ]
+  ],
+  "low_conf": [],
+  "margin": -2.268545425630151,
+  "market": {
+   "books": [
+    {
+     "away_price": -110.0,
+     "book": "FanDuel",
+     "home_price": -110.0,
+     "over_price": -106.0,
+     "spread": 10.5,
+     "total": 48.5,
+     "under_price": -114.0
+    }
+   ],
+   "entry_spread": 10.5,
+   "entry_spread_ts": "2026-11-21T06:58:04.976419+00:00",
+   "entry_total": 48.5,
+   "entry_total_ts": "2026-11-21T06:58:04.976419+00:00",
+   "first_ts": "2026-11-19T22:08:03.165989+00:00",
+   "history": [
+    {
+     "spread": 10.5,
+     "total": 48.5,
+     "ts": "2026-11-19T22:08:03.165989+00:00"
+    },
+    {
+     "spread": 10.5,
+     "total": 48.5,
+     "ts": "2026-11-20T07:04:59.855068+00:00"
+    },
+    {
+     "spread": 10.5,
+     "total": 48.5,
+     "ts": "2026-11-20T21:47:40.599410+00:00"
+    },
+    {
+     "spread": 10.5,
+     "total": 48.5,
+     "ts": "2026-11-21T06:58:04.976419+00:00"
+    },
+    {
+     "spread": 10.5,
+     "total": 48.5,
+     "ts": "2026-11-21T21:36:18.760197+00:00"
+    }
+   ],
+   "last_ts": "2026-11-21T21:36:18.760197+00:00",
+   "open_spread": 10.5,
+   "open_total": 48.5,
+   "spread": 10.5,
+   "spread_books": 1,
+   "spread_src": "odds",
+   "spread_ts": "2026-11-21T21:36:18.760197+00:00",
+   "total": 48.5,
+   "total_books": 1,
+   "total_src": "odds",
+   "total_ts": "2026-11-21T21:36:18.760197+00:00"
+  },
+  "model_spread": 2.3,
+  "model_total": 54.5,
+  "neutral": false,
+  "notes": [],
+  "p_home_cover": 0.6980064524776751,
+  "p_home_win": 0.4429506033364849,
+  "p_over": 0.6468342384501613,
+  "p_push_spread": 0.0,
+  "p_push_total": 0.0,
+  "p_side_cover": 0.515,
+  "p_side_cover_raw": 0.698,
+  "p_side_total": 0.551,
+  "p_side_total_raw": 0.647,
+  "range80": [
+   -22.5,
+   18.0
+  ],
+  "ratings": {
+   "away_def": 0.17113234396597513,
+   "away_off": -0.19805642353380093,
+   "away_pace": 69.78999353054152,
+   "home_def": 0.24579957757159926,
+   "home_off": -0.1931893263712838,
+   "home_pace": 65.63424850993043
+  },
+  "soft_notes": {
+   "spread": "8+ pts apart: worth a quick injury/QB news check",
+   "total": "thin market: only 1 book quoting"
+  },
+  "spread_caution": [
+   "expected value under 2% at the best available price"
+  ],
+  "spread_edge": 8.2,
+  "spread_flag": true,
+  "spread_side": "home",
+  "start": "2026-11-27T17:00:00+00:00",
+  "total_caution": [
+   "wind/rain forecast: the model doesn't use weather, the market does"
+  ],
+  "total_edge": 6.0,
+  "total_flag": false,
+  "total_mean": 54.47259716758208,
+  "total_side": "over",
+  "updated": "2026-11-21T21:36:18.760197+00:00",
+  "version": "6|spread 7.0|total 7.0|window 30|ev 0.02",
+  "weather": {
+   "precip": 0.028,
+   "temp": 37.5,
+   "wind": 15.966666666666669
+  },
+  "wk": 13
+ },
+ "401866473": {
+  "auto_adj": [],
+  "away": "Toledo",
+  "away_mean": 27.637439591442494,
+  "away_med": 28,
+  "away_tier": "G5",
+  "exp_away": 27.6,
+  "exp_home": 26.4,
+  "first_model": {
+   "spread": 1.3,
+   "total": 54.0,
+   "ts": "2026-11-21T21:36:18.760197+00:00"
+  },
+  "fit_id": "90fac10f03",
+  "game_id": 401866473,
+  "hist": [
+   32,
+   28,
+   28,
+   74,
+   103,
+   152,
+   182,
+   243,
+   345,
+   486,
+   636,
+   685,
+   830,
+   741,
+   761,
+   337,
+   931,
+   872,
+   601,
+   491,
+   378,
+   273,
+   250,
+   178,
+   134,
+   91,
+   66,
+   25,
+   24,
+   23
+  ],
+  "home": "Ohio",
+  "home_mean": 26.35520905530357,
+  "home_med": 27,
+  "home_tier": "G5",
+  "likely": [
+   [
+    24,
+    31,
+    0.0101
+   ],
+   [
+    24,
+    27,
+    0.0073
+   ],
+   [
+    31,
+    24,
+    0.0072
+   ],
+   [
+    17,
+    24,
+    0.0064
+   ],
+   [
+    27,
+    24,
+    0.0058
+   ]
+  ],
+  "low_conf": [],
+  "margin": -1.2822305361389255,
+  "market": {
+   "spread_src": null,
+   "total_src": null
+  },
+  "model_spread": 1.3,
+  "model_total": 54.0,
+  "neutral": false,
+  "notes": [],
+  "p_home_win": 0.46767920137456426,
+  "range80": [
+   -21.5,
+   19.0
+  ],
+  "ratings": {
+   "away_def": 0.020940817033268506,
+   "away_off": -0.08163947837442459,
+   "away_pace": 60.96969961078999,
+   "home_def": 0.12953988578750192,
+   "home_off": -0.07448726115392362,
+   "home_pace": 63.00935482974432
+  },
+  "soft_notes": {},
+  "spread_caution": [],
+  "start": "2026-11-27T17:00:00+00:00",
+  "total_caution": [],
+  "total_mean": 53.99264864674606,
+  "updated": "2026-11-21T21:36:18.760197+00:00",
+  "version": "6|spread 7.0|total 7.0|window 30|ev 0.02",
+  "weather": {
+   "precip": 0.0,
+   "temp": 39.3,
+   "wind": 13.6
+  },
+  "wk": 13
+ },
+ "401869930": {
+  "auto_adj": [],
+  "away": "App State",
+  "away_mean": 27.66555941548384,
+  "away_med": 27,
+  "away_tier": "G5",
+  "exp_away": 27.7,
+  "exp_home": 31.2,
+  "first_model": {
+   "spread": -3.5,
+   "total": 58.8,
+   "ts": "2026-11-21T21:36:18.760197+00:00"
+  },
+  "fit_id": "90fac10f03",
+  "game_id": 401869930,
+  "hist": [
+   8,
+   14,
+   29,
+   43,
+   68,
+   111,
+   122,
+   188,
+   235,
+   343,
+   433,
+   575,
+   662,
+   680,
+   638,
+   327,
+   865,
+   906,
+   745,
+   603,
+   535,
+   444,
+   355,
+   358,
+   244,
+   184,
+   107,
+   63,
+   41,
+   74
+  ],
+  "home": "South Alabama",
+  "home_mean": 31.182519571114526,
+  "home_med": 31,
+  "home_tier": "G5",
+  "likely": [
+   [
+    31,
+    24,
+    0.0069
+   ],
+   [
+    34,
+    27,
+    0.006
+   ],
+   [
+    27,
+    24,
+    0.0059
+   ],
+   [
+    34,
+    24,
+    0.0054
+   ],
+   [
+    24,
+    17,
+    0.0054
+   ]
+  ],
+  "low_conf": [],
+  "margin": 3.5169601556306844,
+  "market": {
+   "spread_src": null,
+   "total_src": null
+  },
+  "model_spread": -3.5,
+  "model_total": 58.8,
+  "neutral": false,
+  "notes": [],
+  "p_home_win": 0.5880215659548028,
+  "range80": [
+   -16.7,
+   23.8
+  ],
+  "ratings": {
+   "away_def": 0.123637114049755,
+   "away_off": -0.1585389069228852,
+   "away_pace": 61.79765999954572,
+   "home_def": 0.23070025179146833,
+   "home_off": -0.06524537272350964,
+   "home_pace": 72.54884666621932
+  },
+  "soft_notes": {},
+  "spread_caution": [],
+  "start": "2026-11-27T20:00:00+00:00",
+  "total_caution": [],
+  "total_mean": 58.84807898659837,
+  "updated": "2026-11-21T21:36:18.760197+00:00",
+  "version": "6|spread 7.0|total 7.0|window 30|ev 0.02",
+  "weather": {
+   "precip": 0.0,
+   "temp": 62.9,
+   "wind": 2.733333333333333
   },
   "wk": 13
  }
