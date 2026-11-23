@@ -83,7 +83,9 @@ def log_decisions(preds, store, old_flags, ts, fit_id, policy):
             is_bet = bool(rec.get(f"first_{kind}_flag")) and not old_flags.get(gid, (False, False))[i]
             reasons = [*p.get("low_conf", []), *p.get(f"{kind}_caution", [])]
             m = p.get("market") or {}
-            if not reasons and not predict.bet_eligible(p, kind, ts):
+            if not reasons and getattr(C, "BETS_SUSPENDED", False):
+                reasons = ["bets suspended (paper only)"]
+            elif not reasons and not predict.bet_eligible(p, kind, ts):
                 reasons = ["no fresh sportsbook quote"]
             status = "bet" if is_bet else ("flag" if reasons else None)
             if status is None or (gid, kind, status, policy) in seen:
@@ -443,6 +445,17 @@ def main(mode):
     site.build(season, wk, slate, store, rep, finals[season], now, unmatched, state, prev_final, lines_ts, games,
                rating_hist=rating_hist, health=health, team_meta=team_meta)
     print(f"Done. Week {wk}: {len(preds)} games projected, {sum(p.get('spread_flag', False) for p in preds)} spread edges.")
+
+    # Model 2.0 (research mode) runs after everything above is saved, so a failure here can never stop
+    # the current model from publishing.
+    try:
+        import v2_live
+        v2 = v2_live.run(mode, SEASONS, pfeat, players._passing_rows(), wf, preds, store, season, wk, fetched, mview)
+        print(f"Model 2.0: {len(v2)} games projected.")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print("Model 2.0 skipped:", e)
     if unmatched:
         print("Unmatched odds games:", unmatched[:10])
 

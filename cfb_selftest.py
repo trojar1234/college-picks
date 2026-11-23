@@ -385,8 +385,10 @@ def test_published():
     if not node:
         print("skip  JavaScript checks (node not installed)")
         return
-    for page in ("index", "matchup", "ratings", "report", "method"):
+    for page in ("index", "matchup", "ratings", "report", "method", "v2"):
         p = site / f"{page}.html"
+        if page == "v2" and not p.exists():
+            continue  # Model 2.0 is research-only; its absence never blocks publishing
         if not p.exists():
             check(False, f"{page}.html exists")
             continue
@@ -419,7 +421,51 @@ def test_published():
                   f"matchup formula matches weekly projections (avg gap {out['dm']:.2f} pts margin, {out['dt']:.2f} total, {out['n']} games)")
 
 
+def test_model2():
+    """Model 2.0: valid simulated scores, and no look-ahead in the rating filter."""
+    try:
+        import v2_sim as SIM
+        import v2_ratings as VR
+    except Exception as e:  # research-only: report, but a missing module is a failure worth seeing
+        check(False, f"Model 2.0 modules import ({e})")
+        return
+    h, a = SIM.simulate(31.0, 17.0, 11.5, 15.5, 16.0, n=40000, seed=1)
+    m = h - a
+    check(h.min() >= 0 and a.min() >= 0 and (h == h.astype(int)).all(), "Model 2.0 simulated scores are whole and never negative")
+    check(not (m == 0).any(), "Model 2.0 simulated games never end tied")
+    check(abs(h.mean() - 31) < 1.0 and abs(a.mean() - 17) < 1.0, f"Model 2.0 simulation keeps the projected points ({h.mean():.1f}, {a.mean():.1f})")
+    am = np.abs(m)
+    check((am == 7).mean() > (am == 6).mean() and (am == 3).mean() > (am == 2).mean(), "Model 2.0 margins land on 3 and 7 more than on 2 and 6")
+    # look-ahead: changing a week-2 result must not change any week-1 or week-2 before-game rating
+    G = pd.DataFrame(dict(game_id=[1, 2, 3, 4], season=2020, wk=[1, 1, 2, 2], neutral=False, completed=True,
+                          home=["A", "C", "A", "B"], away=["B", "D", "C", "D"],
+                          home_cls="fbs", away_cls="fbs", start=pd.to_datetime(["2020-09-05"] * 2 + ["2020-09-12"] * 2, utc=True)))
+
+    def tg(pts3):
+        rows = []
+        for gid, hm, aw, hp, ap in ((1, "A", "B", 30, 20), (2, "C", "D", 24, 21), (3, "A", "C", pts3, 10), (4, "B", "D", 17, 14)):
+            rows += [dict(game_id=gid, season=2020, wk=1 if gid < 3 else 2, team=hm, opp=aw, h=1, pts=hp),
+                     dict(game_id=gid, season=2020, wk=1 if gid < 3 else 2, team=aw, opp=hm, h=-1, pts=ap)]
+        return pd.DataFrame(rows)
+    tiers = {2020: {t: "fbs" for t in "ABCD"}}
+    p1, _, _ = VR.run_filter("pts", tg(28), G, {}, tiers, 100.0, 1.0, sd0=5.0, mu0=25.0)
+    p2, _, _ = VR.run_filter("pts", tg(70), G, {}, tiers, 100.0, 1.0, sd0=5.0, mu0=25.0)
+    check(np.allclose(p1.pts_h.to_numpy(), p2.pts_h.to_numpy()) and np.allclose(p1.pts_a.to_numpy(), p2.pts_a.to_numpy()),
+          "Model 2.0 ratings: a game's result never changes its own or earlier before-game ratings")
+    v2 = C.SITE / "v2data.js"
+    if v2.exists():
+        try:
+            t = v2.read_text()
+            V = json.loads(t[t.index("=") + 1:].strip().rstrip(";"))
+            ok = all(g.get("exp_home") is not None and g["exp_home"] >= 0 and g["exp_away"] >= 0
+                     and 10 <= g["total"] <= 130 for g in V.get("games", []))
+            check(ok, f"Model 2.0 projections are sensible ({len(V.get('games', []))} games)")
+        except Exception as e:
+            check(False, f"Model 2.0 data readable ({e})")
+
+
 if __name__ == "__main__":
+    test_model2()
     test_grading()
     test_best_line()
     test_prices_and_eligibility()

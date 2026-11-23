@@ -501,10 +501,18 @@ def NAV(on, title=""):
             f'<a class="brand" href="index.html">{BRAND}CFB Model</a><nav aria-label="Pages">'
             + link("p", "index.html", "Projections") + link("m", "matchup.html", "Matchup")
             + link("t", "ratings.html", "Team ratings", "Ratings") + link("r", "report.html", "Performance", "Results")
-            + link("x", "method.html", "How it works", "Method")
+            + link("x", "method.html", "How it works", "Method") + link("v2", "v2.html", "Model 2.0", "2.0")
             + '</nav><button class="theme" id="theme" type="button">Auto</button></div></header>'
-            f'<div class="wrap"><main id="content" tabindex="-1"><div class="phead"><h1 id="ptitle">{title}</h1>'
+            f'<div class="wrap"><main id="content" tabindex="-1">'
+            + (SUSPENDED_NOTE if getattr(C, "BETS_SUSPENDED", False) and on != "v2" else "")
+            + f'<div class="phead"><h1 id="ptitle">{title}</h1>'
             '<div class="sub" id="sub"></div></div>')
+
+
+SUSPENDED_NOTE = ('<div class="summary" role="note"><b>Bets are suspended (since Nov 23, 2026).</b> An independent audit found '
+                  'the model has no reliable edge on spreads and two biases (home field counted partly twice, totals leaning '
+                  'over) that produced most past bets. Picks below are tracked on paper only: anything that would have been a '
+                  'bet is recorded as a flag marked "paper only". <a href="v2.html">Model 2.0</a> runs alongside in research mode.</div>')
 
 
 INDEX_BODY = NAV("p", "Projections") + r"""

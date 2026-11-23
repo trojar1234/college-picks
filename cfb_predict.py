@@ -325,7 +325,8 @@ def _shrink_for(gap, shrink, shrink_big, i):
 def bet_eligible(p, kind, now):
     """A recorded bet needs a real sportsbook quote for THAT market (not the CollegeFootballData backup
     line): offered by at least one book in the newest snapshot, taken within the last
-    C.BET_MAX_QUOTE_AGE_H hours. The other market's quote never counts."""
+    C.BET_MAX_QUOTE_AGE_H hours. The other market's quote never counts. (C.BETS_SUSPENDED is applied
+    where bets are recorded, in update_store and run.log_decisions, not here.)"""
     m = p.get("market") or {}
     if m.get(f"{kind}_src", "odds") != "odds" or not m.get("books"):
         return False
@@ -360,7 +361,8 @@ def update_store(store, preds, now, version):
             fk = f"first_{kind}_flag"
             if old.get(fk) and old[fk].get("version") == version:
                 new[fk] = old[fk]  # already bet at an earlier line: keep that line
-            elif p.get(f"{kind}_flag") and not p["low_conf"] and not p.get(f"{kind}_caution") and bet_eligible(p, kind, now):
+            elif (p.get(f"{kind}_flag") and not p["low_conf"] and not p.get(f"{kind}_caution") and bet_eligible(p, kind, now)
+                  and not getattr(C, "BETS_SUSPENDED", False)):
                 # Graded at the consensus line (conservative); the best single book is kept for reference
                 m = p.get("market") or {}
                 new[fk] = dict(ts=now.isoformat(), side=p[f"{kind}_side"], version=version,

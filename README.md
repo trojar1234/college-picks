@@ -219,3 +219,37 @@ are an expired or mistyped API key, or a change at one of the data providers. Th
   history; publish checks and self-test. No change to the model or the bet rules.
 
 Data: CollegeFootballData.com, The Odds API, Open-Meteo. For information only, not betting advice.
+
+## Model 2.0 (research mode, Nov 2026)
+
+Bets are suspended (`BETS_SUSPENDED = True` in `cfb_config.py`): anything that would have been a bet is logged
+in `data/decisions.csv` as a flag with the reason "bets suspended (paper only)". The site shows a notice.
+
+Model 2.0 runs after the current model on every update and publishes `docs/v2.html` ("Model 2.0" in the menu).
+It never stops the current model from publishing: any error is printed and skipped.
+
+| File | What it does |
+|---|---|
+| `v2_data.py` | Team-game table (scores, rushing/passing efficiency, drives, field position), personnel tables, QB changes |
+| `v2_ratings.py` | 14 Kalman-filter ratings (offense and defense, each with its own uncertainty), preseason priors |
+| `v2_models.py` | Models 2-5 (possession, matchup, personnel, machine learning) and Massey/Elo baselines |
+| `v2_ensemble.py` | Weights for the five models plus the current model, fitted on earlier seasons' unseen forecasts; game-specific error sizes |
+| `v2_sim.py` | Drive-by-drive score simulator: whole, non-negative scores; overtime; 3s and 7s |
+| `v2_eval.py`, `v2_backtest.py` | Walk-forward backtest and its report |
+| `v2_live.py`, `v2_site.py` | Live projections, frozen records (`data/v2/predictions_<season>.json`), grading, the page |
+
+Seasons: 2017-2022 tune, 2023-2024 validate, 2025 test (opened once after the design was fixed), 2026 research.
+Results on FBS-vs-FBS games (average miss in points; gain over the current model with a 95% week-resampled range):
+
+| | Model 2.0 margin | v1 margin | gain | Model 2.0 total | v1 total | Closing line margin / total |
+|---|---|---|---|---|---|---|
+| Tune | 12.64 | 12.73 | +0.11 (0.02 to 0.20) | 12.79 | 12.84 | 12.27 / 12.33 |
+| Validate | 12.42 | 12.46 | +0.04 (-0.09 to 0.15) | 12.83 | 12.83 | 12.09 / 12.75 |
+| Test 2025 | 12.03 | 12.19 | +0.17 (0.00 to 0.32) | 12.75 | 12.73 | 11.81 / 12.54 |
+| 2026 | 12.19 | 12.22 | +0.04 (-0.12 to 0.17) | 12.82 | 12.89 | 11.70 / 12.26 |
+
+What did not work, kept on record: model agreement does not predict accuracy (so it changes no probability);
+the possession model is the weakest component (the ensemble gives it almost no weight; it powers the score
+simulator); context terms in the ensemble changed nothing. Like v1, Model 2.0 still projects totals about 0.7
+points high in 2025-2026 and leans to the home side against the market. Model 2.0 replaces v1 only if it is
+more accurate on games played after it went live.

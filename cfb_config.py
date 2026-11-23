@@ -113,3 +113,9 @@ QB_FRESH_STARTS = 3
 # Books you can actually bet at, by the names in the line files (e.g. ["DraftKings", "FanDuel", "BetMGM"]).
 # When set, the consensus line, the best book, bets and grading use only these. Empty = every book.
 MY_BOOKS = []
+
+# Nov 23, 2026: no new bets. After the audit (no reliable spread edge; home field partly double-counted;
+# totals leaning over), every would-be bet is logged as a flag with the reason "bets suspended (paper only)"
+# so it is still tracked, and Model 2.0 runs alongside in research mode (v2_*.py, docs/v2.html).
+# Set to False to restore bets.
+BETS_SUSPENDED = True
