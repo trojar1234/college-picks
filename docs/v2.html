@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Model 2.0 · CFB Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<script>try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}</script>
+<style>
+:root{color-scheme:dark;
+--bg:#0E1A24;--card:#142330;--soft:#1B2D3B;--text:#E9EFF2;--muted:#98AAB7;--faint:#8A9DAB;--line:#253949;
+--turf:#33B877;--flagc:#F2C443;--red:#E4625C;
+--acc:#33B877;--accbg:rgba(51,184,119,.14);--good:#4CC98A;--goodbg:rgba(51,184,119,.15);--warn:#F2C443;--warnbg:rgba(242,196,67,.14);
+--bad:#EE7A74;--badbg:rgba(228,98,92,.15);--series:#33B877;--zone:rgba(51,184,119,.3);--hash:rgba(233,239,242,.13);--goal:rgba(233,239,242,.75);--swring:rgba(233,239,242,.3);
+--disp:"Barlow Condensed","Arial Narrow",Barlow,sans-serif;--ui:Barlow,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme:light){:root:not([data-theme=dark]){color-scheme:light;
+--bg:#F2F5F4;--card:#FFFFFF;--soft:#E9EFEE;--text:#0F1E29;--muted:#52677A;--faint:#5D7180;--line:#D5DEE2;
+--turf:#11804A;--flagc:#8C6400;--red:#BE3A30;--acc:#11804A;--accbg:#DDF1E6;--good:#11804A;--goodbg:#DDF1E6;--warn:#8C6400;--warnbg:#FBEFC6;
+--bad:#BE3A30;--badbg:#F9E1DE;--series:#11804A;--zone:rgba(17,128,74,.2);--hash:rgba(15,30,41,.16);--goal:rgba(15,30,41,.6);--swring:rgba(15,30,41,.18)}}
+:root[data-theme=light]{color-scheme:light;
+--bg:#F2F5F4;--card:#FFFFFF;--soft:#E9EFEE;--text:#0F1E29;--muted:#52677A;--faint:#5D7180;--line:#D5DEE2;
+--turf:#11804A;--flagc:#8C6400;--red:#BE3A30;--acc:#11804A;--accbg:#DDF1E6;--good:#11804A;--goodbg:#DDF1E6;--warn:#8C6400;--warnbg:#FBEFC6;
+--bad:#BE3A30;--badbg:#F9E1DE;--series:#11804A;--zone:rgba(17,128,74,.2);--hash:rgba(15,30,41,.16);--goal:rgba(15,30,41,.6);--swring:rgba(15,30,41,.18)}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 var(--ui);font-feature-settings:"tnum" 1;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+.skip{position:absolute;left:-999px;top:8px;background:var(--acc);color:var(--bg);padding:8px 12px;border-radius:6px;z-index:30;font-weight:600}.skip:focus{left:16px}
+
+/* Top bar */
+.top{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.top .in{max-width:1180px;margin:0 auto;padding:0 20px;height:56px;display:flex;align-items:center;gap:24px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);font:600 21px/1 var(--disp);letter-spacing:.01em;white-space:nowrap}
+.brand svg{width:22px;height:22px;flex:none}
+.top nav{display:flex;gap:2px;margin-left:auto;align-items:stretch;height:100%}
+.top nav a{display:flex;align-items:center;padding:0 12px;text-decoration:none;color:var(--muted);font-weight:500;font-size:15px;border-bottom:2px solid transparent;margin-bottom:-1px}
+.top nav a:hover{color:var(--text)}
+.top nav a.on{color:var(--text);border-bottom-color:var(--turf)}
+.theme{background:none;border:1px solid var(--line);color:var(--muted);border-radius:6px;height:32px;min-width:32px;display:grid;place-items:center;cursor:pointer;padding:0 8px;font:inherit;font-size:13px}
+.theme:hover{color:var(--text);border-color:var(--muted)}
+.theme svg{width:16px;height:16px}
+.navs{display:none}
+@media (max-width:760px){
+ .top .in{height:auto;flex-wrap:wrap;gap:0 12px;padding:10px 16px 0}
+ .top nav{order:3;width:100%;margin:6px 0 0;overflow-x:auto;height:40px}
+ .top nav a{padding:0 10px;font-size:14px;white-space:nowrap}
+ .theme{margin-left:auto}.navl{display:none}.navs{display:inline}}
+
+/* Page */
+.wrap{max-width:1180px;margin:0 auto;padding:24px 20px 72px}
+@media (max-width:760px){.wrap{padding:18px 16px 56px}}
+.phead{margin:4px 0 20px}
+h1{font:600 38px/1.05 var(--disp);letter-spacing:-.005em;margin:0}
+@media (max-width:760px){h1{font-size:31px}}
+h2{font:600 26px/1.15 var(--disp);margin:44px 0 10px}
+h3{font-size:16px;font-weight:600;margin:0 0 8px}
+h4{font-size:14px;font-weight:600;margin:0 0 6px}
+.sub{color:var(--muted);font-size:14px}
+.phead .sub{margin-top:6px;font-size:14px}
+.method{font:500 14px var(--ui);color:var(--faint);margin-left:10px;white-space:nowrap}
+p{max-width:78ch}
+.note{font-size:13px;color:var(--muted);margin-top:40px;padding-top:14px;border-top:1px solid var(--line);max-width:none}
+.when{font-size:13px;color:var(--faint)}
+.muted{color:var(--faint)}.nw{white-space:nowrap}
+.up{color:var(--good)}.down{color:var(--bad)}.flag{color:var(--bad);font-weight:600}
+.home{font-weight:600}
+a.lnk{color:var(--acc);text-decoration:none;font-weight:500;font-size:14px}a.lnk:hover{text-decoration:underline}
+.banner{background:var(--warnbg);color:var(--warn);border-radius:10px;padding:10px 14px;margin:0 0 16px;font-size:14px}
+.hide-sm{}.show-sm{display:none}.sm-inline{display:none}
+@media (max-width:760px){.hide-sm{display:none!important}.show-sm{display:block}.sm-inline{display:inline}}
+
+/* Team color bar */
+.sw{display:inline-block;width:4px;height:15px;border-radius:2px;background:var(--c,var(--line));vertical-align:-2px;margin-right:7px;box-shadow:0 0 0 1px var(--swring)}
+.tn{white-space:nowrap}
+
+/* Edge meter: a 10-yard strip with the end zone at 7+ */
+.meter{position:relative;display:inline-block;width:76px;height:8px;border-radius:2px;background:
+ linear-gradient(90deg,transparent calc(70% - 1px),var(--goal) calc(70% - 1px) 70%,var(--zone) 70%),repeating-linear-gradient(90deg,var(--hash) 0 1px,transparent 1px 10%),var(--soft);vertical-align:middle;overflow:hidden}
+.meter i{position:absolute;left:0;top:1px;bottom:1px;width:var(--v);background:var(--faint);border-radius:1px;opacity:.9}
+.meter.m-bet i{background:var(--turf)}.meter.m-flag i{background:var(--flagc)}.meter.m-mid i{background:var(--muted)}
+.edge{display:flex;align-items:center;gap:8px;white-space:nowrap;min-height:22px}
+.edge b{font:600 16px/1 var(--disp);min-width:26px;text-align:right}
+.edge.weak b{color:var(--faint);font-weight:500}
+@media (max-width:760px){.meter{width:56px}}
+
+/* Pills (sentence case) */
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:1px 7px;border-radius:4px;white-space:nowrap;margin:1px 0;line-height:18px}
+.p-good{background:var(--goodbg);color:var(--good)}.p-warn{background:var(--warnbg);color:var(--warn)}
+.p-bad{background:var(--badbg);color:var(--bad)}.p-mv{background:transparent;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}.p-acc{background:var(--accbg);color:var(--acc)}
+
+/* Controls */
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.chip{font:inherit;font-size:14px;font-weight:500;padding:5px 11px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer;line-height:20px}
+.chip:hover{color:var(--text);border-color:var(--muted)}
+.chip.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+select.chip{padding-right:6px}
+a.chip{text-decoration:none;color:var(--text);display:inline-block}
+input[type=search],.mpick input{font:inherit;font-size:15px;padding:6px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);min-width:180px;flex:1;max-width:280px}
+@media (pointer:coarse){.chip,input[type=search]{min-height:40px}}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--muted);margin:2px 0 12px;align-items:center}
+.legend>span{display:flex;align-items:center;gap:6px}
+
+/* Panels and numbers */
+.summary,.help,.mcard,.scard,.chart{background:var(--card);border:1px solid var(--line);border-radius:10px}
+.summary{padding:16px 18px;margin-bottom:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;margin:0 0 18px;border:1px solid var(--line);border-radius:10px;background:var(--card);overflow:hidden}
+.card{padding:12px 16px;border-right:1px solid var(--line);min-width:0}
+.cards .card:last-child{border-right:0}
+.card .l{font-size:13px;color:var(--muted)}
+.card .v{font:600 26px/1.15 var(--disp);margin-top:2px}
+.card .v .when{display:block;font:400 13px/1.35 var(--ui);color:var(--faint);margin-top:2px}
+.card .v .push{font-size:16px;color:var(--muted);font-weight:500}
+.big{font:600 20px/1.1 var(--disp);white-space:nowrap}
+.big2{font:600 30px/1.1 var(--disp);margin:2px 0 6px}
+.big2 .when,.card .v .ci,.card .v .sub,.card .v .when{font-family:var(--ui);font-weight:500;font-size:13px;line-height:1.4}
+.card .v .sub{color:var(--muted)}
+.score{font-size:13px;margin-top:3px}
+.kv{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:3px 0}
+.kv>span:last-child{text-align:right}
+.help{padding:10px 16px;margin:0 0 16px;font-size:14px;color:var(--muted)}
+.help summary{cursor:pointer;color:var(--text);font-weight:600}
+.help p,.help li{margin:8px 0;line-height:1.55;max-width:84ch}.help ul{padding-left:18px;margin:6px 0}
+.def{font-size:14px;color:var(--muted);margin:0 0 12px}
+.notes{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.45}
+
+/* The week's card */
+.summary h3{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font:600 21px/1.2 var(--disp);margin:0 0 4px}
+.summary h3 .when{font:400 13px var(--ui)}
+.summary .grp+.grp{margin-top:16px}
+.sitem{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;align-items:center;padding:9px 0;border-top:1px solid var(--line);cursor:pointer;font-size:15px}
+.sitem:first-of-type{border-top:0}
+.sitem .t{font:600 19px/1.2 var(--disp)}.sitem .t.bet{color:var(--text)}
+.sitem .g2{color:var(--muted);font-size:14px;margin-left:6px}
+.sitem .r{font-size:13px;color:var(--faint);text-align:right;line-height:1.45}
+.sitem:hover .t{text-decoration:underline}
+.sitem:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
+
+/* Tables */
+.tbl{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{font-size:13px;font-weight:600;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:bottom}
+th .when{display:block;font-weight:400}
+td{padding:11px 12px;border-bottom:1px solid var(--line);font-size:15px;vertical-align:top}
+tr:last-child td{border-bottom:0}
+tr.g{cursor:pointer}tr.g:hover td{background:var(--soft)}tr.g:focus-visible td{outline:2px solid var(--acc);outline-offset:-2px}
+tr.g[aria-expanded=true] td{background:var(--soft)}
+tr.day td{background:var(--bg);font:600 17px/1.2 var(--disp);color:var(--text);padding:16px 12px 8px;border-bottom:1px solid var(--line)}
+tr.day td .when{font:400 13px var(--ui);margin-left:6px}
+tr.g.flash td{background:var(--accbg)}
+.detail td{background:var(--soft);padding:16px 18px}
+.ln{line-height:1.5;min-height:22px;white-space:nowrap}.c-pick .ln{white-space:normal}
+.hot{color:var(--acc);font-weight:600}.mid{font-weight:600}b.weak{color:var(--muted);font-weight:500}
+.bet{font-weight:600}
+.games th:nth-child(1){width:27%}.games th:nth-child(2){width:15%}.games th:nth-child(3),.games th:nth-child(4){width:14%}.games th:nth-child(5){width:12%}
+.c-game .tn{display:block;line-height:1.55}
+.c-game .tn .at{color:var(--faint);font-size:13px;margin-right:4px}
+.wp{display:block;width:96px;height:3px;background:var(--line);border-radius:2px;margin:6px 0 2px;overflow:hidden}
+.wp span{display:block;height:100%;background:var(--muted)}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px}
+.dgrid h4{margin:0 0 6px;font-size:13px;color:var(--muted);font-weight:600}
+.hist{display:flex;align-items:flex-end;gap:2px;height:64px}
+.hist div{flex:1;background:var(--series);opacity:.8;border-radius:1px 1px 0 0;min-height:1px}
+.hist div.z{opacity:.4}
+.spark{margin-top:10px}.vsl{font-size:14px;padding:3px 0;line-height:1.45}.spark svg{width:100%;max-width:300px;height:auto;display:block}
+.rbar{display:inline-block;position:relative;width:64px;height:5px;background:var(--soft);border-radius:2px;vertical-align:middle;margin-left:8px}.rbar span{position:absolute;top:0;height:5px;border-radius:2px}.rbar .pos{background:var(--series)}.rbar .neg{background:var(--muted);opacity:.6}
+.crng{position:relative;display:inline-block;width:120px;height:8px;background:var(--soft);border-radius:2px;vertical-align:middle}.crng span{position:absolute;top:0;height:8px;background:var(--series);opacity:.45;border-radius:2px}.crng i{position:absolute;top:-3px;width:2px;height:14px;background:var(--text)}
+th .sb{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}th .sb:hover{color:var(--text);text-decoration:underline}th.on{color:var(--text)}th.on .sb:after{content:' ▾';font-size:10px}
+.rt th{white-space:normal}.mtbl th,.mtbl td{white-space:normal}
+.movers{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px}.rh{width:100%;max-width:320px;height:auto;display:block}
+.btt th{white-space:normal}.btt td{white-space:nowrap}
+.mono{font-variant-numeric:tabular-nums}
+
+/* Performance */
+.secnav{position:sticky;top:56px;z-index:10;background:var(--bg);display:flex;gap:4px;overflow-x:auto;white-space:nowrap;padding:8px 0;margin:-8px 0 14px;border-bottom:1px solid var(--line)}
+.secnav a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;padding:4px 10px;border-radius:6px}.secnav a:hover{background:var(--soft);color:var(--text)}
+h2[id],.summary[id]{scroll-margin-top:110px}
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.gblock .l{font-size:14px;font-weight:600;color:var(--muted)}
+.gtxt{font-size:14px;color:var(--muted);line-height:1.5}
+.score2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}.scard{padding:16px 18px}.scard h3{font:600 20px var(--disp);margin:0}
+.chartgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}.chart{padding:14px 16px}.chart h4{margin:0 0 8px}.chart svg{width:100%;height:auto;display:block}
+.chart .tbl{border:0;border-radius:0;background:none}
+.ci{display:block;font-size:13px;font-weight:500}.ci.warnc{color:var(--warn)}.ci.up{color:var(--good)}.ci.down{color:var(--bad)}
+.okbox{font-size:14px;color:var(--muted);margin:12px 0 0}.okbox.bad{color:var(--warn)}
+.mh{margin:22px 0 8px;font-size:16px}
+.mon{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+
+/* Matchup */
+.mpick{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:8px}.mpick label{display:flex;flex-direction:column;font-size:13px;font-weight:600;color:var(--muted);gap:5px}
+.mpick input{min-width:230px}
+.venue{display:flex;gap:0}.venue .chip{border-radius:0;margin-left:-1px}.venue .chip:first-child{border-radius:6px 0 0 6px;margin-left:0}.venue .chip:last-child{border-radius:0 6px 6px 0}
+.mcard{padding:20px;margin-top:16px}
+.mhead{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:10px}.mteam{font-size:16px;font-weight:600}.mscore{font:600 64px/1 var(--disp);margin-top:4px}
+.mvs{text-align:center;color:var(--muted);font-size:13px}.mat{font:600 22px var(--disp);color:var(--faint)}
+.mcards{margin:18px 0 0}.mnote{font-size:14px;color:var(--muted);margin-top:14px;line-height:1.6}.mtry{margin-top:12px}
+.mtbl td:first-child{color:var(--muted)}.vtbl tr.on td{background:var(--soft)}.vtbl tr.on td:first-child{color:var(--text);font-weight:600}
+.presets{display:flex;flex-wrap:wrap;gap:6px}.scen{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 0;font-size:14px;color:var(--muted)}.scen input[type=range]{accent-color:var(--turf);width:180px}
+.eq{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:4px 0 8px}.eq>span{display:flex;flex-direction:column}.eq b{font:600 20px var(--disp)}.eq .op{font-size:20px;color:var(--faint)}.eq .when{display:block}
+.wbar{display:flex;gap:2px;height:6px;margin:8px 0 4px}.wbar span{display:block;height:100%;border-radius:2px;background:var(--line)}.wbar span.fav{background:var(--series)}
+#swap{align-self:flex-end;font-size:16px;padding:6px 12px}
+@media (max-width:760px){.mpick input{min-width:0;width:100%;max-width:none}.mpick label{flex:1 1 100%}.mscore{font-size:48px}.mcards{grid-template-columns:1fr 1fr}.mcards .card:nth-child(3){grid-column:1/-1}}
+
+/* Method page */
+.doc{max-width:760px}
+.doc h2{margin-top:40px}.doc p,.doc li{font-size:16px;line-height:1.65;color:var(--text)}.doc li{margin:6px 0}
+.doc .sub{font-size:15px}
+.doc dl{margin:0}.doc dt{font-weight:600;margin-top:12px}.doc dd{margin:2px 0 0;color:var(--muted)}
+.docwrap{display:grid;grid-template-columns:minmax(0,760px) 190px;gap:56px;align-items:start}
+.docwrap .doc{grid-column:1;grid-row:1}
+.toc{grid-column:2;grid-row:1;position:sticky;top:80px;display:flex;flex-direction:column;gap:2px;border-left:1px solid var(--line);padding-left:14px}
+.toc a{color:var(--muted);text-decoration:none;font-size:14px;padding:3px 0}.toc a:hover{color:var(--text)}
+.doc h2[id]{scroll-margin-top:72px}
+@media (max-width:960px){.docwrap{display:block}.toc{position:static;flex-direction:row;flex-wrap:wrap;gap:4px 14px;border:0;padding:0;margin:0 0 8px}}
+
+/* Phones: the games table becomes stacked rows */
+@media (max-width:760px){
+ td,th{padding:9px 8px;font-size:14px}
+ table.games thead{display:none}
+ table.games tr.g{display:grid;grid-template-columns:1fr auto;border-bottom:1px solid var(--line)}
+ table.games tr.g td{border:0;padding:12px 14px 2px}
+ table.games td.c-proj{text-align:right}
+ table.games td.c-pick{grid-column:1/-1;padding:4px 14px 14px}
+ table.games tr.detail td{display:block}table.games tr.day td{display:block}
+ .cards{grid-template-columns:repeat(2,1fr)}.card{border-bottom:1px solid var(--line)}.cards .card:nth-child(2n){border-right:0}
+ .card .v{font-size:23px}
+ .sitem{grid-template-columns:auto 1fr}.sitem .r{grid-column:1/-1;text-align:left}
+ .wp{margin-left:auto}.rbar{display:none}}
+@media print{:root{--bg:#fff;--card:#fff;--soft:#f2f4f6;--text:#111;--muted:#444;--faint:#555;--line:#ccc}
+ .top,.secnav,.bar,#swap,.venue,.skip,.banner,#filters,.legend,a.lnk,.theme{display:none!important}.tbl{overflow:visible}details.help{display:none}body{font-size:12px}}
+
+.det td{background:var(--soft)}.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px}@media(max-width:700px){.dgrid{grid-template-columns:1fr}}
+.mh{font:600 22px/1.2 var(--disp);margin:28px 0 10px}</style></head><body>
+<a class="skip" href="#content">Skip to content</a><header class="top"><div class="in"><a class="brand" href="index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="3" width="22" height="18" rx="3" fill="var(--turf)"/><path d="M8 3v18M12 3v18M16 3v18" stroke="var(--bg)" stroke-width="1.6"/></svg>CFB Model</a><nav aria-label="Pages"><a href="index.html">Projections</a><a href="matchup.html">Matchup</a><a href="ratings.html"><span class="navl">Team ratings</span><span class="navs">Ratings</span></a><a href="report.html"><span class="navl">Performance</span><span class="navs">Results</span></a><a href="method.html"><span class="navl">How it works</span><span class="navs">Method</span></a><a href="v2.html" class="on" aria-current="page"><span class="navl">Model 2.0</span><span class="navs">2.0</span></a></nav><button class="theme" id="theme" type="button">Auto</button></div></header><div class="wrap"><main id="content" tabindex="-1"><div class="phead"><h1 id="ptitle">Model 2.0</h1><div class="sub" id="sub"></div></div>
+<div class="summary" id="intro"></div>
+<h2 class="mh">This week</h2>
+<details class="help"><summary>How to read this table</summary><ul>
+<li><b>Model 2.0</b> is an ensemble of five new models (Bayesian ratings, a possession model, a matchup model, a personnel model and machine learning) plus the current model, weighted by how accurate each was on past seasons it never saw.</li>
+<li><b>Score</b> is the projected score (away–home); <b>Win</b> the favorite's chance; <b>80% range</b> the home team's final margin, which should land in that range 4 times out of 5 (EMU +3 to +20 means Eastern Michigan winning by 3 to 20). Ranges are wider early in the season and for teams the model knows less about.</li>
+<li><b>Agreement</b> is how closely the five new models agree. It is information only: on 2017–2025 it did not predict which projections would be more accurate, so it changes no probability.</li>
+<li><b>Line</b> is the sportsbooks' current number, shown for comparison. Lines are never inputs. <b>No bets are recommended</b>: Model 2.0 is in research mode until it proves itself on games it has not seen.</li>
+<li>Tap a game for each model's number, the likeliest scores and the chances at the current line.</li></ul></details>
+<div class="tbl"><table id="wk"><thead><tr><th>Game</th><th>Score</th><th>Spread</th><th>Total</th><th>Win</th><th class="hide-sm">80% range</th><th class="hide-sm">Agreement</th><th>Line</th></tr></thead><tbody></tbody></table></div>
+<h2 class="mh">Live scorecard</h2>
+<div id="live"></div>
+<h2 class="mh">Backtest</h2>
+<details class="help"><summary>How the backtest works</summary><ul>
+<li>Every number is a walk-forward forecast: each game predicted only from games before it, and every model refit each season on earlier seasons only.</li>
+<li><b>Tune</b> (2017–2022) is where every design choice was made. <b>Validate</b> (2023–2024) checked those choices. <b>Test</b> (2025) was opened once, after the design was fixed. <b>2026</b> is research: it shaped too many decisions on the current model to count as unseen.</li>
+<li>Games between two FBS teams only. Average miss is in points; Brier score and log loss measure win chances (lower is better); "80% range hit" should be near 80%.</li>
+<li>The opening and closing lines are included as forecasts to beat, not as inputs.</li></ul></details>
+<div class="presets" id="splits"></div>
+<div id="bt"></div>
+<h2 class="mh">How Model 2.0 works</h2>
+<div class="summary" id="how"></div>
+
+<p class="note">Model 2.0 is a separate research model. Sportsbook lines are never inputs. Nothing here is betting advice.</p>
+</main></div>
+<script src="v2data.js?v=44117668"></script>
+<script>
+(function(){var b=document.getElementById('theme');if(!b)return;var m=['auto','light','dark'];
+function cur(){return document.documentElement.dataset.theme||'auto';}
+function lab(){b.textContent=cur()[0].toUpperCase()+cur().slice(1);}
+b.onclick=function(){var i=(m.indexOf(cur())+1)%3;if(m[i]==='auto'){delete document.documentElement.dataset.theme;try{localStorage.removeItem('theme')}catch(e){}}else{document.documentElement.dataset.theme=m[i];try{localStorage.setItem('theme',m[i])}catch(e){}}lab();};lab();})();
+if(!window.V2){document.getElementById('intro').innerHTML='<b>Data unavailable.</b> Model 2.0 has not published yet.';}else{
+
+const V=window.V2;
+const fmt=x=>x==null?'—':(Math.round(x*10)/10).toString();
+const f2=x=>x==null?'—':Number(x).toFixed(2);
+const f3=x=>x==null?'—':Number(x).toFixed(3);
+const pct=x=>x==null?'—':Math.round(x*100)+'%';
+const sg=x=>x==null?'—':(Math.round(x)>0?'+':Math.round(x)<0?'−':'')+Math.abs(Math.round(x));
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const when=s=>new Date(s).toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',hour:'numeric',minute:'2-digit'});
+const line=(h,a,s)=>s==null?'—':s===0?'Pick':s<0?`${esc(h)} −${Math.abs(s)}`:`${esc(a)} −${s}`;
+const NAMES={bayes:'Bayesian ratings',poss:'Possession model',matchup:'Matchup model',personnel:'Personnel model',ml:'Machine learning',v1:'Current model (v1)',ens:'Model 2.0 (ensemble)',massey:'Massey (baseline)',elo:'Elo (baseline)',open:'Opening line',close:'Closing line'};
+function score(g){const h=Math.round(g.exp_home),a=Math.round(g.exp_away);return `${a}–${h}`;}
+function render(){
+ document.getElementById('sub').textContent=`Updated ${when(V.generated)} CT · ${V.week>20?'Bowls':'Week '+V.week} · research mode, no bets`;
+ const L=V.live||{};
+ document.getElementById('intro').innerHTML=`<p><b>Research mode.</b> Model 2.0 runs alongside the current model. Its projections are frozen at kickoff and graded, and nothing is recommended as a bet. It replaces the current model only if, on games neither has seen, it is more accurate and its probabilities hold up.</p>`+
+ `<p class="muted">On past seasons it has been modestly more accurate than the current model on margins (about 0.1–0.2 points a game in most seasons) and about even on totals. Both remain less accurate than the closing line.</p>`;
+ const tb=document.querySelector('#wk tbody');
+ tb.innerHTML=(V.games||[]).map(g=>{const fav=g.margin>=0?g.home:g.away,pw=g.margin>=0?g.p_home:1-g.p_home;const m=g.market||{};
+  const lo=g.m_lo,hi=g.m_hi;
+  return `<tr data-id="${g.game_id}" style="cursor:pointer"><td><b>${esc(g.away)}</b> ${g.neutral?'vs':'@'} <b>${esc(g.home)}</b><br><span class="muted">${when(g.start)}</span></td>
+  <td class="mono">${score(g)}</td><td class="mono">${line(g.home,g.away,g.spread)}</td><td class="mono">${fmt(g.total)}</td>
+  <td>${esc(fav)} ${pct(pw)}</td><td class="hide-sm mono">${esc(g.home)} ${sg(lo)} to ${sg(hi)}</td><td class="hide-sm">${esc(g.agree)}</td>
+  <td class="mono">${line(g.home,g.away,m.spread)}<br>${m.total==null?'—':'O/U '+m.total}</td></tr>
+  <tr class="det" id="d${g.game_id}" hidden><td colspan="8">${detail(g)}</td></tr>`}).join('')||'<tr><td colspan="8">No upcoming games.</td></tr>';
+ tb.querySelectorAll('tr[data-id]').forEach(r=>r.onclick=()=>{const d=document.getElementById('d'+r.dataset.id);d.hidden=!d.hidden;});
+ document.getElementById('live').innerHTML=liveCard(L);
+ const sp=['tune','validate','test','2026'];let cur='test';
+ const lab={tune:'Tune 2017–22',validate:'Validate 2023–24',test:'Test 2025',2026:'2026'};
+ const bar=document.getElementById('splits');
+ const draw=()=>{bar.innerHTML=sp.map(s=>`<button class="chip${s===cur?' on':''}" data-s="${s}">${lab[s]}</button>`).join('');
+  bar.querySelectorAll('button').forEach(b=>b.onclick=()=>{cur=b.dataset.s;draw();});
+  document.getElementById('bt').innerHTML=btCard((V.backtest||{})[cur]);};
+ draw();
+ document.getElementById('how').innerHTML=HOW;
+}
+function detail(g){const c=g.comp||{};const m=g.market||{};
+ const rows=Object.keys(c).map(k=>`<div class="kv"><span>${NAMES[k]||k}</span><span class="mono">${line(g.home,g.away,c[k][0]==null?null:-c[k][0])} · ${fmt(c[k][1])}</span></div>`).join('');
+ const lk=(g.likely||[]).map(x=>`${x[1]}–${x[0]} (${Math.round(x[2]*1000)/10}%)`).join(', ');
+ let mk='';if(m.spread!=null&&g.p_home_cover!=null){const hc=g.p_home_cover;mk+=`<div class="kv"><span>Chance ${esc(g.home)} covers ${m.spread>0?'+':''}${m.spread}</span><span>${pct(hc)}</span></div>`;}
+ if(m.total!=null&&g.p_over!=null)mk+=`<div class="kv"><span>Chance of over ${m.total}</span><span>${pct(g.p_over)}</span></div>`;
+ return `<div class="dgrid"><div><b>Each model (spread · total)</b>${rows}</div><div><b>Likeliest scores (away–home)</b><p>${lk||'—'}</p>
+ <div class="kv"><span>80% range, total</span><span>${fmt(g.t_lo)} to ${fmt(g.t_hi)}</span></div>${mk}
+ <p class="muted">Chances at the current line come straight from the model and are not adjusted toward the market. Research only.</p></div></div>`;}
+function liveCard(L){if(!L||!L.n)return `<div class="summary"><p>No graded games yet. Model 2.0's first frozen projections are graded as games finish; this card fills in from there.</p></div>`;
+ const r=(x)=>x&&x[0]!=null?`${f2(x[0])} <span class="muted">(${x[1]})</span>`:'—';
+ const rc=x=>x&&(x.w+x.l)?`${x.w}–${x.l}${x.p?'–'+x.p:''} (${pct(x.pct)})`:'—';
+ return `<div class="tbl"><table><thead><tr><th>Average miss since ${new Date(L.since).toLocaleDateString('en-US')}</th><th>Margin</th><th>Total</th></tr></thead><tbody>
+ <tr><td>Model 2.0</td><td>${r(L.v2.margin)}</td><td>${r(L.v2.total)}</td></tr>
+ <tr><td>Current model (v1)</td><td>${r(L.v1.margin)}</td><td>${r(L.v1.total)}</td></tr>
+ <tr><td>Opening line</td><td>${r(L.open.margin)}</td><td>${r(L.open.total)}</td></tr>
+ <tr><td>Last line before kickoff</td><td>${r(L.close.margin)}</td><td>${r(L.close.total)}</td></tr></tbody></table></div>
+ <p class="muted">Games graded: ${L.n} (FBS vs FBS). Win-chance Brier score: ${f3(L.v2.brier)}. Model 2.0's side against the opening line: spreads ${rc(L.leans.spread_open)}, totals ${rc(L.leans.total_open)}; against the last line: spreads ${rc(L.leans.spread_close)}, totals ${rc(L.leans.total_close)}. These are research records, not bets: break-even at −110 is 52.4%.</p>`;}
+function btCard(R){if(!R)return '<p>Backtest not available yet.</p>';
+ const A=R.accuracy||[];const order=['ens','v1','bayes','poss','matchup','personnel','ml','massey','elo','open','close'];
+ const rows=order.map(k=>A.find(a=>a.model===k)).filter(Boolean).map(a=>`<tr${a.model==='ens'?' style="font-weight:600"':''}><td>${NAMES[a.model]||a.model}</td><td>${f2(a.margin_mae)}</td><td>${a.total_mae==null?'—':f2(a.total_mae)}</td><td>${fmt(a.margin_bias)}</td><td>${a.total_bias==null?'—':fmt(a.total_bias)}</td><td>${a.brier==null?'—':f3(a.brier)}</td><td>${a.cover80_margin==null?'—':pct(a.cover80_margin)}</td></tr>`).join('');
+ const n=(A[0]||{}).n;
+ const pv=(R.vs_v1||[]).filter(Boolean).map(p=>`${p.kind}: ${p.gain>=0?'+':''}${f2(p.gain)} points a game (95% range ${p.range95?f2(p.range95[0])+' to '+f2(p.range95[1]):'—'})`).join('; ');
+ const mi=R.market_info||{};const ml=k=>mi[k]?`${f2(mi[k].w)} ± ${f2(mi[k].se)}`:'—';
+ const C=R.confidence||{};
+ const pk=(R.picks||[]).filter(x=>x.gap===0||x.gap===5).map(x=>`<tr><td>${x.kind==='margin'?'Spread':'Total'} vs ${x.line.includes('open')?'opening':'closing'} line</td><td>${x.gap?x.gap+'+':'all'}</td><td>${x.w}–${x.l}</td><td>${pct(x.pct)}</td><td>${x.units>=0?'+':''}${x.units}</td><td>${x.kind==='total'?(x.over_share==null?'—':pct(x.over_share)+' overs'):(x.home_share==null?'—':pct(x.home_share)+' home')}</td></tr>`).join('');
+ return `<div class="tbl"><table><thead><tr><th>Forecast</th><th>Margin miss</th><th>Total miss</th><th>Margin bias</th><th>Total bias</th><th>Brier</th><th>80% range hit</th></tr></thead><tbody>${rows}</tbody></table></div>
+ <p class="muted">${n||0} games. Bias = actual minus projected (positive: the forecast was too low on the home margin or total).</p>
+ <div class="summary"><p><b>Model 2.0 vs current model:</b> ${pv||'—'} (positive = Model 2.0 more accurate; ranges resample whole weeks).</p>
+ <p><b>What it knows beyond the line</b> (share of the model's gap that shows up in results; 0 = the line already knows it all): spreads ${ml('line_m_open')} vs opening, ${ml('line_m_close')} vs closing; totals ${ml('line_t_open')} vs opening, ${ml('line_t_close')} vs closing. A share of about 0.3 on a 5-point gap is worth 1.5 points, roughly 54% against the line; below about 0.2 a gap rarely clears the bookmaker's cut.</p>
+ <p><b>Does model agreement predict accuracy?</b> Log score with it ${C.logscore_with??'—'}, without ${C.logscore_without??'—'} (higher is better). Average miss by agreement: ${Object.entries(C.by_agreement||{}).map(([k,v])=>`${k} ${f2(v.mae)} (${v.n})`).join(', ')||'—'}.</p></div>
+ <h3>Research only: Model 2.0's side against the line</h3><div class="tbl"><table><thead><tr><th>Line</th><th>Gap</th><th>Record</th><th>Win %</th><th>Units</th><th>Lean</th></tr></thead><tbody>${pk}</tbody></table></div>
+ <p class="muted">Not bets. Shown so any lean toward overs or home teams is visible. Break-even at −110 is 52.4%.</p>`;}
+const HOW=`<p><b>1. Bayesian ratings.</b> Fourteen Kalman filters (points, points per drive, drives, rushing and passing efficiency and success, explosiveness, stuff rate, line yards, run share, scoring chances, points per scoring chance, field position) rate every team's offense and defense, each with its own uncertainty. Games are absorbed week by week; every forecast uses only earlier games. Between seasons ratings restart from a preseason prior fitted on earlier seasons (last season's rating, talent, recruiting, returning production, quarterback, transfers, roster experience), with wider uncertainty for teams returning less.</p>
+<p><b>2. Possession model.</b> Points as drives times what each drive is worth (points per drive, how often drives reach the opponent's 40 and score there, field position, passing and rushing efficiency). It also powers the score simulator: drives end in touchdowns, field goals or nothing, so scores are always whole, never negative, and land on 3s and 7s as real games do.</p>
+<p><b>3. Matchup model.</b> Ridge regression on unit-versus-unit ratings and their interactions (a run-heavy offense against a weak run defense, pass efficiency against pass defense, and so on).</p>
+<p><b>4. Personnel model.</b> Model 1 corrected for roster talent, recruiting, transfers, returning production and quarterback changes, with preseason information fading as games accumulate. This data has no injury reports or depth charts; in-season quarterback changes come from the previous game's box score.</p>
+<p><b>5. Machine learning.</b> Gradient-boosted trees on every rating and personnel input.</p>
+<p><b>Ensemble.</b> Non-negative weights on the five models plus the current model, fitted each season on earlier seasons' unseen forecasts. Error sizes are game-specific (rating uncertainty, time of season, game size), also fitted only on earlier seasons.</p>
+<p><b>Never an input:</b> sportsbook lines. They are used only to grade and compare. Model 2.0 makes no bets.</p>`;
+render();
+
+}
+</script></body></html>
