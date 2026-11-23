@@ -65,6 +65,10 @@ jobs:
           echo "mode=${MODE:-skip}" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
         if: steps.plan.outputs.mode != 'skip'
+        with:
+          # Start from the newest commit, not the one that triggered the run: a run that waited in the
+          # queue behind another must not redo its work on stale files (that caused rebase conflicts).
+          ref: ${{ github.ref_name }}
       - uses: actions/setup-python@v5
         if: steps.plan.outputs.mode != 'skip'
         with:
@@ -94,5 +98,11 @@ jobs:
           git add data docs
           git diff --cached --quiet || git commit -m "Model update $(date -u +%Y-%m-%dT%H:%MZ)"
           # pick up anything uploaded while this run was going, so the push never gets rejected
-          git pull --rebase
+          if ! git pull --rebase; then
+            # Another run published the same generated files first. Its results are just as current,
+            # so drop this run's copy instead of failing; the next scheduled run carries on as normal.
+            git rebase --abort
+            echo "::notice::Another run published first; this run's results were not saved (nothing is lost)."
+            exit 0
+          fi
           git push
