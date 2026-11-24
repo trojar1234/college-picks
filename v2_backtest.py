@@ -46,11 +46,30 @@ def build(SEASONS, pfeat=None, passing=None, v1_wf=None, params=None):
     Gm["sd_m"], Gm["sd_t"] = Gm.sd_m_nodis, Gm.sd_t_nodis  # the confidence model in use (no disagreement term)
     Gm["agree"] = VE.agreement(Gm)
     Gm["sd_m_ens"], Gm["sd_t_ens"] = Gm.sd_m, Gm.sd_t
+    Gm = sim_probs(Gm)
     for c in VM.MODELS + ["massey", "elo", "v1", "close", "open"]:
         if f"m_{c}" in Gm:
             Gm[f"sd_m_{c}"] = EV.hist_sd(Gm, f"m_{c}", "margin")
             Gm[f"sd_t_{c}"] = EV.hist_sd(Gm, f"t_{c}", "total")
     return dict(G=G, TG=TG, P=P, QB=QB, pre=pre, fins=fins, filt=filt, S=S, Gm=Gm, weights=weights)
+
+
+def sim_probs(Gm, n=4000):
+    """The live page's probabilities come from the score simulator, so the backtest scores those same
+    simulated probabilities (win chance, 80% ranges), not a normal-curve stand-in."""
+    import v2_sim as SIM
+    Gm = Gm.copy()
+    for c in ("p_sim", "m_lo_sim", "m_hi_sim", "t_lo_sim", "t_hi_sim"):
+        Gm[c] = np.nan
+    k = Gm.m_ens.notna() & Gm.t_ens.notna() & Gm.sd_m.notna() & Gm.sd_t.notna() & (Gm.mismatch == 0)
+    for i, r in Gm[k].iterrows():
+        mu_h, mu_a = max((r.t_ens + r.m_ens) / 2, 1.0), max((r.t_ens - r.m_ens) / 2, 1.0)
+        d = np.nanmean([r.drives_h, r.drives_a])
+        h, a = SIM.simulate(mu_h, mu_a, d if np.isfinite(d) else 11.5, r.sd_m, r.sd_t, n=n, seed=int(r.game_id) % 100000)
+        m, t = h - a, h + a
+        Gm.loc[i, ["p_sim", "m_lo_sim", "m_hi_sim", "t_lo_sim", "t_hi_sim"]] = [
+            float((m > 0).mean()), np.quantile(m, 0.1), np.quantile(m, 0.9), np.quantile(t, 0.1), np.quantile(t, 0.9)]
+    return Gm
 
 
 def add_context(base, G):

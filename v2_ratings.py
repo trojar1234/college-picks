@@ -6,8 +6,11 @@ where h is +1 at home, -1 away, 0 neutral. Each filter keeps a mean and a full c
 team's offense and defense, so every rating carries its own uncertainty, and a forecast's uncertainty
 is computed from it (not assumed equal for all games).
 
-Chronology is the guard against look-ahead: games are processed week by week, every game's
-before-game ratings are recorded first, and only then are that week's results absorbed. Ratings drift
+Chronology is the guard against look-ahead: games are processed in batches by kickoff date (US Central),
+every game's before-game ratings are recorded first, and only then are that day's results absorbed. So no
+forecast uses a result from a game that ended after it kicked off. (Until Nov 23, 2026 batches were by
+assigned week, which let 47 games in 2019, 529 in 2020 and 1 in 2025 see results from games that ended
+after their own kickoff.) Ratings drift
 a little each week (process noise) so recent games count more, as evidence warrants.
 
 Between seasons each rating restarts from a preseason prior: a regression, fitted only on earlier
@@ -252,7 +255,8 @@ def run_filter(metric, TG, G, pers, tiers, R, q, carry=0.6, sd0=None, prior_alph
             F.P[0, 0] += (0.1 * sd0) ** 2
             F.P[1, 1] += (0.05 * sd0) ** 2
         # center: league-average rating 0 for FBS teams keeps mu identifiable
-        for (wk,), grp in Gs.groupby(["wk"], sort=True):
+        last_day = None
+        for day, grp in Gs.groupby(batch_day(Gs), sort=True):
             if record:
                 for r in grp.itertuples():
                     h = 0 if r.neutral else 1
@@ -270,7 +274,10 @@ def run_filter(metric, TG, G, pers, tiers, R, q, carry=0.6, sd0=None, prior_alph
                     pre_rows.append(row)
             obs = tg[tg.game_id.isin(grp.game_id)]
             if len(obs):
-                F.drift()
+                # ratings drift with time: q per week, scaled by days since the last batch (capped at 2 weeks)
+                gap = 7.0 if last_day is None else min(max((day - last_day).days, 1), 14)
+                F.drift(F.q * gap / 7.0)
+                last_day = day
                 for r in obs.itertuples():
                     w = (getattr(r, wcol) / wscale) if wcol else 1.0
                     if not np.isfinite(w) or w <= 0:
@@ -283,6 +290,11 @@ def run_filter(metric, TG, G, pers, tiers, R, q, carry=0.6, sd0=None, prior_alph
                        on="team", how="left")
         pairs_hist.append(pf2[pf2.final_off.notna()])
     return pd.DataFrame(pre_rows), finals, F
+
+
+def batch_day(G):
+    """Kickoff date in US Central time: the unit of chronology (a game never sees same-day results)."""
+    return pd.to_datetime(G.start, utc=True).dt.tz_convert("America/Chicago").dt.normalize().dt.tz_localize(None)
 
 
 def tiers_by_season(G):

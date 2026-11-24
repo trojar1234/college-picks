@@ -225,8 +225,8 @@ def massey(G, lam=4.0, carry=0.5, hfa_games=60.0):
         pdf = np.array([carry * prev[t][1] if t in prev else new.get(cls.get(t), (0.0, 0.0))[1] for t in teams])
         mu_prev = prev.get("_mu", 27.5)
         done = Gs.iloc[0:0]
-        for wk, grp in Gs.groupby("wk", sort=True):
-            # fit on games before this week
+        for _, grp in Gs.groupby(VR.batch_day(Gs), sort=True):
+            # fit on games before this kickoff date
             d = done
             k = len(d)
             if k:
@@ -271,7 +271,7 @@ def elo(G, k=20.0, hfa=55.0, regress=0.33, scale=25.0):
             if t in R:
                 R[t] = base + (1 - regress) * (R[t] - base)
         tot_sum, tot_n = 55.0 * 20, 20
-        for wk, grp in Gs.groupby("wk", sort=True):
+        for _, grp in Gs.groupby(VR.batch_day(Gs), sort=True):
             for r in grp.itertuples():
                 for t in (r.home, r.away):
                     if t not in R:

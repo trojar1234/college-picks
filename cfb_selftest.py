@@ -452,6 +452,22 @@ def test_model2():
     p2, _, _ = VR.run_filter("pts", tg(70), G, {}, tiers, 100.0, 1.0, sd0=5.0, mu0=25.0)
     check(np.allclose(p1.pts_h.to_numpy(), p2.pts_h.to_numpy()) and np.allclose(p1.pts_a.to_numpy(), p2.pts_a.to_numpy()),
           "Model 2.0 ratings: a game's result never changes its own or earlier before-game ratings")
+    # kickoff order, not assigned week: a week-1 game played after a week-2 game must not inform it
+    G2 = G.copy()
+    G2["start"] = pd.to_datetime(["2020-09-12", "2020-09-12", "2020-09-05", "2020-09-05"], utc=True)
+    q1, _, _ = VR.run_filter("pts", tg(28).assign(pts=lambda x: x.pts.where(x.game_id != 1, 30)), G2, {}, tiers, 100.0, 1.0, sd0=5.0, mu0=25.0)
+    q2, _, _ = VR.run_filter("pts", tg(28).assign(pts=lambda x: x.pts.where(x.game_id != 1, 60)), G2, {}, tiers, 100.0, 1.0, sd0=5.0, mu0=25.0)
+    a1 = q1.set_index("game_id").loc[[3, 4], ["pts_h", "pts_a"]].to_numpy()
+    a2 = q2.set_index("game_id").loc[[3, 4], ["pts_h", "pts_a"]].to_numpy()
+    check(np.allclose(a1, a2), "Model 2.0 ratings follow kickoff dates: a later game in an earlier week never informs an earlier game")
+    # live grading: model home -10 vs a home -3.5 line, home wins 30-20 -> the home side covers
+    import v2_live as VL
+    rec = {"1": dict(margin=10.0, total=50.0, market=dict(spread=-3.5, total=45.0, open_spread=-14.0, open_total=55.0))}
+    Gg = pd.DataFrame(dict(game_id=[1], completed=[True], home_pts=[30.0], away_pts=[20.0]))
+    VL._grade(rec, Gg)
+    r = rec["1"]["result"]
+    check(r.get("ats_close") == "win" and r.get("ou_close") == "win", "Model 2.0 grading: home -10 vs -3.5, won 30-20 = spread win; 50 vs 45 over, 50 = win")
+    check(r.get("ats_open") == "win" and r.get("ou_open") == "win", "Model 2.0 grading: model home -10 vs -14 = away +14, home won by 10 = win; 50 vs 55 under, 50 = win")
     v2 = C.SITE / "v2data.js"
     if v2.exists():
         try:

@@ -243,13 +243,38 @@ Results on FBS-vs-FBS games (average miss in points; gain over the current model
 
 | | Model 2.0 margin | v1 margin | gain | Model 2.0 total | v1 total | Closing line margin / total |
 |---|---|---|---|---|---|---|
-| Tune | 12.64 | 12.73 | +0.11 (0.02 to 0.20) | 12.79 | 12.84 | 12.27 / 12.33 |
-| Validate | 12.42 | 12.46 | +0.04 (-0.09 to 0.15) | 12.83 | 12.83 | 12.09 / 12.75 |
-| Test 2025 | 12.03 | 12.19 | +0.17 (0.00 to 0.32) | 12.75 | 12.73 | 11.81 / 12.54 |
-| 2026 | 12.19 | 12.22 | +0.04 (-0.12 to 0.17) | 12.82 | 12.89 | 11.70 / 12.26 |
+| Tune | 12.68 | 12.79 | +0.11 (0.02 to 0.20) | 13.05 | 13.09 | 12.37 / 12.71 |
+| Validate | 12.41 | 12.46 | +0.05 (-0.08 to 0.16) | 12.83 | 12.83 | 12.09 / 12.75 |
+| Test 2025 | 12.02 | 12.19 | +0.17 (-0.01 to 0.34) | 12.75 | 12.73 | 11.81 / 12.54 |
+| 2026 | 12.18 | 12.22 | +0.04 (-0.12 to 0.18) | 12.81 | 12.89 | 11.70 / 12.26 |
+
+(Closing lines are scored on the games that have them.) 2025 has now been looked at and discussed, so it no
+longer counts as untouched; only games after Model 2.0 went live are a clean test.
 
 What did not work, kept on record: model agreement does not predict accuracy (so it changes no probability);
 the possession model is the weakest component (the ensemble gives it almost no weight; it powers the score
 simulator); context terms in the ensemble changed nothing. Like v1, Model 2.0 still projects totals about 0.7
 points high in 2025-2026 and leans to the home side against the market. Model 2.0 replaces v1 only if it is
 more accurate on games played after it went live.
+
+### Model 2.0 fixes (Nov 23, 2026, after an outside review)
+
+- Live spread grading had the side reversed (home -10 vs a -3.5 line was graded as the away side). Fixed before
+  any game was graded; self-tests now cover it.
+- Ratings were processed by assigned week, so 47 games in 2019, 529 in 2020 and 1 in 2025 could see results of
+  games that ended after their own kickoff. Ratings and the Massey/Elo baselines now go by kickoff date; a
+  self-test checks it. Starting values of the filters come from the 2015 burn-in season only.
+- Line-only updates re-simulated with a fixed 11.5 drives and rounded inputs, moving win chances by up to 1 point.
+  They now reuse the exact inputs and seed: football numbers never move with the lines.
+- The backtest now scores the simulator's probabilities (what the page shows), not a normal curve.
+- Error sizes are recomputed after the current model's live number enters the ensemble.
+- Simulated average scores now match the published projection (within about 0.9 points in lopsided games).
+- Grading uses CollegeFootballData's closing consensus where available, and says when it fell back to the last
+  tracked line.
+- Model agreement is no longer a column: it never predicted accuracy (in 2026 the closest-agreeing games had the
+  largest misses).
+- The page warns when Model 2.0's projections are more than 36 hours old.
+
+Known limits, not fixed: roster, talent and returning-production tables are season snapshots from
+CollegeFootballData, not verified as of each game date; the simulator plays possessions in aggregate, not down by
+down; the model has no injury data.

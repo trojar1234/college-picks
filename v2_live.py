@@ -66,13 +66,19 @@ def project(R, slate_ids, v1_live, mkt):
     for i, r in g.iterrows():
         if int(r.game_id) in v1_live:
             g.at[i, "m_v1"], g.at[i, "t_v1"] = v1_live[int(r.game_id)]
-    w = R["weights"].get(int(g.season.max()))
+    season = int(g.season.max())
+    w = R["weights"].get(season)
     if w:
         has = g[[f"m_{m}" for m in VE.MEMBERS if f"m_{m}" in g]].notna().all(axis=1).to_numpy()
         g["m_ens"] = np.where(has, VE.apply_weights(g.fillna({"m_v1": 0.0}), w["margin"]),
                               VE.apply_weights(g, w["margin_without_v1"]))
         g["t_ens"] = np.where(has, VE.apply_weights(g.fillna({"t_v1": 0.0}), w["total"]),
                               VE.apply_weights(g, w["total_without_v1"]))
+        # error sizes recomputed with the projection actually published (v1's live number included)
+        tr = Gm[(Gm.season < season) & Gm.m_ens.notna() & Gm.margin.notna()]
+        if tr.season.nunique() >= 2:
+            g["sd_m"] = VE.pred_sd(g, "margin", VE.fit_conf(tr, "margin", False), False)
+            g["sd_t"] = VE.pred_sd(g, "total", VE.fit_conf(tr, "total", False), False)
     out = []
     for r in g.itertuples():
         m, t = float(r.m_ens), float(r.t_ens)
@@ -85,6 +91,8 @@ def project(R, slate_ids, v1_live, mkt):
         sm = SIM.summarize(h, a, (mk.get("spread"), mk.get("total")))
         comp = {k: [_f(getattr(r, f"m_{k}")), _f(getattr(r, f"t_{k}"))] for k in VE.MEMBERS if hasattr(r, f"m_{k}")}
         out.append(dict(game_id=int(r.game_id), start=pd.Timestamp(r.start).isoformat(), home=r.home, away=r.away,
+                        drives=_f(drives, 2),
+                        sim=[float(mu_h), float(mu_a), float(drives), float(sd_m), float(sd_t)],  # exact simulator inputs
                         neutral=bool(r.neutral), wk=int(r.wk), mismatch=int(r.mismatch),
                         margin=_f(m), spread=_f(-m), total=_f(t), sd_m=_f(sd_m), sd_t=_f(sd_t),
                         exp_home=_f(mu_h), exp_away=_f(mu_a), agree=str(r.agree),
@@ -94,8 +102,11 @@ def project(R, slate_ids, v1_live, mkt):
     return out
 
 
-def _grade(rec, G):
+def _grade(rec, G, closing=None):
+    """closing: {game_id: (spread, total)} true closing lines (CollegeFootballData consensus) when
+    available; otherwise the last line this run tracked before kickoff is used and marked as such."""
     res = G.set_index("game_id")
+    closing = closing or {}
     for gid, p in rec.items():
         if p.get("result") or int(gid) not in res.index:
             continue
@@ -107,12 +118,20 @@ def _grade(rec, G):
                    err_total=_f(tot - p["total"]))
         if p.get("v1"):
             out.update(v1_err_margin=_f(mar - p["v1"][0]), v1_err_total=_f(tot - p["v1"][1]))
-        mk = p.get("market") or {}
+        mk = dict(p.get("market") or {})
+        cs, ct = closing.get(int(gid), (None, None))
+        out["close_src"] = "cfbd" if cs is not None or ct is not None else "last tracked"
+        if cs is not None:
+            mk["spread"] = cs
+        if ct is not None:
+            mk["total"] = ct
         for lab, sk, tk in (("close", "spread", "total"), ("open", "open_spread", "open_total")):
             sp, tl = mk.get(sk), mk.get(tk)
             if sp is not None:
                 out[f"{lab}_err_margin"] = _f(mar + sp)
-                side = 1 if -p["margin"] > sp else -1 if -p["margin"] < sp else 0  # 1 = home side
+                # sp is the home spread (negative = home favored); the model's home spread is -margin.
+                # The model prefers home when its spread is below the line (home -10 vs a -3.5 line).
+                side = 1 if -p["margin"] < sp else -1 if -p["margin"] > sp else 0  # 1 = home side
                 v = (mar + sp) * side
                 out[f"ats_{lab}"] = "win" if v > 0 else "loss" if v < 0 else "push" if side else None
             if tl is not None:
@@ -177,8 +196,14 @@ def run(mode, SEASONS, pfeat, passing, v1_wf, preds, store, season, wk, now, mvi
         proj = [p for p in _load(SLATE, {}).get("games", []) if p["game_id"] in slate_ids]
         for p in proj:
             p["market"] = {k: _f(v) for k, v in mkt.get(p["game_id"], {}).items()}
-            h, a = SIM.simulate(p["exp_home"], p["exp_away"], 11.5, p["sd_m"], p["sd_t"], n=20000, seed=p["game_id"] % 100000)
-            p.update(SIM.summarize(h, a, (p["market"].get("spread"), p["market"].get("total"))))
+            # identical football inputs and seed as the full run; only the chances at the new lines change
+            mu_h, mu_a, dr, sm_, st_ = p.get("sim") or [p["exp_home"], p["exp_away"], p.get("drives") or 11.5, p["sd_m"], p["sd_t"]]
+            h, a = SIM.simulate(mu_h, mu_a, dr, sm_, st_, n=20000, seed=p["game_id"] % 100000)
+            sm = SIM.summarize(h, a, (p["market"].get("spread"), p["market"].get("total")))
+            for k in ("p_home_cover", "p_push_spread", "p_over", "p_push_total"):
+                p.pop(k, None)
+                if k in sm:
+                    p[k] = round(sm[k], 3)
         G = None
     SLATE.write_text(json.dumps(dict(made=now.isoformat(), season=season, week=wk, games=proj), default=str))
 
@@ -195,7 +220,16 @@ def run(mode, SEASONS, pfeat, passing, v1_wf, preds, store, season, wk, now, mvi
     if G is None:
         import v2_data as VD
         G = VD.games_table({season: SEASONS[season]})
-    _grade(rec, G)
+    closing = {}
+    try:
+        L = SEASONS[season]["lines"]
+        for r in L.itertuples():
+            sp = r.cfbd_spread if np.isfinite(r.cfbd_spread) else None
+            tl = r.cfbd_total if np.isfinite(r.cfbd_total) else None
+            closing[int(r.game_id)] = (sp, tl)
+    except Exception as e:
+        print("Model 2.0: closing lines unavailable:", e)
+    _grade(rec, G, closing)
     _rec_path(season).write_text(json.dumps(rec, default=str))
 
     bt = _load(BACKTEST, {})

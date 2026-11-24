@@ -64,11 +64,17 @@ def simulate(mu_h, mu_a, drives, sd_m, sd_t, n=20000, seed=0, pilot=True):
         return h, a
 
     sm, st = sd_m, sd_t
+    target_h, target_a = mu_h, mu_a
     if pilot:  # remove the drive-to-drive luck already in the engine from the extra shift
         h0, a0 = draw(0.0, 0.0, np.random.default_rng(seed + 1))
         vm, vt = np.var(h0 - a0), np.var(h0 + a0)
         sm = float(np.sqrt(max(sd_m ** 2 - vm, 0.0)))
         st = float(np.sqrt(max(sd_t ** 2 - vt, 0.0)))
+        # the zero-point floor and overtime nudge the averages; shift the inputs once so the simulated
+        # average scores match the published projection
+        h1, a1 = draw(sm, st, np.random.default_rng(seed + 2))
+        mu_h = max(mu_h + (target_h - h1.mean()), 0.3)
+        mu_a = max(mu_a + (target_a - a1.mean()), 0.3)
     return draw(sm, st, rng)
 
 

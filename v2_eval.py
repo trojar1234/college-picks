@@ -43,15 +43,21 @@ def hist_sd(Gm, col, kind):
     return out
 
 
+MARKET = ("open", "close")
+
+
 def accuracy(Gm, models, split, fbs_only=True):
-    d = Gm[Gm.season.isin(SPLITS[split]) & Gm.margin.notna()]
+    """Every model on the same games (all games where every model has a projection). The opening and
+    closing lines are scored on the subset of those games that have them; each row reports its n."""
+    d0 = Gm[Gm.season.isin(SPLITS[split]) & Gm.margin.notna()]
     if fbs_only:
-        d = d[d.mismatch == 0]
-    d = d.dropna(subset=[f"m_{m}" for m in models if f"m_{m}" in d])
+        d0 = d0[d0.mismatch == 0]
+    d0 = d0.dropna(subset=[f"m_{m}" for m in models if f"m_{m}" in d0 and m not in MARKET])
     rows = []
     for m in models:
-        if f"m_{m}" not in d:
+        if f"m_{m}" not in d0:
             continue
+        d = d0.dropna(subset=[f"m_{m}"]) if m in MARKET else d0
         em, et = d.margin - d[f"m_{m}"], d.total - d[f"t_{m}"]
         r = dict(model=m, n=int(len(d)), margin_mae=round(float(em.abs().mean()), 3),
                  margin_rmse=round(float(np.sqrt((em ** 2).mean())), 3), margin_bias=round(float(em.mean()), 2))
@@ -70,6 +76,15 @@ def accuracy(Gm, models, split, fbs_only=True):
             lo, hi = d[f"t_{m}"] - 1.2816 * d[f"sd_t_{m}"], d[f"t_{m}"] + 1.2816 * d[f"sd_t_{m}"]
             r["cover80_total"] = round(float(((d.total >= lo) & (d.total <= hi)).mean()), 3)
             r["crps_total"] = round(float(crps_normal(d.total, d[f"t_{m}"], d[f"sd_t_{m}"]).mean()), 3)
+        if m == "ens" and "p_sim" in d and d.p_sim.notna().all():
+            # the probabilities the site actually shows (score simulator), scored on the same games
+            p = np.clip(d.p_sim, 1e-4, 1 - 1e-4)
+            y = (d.margin > 0).astype(float)
+            r.update(brier=round(float(((p - y) ** 2).mean()), 4),
+                     logloss=round(float(-(y * np.log(p) + (1 - y) * np.log(1 - p)).mean()), 4),
+                     cover80_margin=round(float(((d.margin >= d.m_lo_sim) & (d.margin <= d.m_hi_sim)).mean()), 3),
+                     cover80_total=round(float(((d.total >= d.t_lo_sim) & (d.total <= d.t_hi_sim)).mean()), 3),
+                     probs="simulator")
         rows.append(r)
     return rows
 
